@@ -1,0 +1,131 @@
+---
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
+# @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  This template will provision all the required resources and infrastructure
+  to setup the smart media infrastructure.
+
+Parameters:
+  BucketPrefix:
+    Type: String
+    Default: moodlesmartmedia
+    Description: The prefix to use for the input and output buckets.
+  LambdaElasticTranscoderPipeline:
+    Type: String
+    Default: CfnElasticTranscoderLambda
+    Description: Lambda function name that provides the custom Cloudformaiton resource for elastic transcoder.
+
+Resources:
+  SqsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSqsQueue'] ]
+  SnsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopic'] ]
+      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopic'] ]
+      Subscription :
+        -
+          Endpoint: !GetAtt SqsQueue.Arn
+          Protocol: 'sqs'
+  InputS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'input'] ]
+      AccessControl: Private
+  OutputS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'output'] ]
+      AccessControl: Private
+  ElasticTranscoderRole:
+    Type: AWS::IAM::Role
+    Description: Elastic Transcoder Role
+    Properties:
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'elastic-transcoder-role'] ]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: elastictranscoder.amazonaws.com
+          Action: sts:AssumeRole
+  ElasticTranscoderPipeline:
+    Type: Custom::ElasticTranscoderPipeline
+    Properties:
+      ServiceToken:
+        !Join
+          - ':'
+          - - 'arn:aws:lambda'
+            - !Ref 'AWS::Region'
+            - !Ref 'AWS::AccountId'
+            - 'function'
+            - !Ref LambdaElasticTranscoderPipeline
+      Name: !Join [ '-', [!Ref 'AWS::StackName', 'ElasticTranscoderPipeline'] ]
+      Role: !GetAtt ElasticTranscoderRole.Arn
+      InputBucket: !Ref InputS3Bucket
+      OutputBucket: !Ref OutputS3Bucket
+      Notifications:
+        Completed: !Ref SnsTopic
+        Error: !Ref SnsTopic
+        Progressing: !Ref SnsTopic
+        Warning: !Ref SnsTopic
+#  SmartMediaS3User:
+#    Type: AWS::IAM::User
+#    Properties:
+#      UserName: SmartMediaS3User
+#      Policies:
+#       - PolicyName: SmartMediaS3UserPolicy
+#         PolicyDocument:
+#            Version: '2012-10-17'
+#            Statement:
+#            - Effect: Allow
+#              Action:
+#              - s3:ListBucket
+#              Resource:
+#              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '*'] ]
+#              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '*'] ]
+#            - Effect: Allow
+#              Action:
+#              - s3:GetObject
+#              - s3:PutObject
+#              - s3:DeleteObject
+#              Resource:
+#              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+#              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
+#  S3UserAccessKey:
+#    Type: AWS::IAM::AccessKey
+#    Properties:
+#      UserName: !Ref SmartMediaS3User
+
+Outputs:
+#  S3UserAccessKey:
+#    Description: S3 user access key
+#    Value: !Ref S3UserAccessKey
+#  S3UserSecretKey:
+#    Description: S3 user secret key
+#    Value: !GetAtt S3UserAccessKey.SecretAccessKey
+  InputBucket:
+    Description: S3 Input Bucket
+    Value: !Ref InputS3Bucket
+  OutputBucket:
+    Description: S3 Output Bucket
+    Value: !Ref OutputS3Bucket
