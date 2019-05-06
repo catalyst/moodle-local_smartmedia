@@ -50,13 +50,10 @@ if ($unrecognized) {
 
 if ($options['help'] || !$options['keyid'] || !$options['secret'] || !$options['region']) {
     $help = "Command line Librelmbda provision.
-This command line script will provision the Librelambda environment in AWS.
-It will setup the input and output buckets as well as the Lambda function in S3.
+This command line script will provision the Smart Media environment in AWS.
 
 Options:
 --keyid=STRING            AWS API Access Key ID.
-                          The API user for this key, will need permissions to:
-                          Create S3 buckets, IAM roles, Lambda functions.
 --secret=STRING           AWS API Secret Access Key.
 --region=STRING           The AWS region to create the environment in.
                           e.g. ap-southeast-2
@@ -69,7 +66,7 @@ Options:
 -h, --help                Print out this help
 
 Example:
-\$sudo -u www-data php files/converter/librelambda/cli/provision.php \
+\$sudo -u www-data php local/smartmedia/cli/provision.php \
 --keyid=QKIAIVYPO6FXJESSW4HQ \
 --secret=CzI0r0FvPf/TqPwCoiPOdhztEkvkyULbWike1WqA \
 --region=ap-southeast-2 \
@@ -101,7 +98,7 @@ if ($resourcebucketresposnse->code != 0 ) {
         'location' => $resourcebucketresposnse->message)) . PHP_EOL . PHP_EOL;
 }
 
-// Upload Libre Office archive to resource bucket.
+// Upload custom transcoder resource provider lambda to resource bucket.
 cli_heading(get_string('provision:uploadlibrearchive', 'local_smartmedia'));
 
 // Upload Lambda funtion code to resource bucket.

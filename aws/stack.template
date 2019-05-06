@@ -30,8 +30,71 @@ Parameters:
     Type: String
     Default: CfnElasticTranscoderLambda
     Description: Lambda function name that provides the custom Cloudformaiton resource for elastic transcoder.
+  ResourceBucket:
+    Type: String
+    Default: moodlesmartmedia-resource
+    Description: The bucket that contains the Lambda archive.
+  LambdaTranscodeTriggerArchiveKey:
+    Type: String
+    Default: lambda_transcoder_trigger.zip
+    Description: The S3 Key (filename) for the Lambda transcode trigger function archive.
 
 Resources:
+  LambdaTranscodeTriggerRole:
+    Type: AWS::IAM::Role
+    Description: Lambda Elastic Transcoder trigger role
+    Properties:
+      RoleName: lambda-transcode-trigger-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+  LambdaTranscodeTriggerPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - logs:*
+          Resource: arn:aws:logs:*:*:*
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          Resource: arn:aws:s3:::*
+      PolicyName: lambda-transcode-trigger-policy
+      Roles:
+        - !Ref LambdaTranscodeTriggerRole
+  LambdaTranscodeTriggerFunction:
+    Type: AWS::Lambda::Function
+    Description: Lambda Function to trigger Elastic Transcoder conversions.
+    Properties:
+      Code:
+        S3Bucket: !Ref ResourceBucket
+        S3Key: !Ref LambdaTranscodeTriggerArchiveKey
+      Environment:
+        Variables:
+          OutputBucket: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'output'] ]
+      FunctionName: lambda_transcoder_trigger
+      Handler: lambda_transcoder_trigger.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt LambdaTranscodeTriggerRole.Arn
+      Runtime: python3.6
+      Timeout: 600
+  LambdaTranscodeTriggerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref LambdaTranscodeTriggerFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'input'] ]
   SqsQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -88,41 +151,41 @@ Resources:
         Error: !Ref SnsTopic
         Progressing: !Ref SnsTopic
         Warning: !Ref SnsTopic
-#  SmartMediaS3User:
-#    Type: AWS::IAM::User
-#    Properties:
-#      UserName: SmartMediaS3User
-#      Policies:
-#       - PolicyName: SmartMediaS3UserPolicy
-#         PolicyDocument:
-#            Version: '2012-10-17'
-#            Statement:
-#            - Effect: Allow
-#              Action:
-#              - s3:ListBucket
-#              Resource:
-#              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '*'] ]
-#              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '*'] ]
-#            - Effect: Allow
-#              Action:
-#              - s3:GetObject
-#              - s3:PutObject
-#              - s3:DeleteObject
-#              Resource:
-#              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
-#              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
-#  S3UserAccessKey:
-#    Type: AWS::IAM::AccessKey
-#    Properties:
-#      UserName: !Ref SmartMediaS3User
+  SmartMediaS3User:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: SmartMediaS3User
+      Policies:
+       - PolicyName: SmartMediaS3UserPolicy
+         PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - s3:ListBucket
+              Resource:
+              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '*'] ]
+              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '*'] ]
+            - Effect: Allow
+              Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:DeleteObject
+              Resource:
+              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
+  SmartMediaS3UserAccessKey:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref SmartMediaS3User
 
 Outputs:
-#  S3UserAccessKey:
-#    Description: S3 user access key
-#    Value: !Ref S3UserAccessKey
-#  S3UserSecretKey:
-#    Description: S3 user secret key
-#    Value: !GetAtt S3UserAccessKey.SecretAccessKey
+  SmartMediaS3UserAccessKey:
+    Description: Smart media S3 user access key
+    Value: !Ref SmartMediaS3UserAccessKey
+  SmartMediaS3UserSecretKey:
+    Description:  Smart media S3 user secret key
+    Value: !GetAtt SmartMediaS3UserAccessKey.SecretAccessKey
   InputBucket:
     Description: S3 Input Bucket
     Value: !Ref InputS3Bucket
