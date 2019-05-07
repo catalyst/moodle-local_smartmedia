@@ -25,7 +25,7 @@
 define('CLI_SCRIPT', true);
 define('CACHE_DISABLE_ALL', true);
 
-require(__DIR__.'/../../../../config.php');
+require(__DIR__.'/../../../config.php');
 require_once($CFG->libdir.'/clilib.php');
 
 // Get cli options.
@@ -99,50 +99,40 @@ if ($resourcebucketresposnse->code != 0 ) {
 }
 
 // Upload custom transcoder resource provider lambda to resource bucket.
-cli_heading(get_string('provision:uploadlibrearchive', 'local_smartmedia'));
+cli_heading(get_string('provision:uploadlambdatranscodearchive', 'local_smartmedia'));
 
-// Upload Lambda funtion code to resource bucket.
-cli_heading(get_string('provision:uploadlambdaarchive', 'local_smartmedia'));
-$lambdapath = $CFG->dirroot . '/files/converter/librelambda/lambda/lambdaconvert.zip';
-$lambdauploadresponse = $provisioner->upload_file($lambdapath, $resourcebucketresposnse->bucketname);
-if ($lambdauploadresponse->code != 0 ) {
-    $errormsg = $lambdauploadresponse->code . ': ' . $lambdauploadresponse->message;
+$lambdapath = $CFG->dirroot . '/local/smartmedia/aws/lambda_resource_transcoder.zip';
+$lambdaresourceuploadresponse = $provisioner->upload_file($lambdapath, $resourcebucketresposnse->bucketname);
+if ($lambdaresourceuploadresponse->code != 0 ) {
+    $errormsg = $lambdaresourceuploadresponse->code . ': ' . $lambdaresourceuploadresponse->message;
     throw new \moodle_exception($errormsg);
     exit(1);
 } else {
     echo get_string(
-        'provision:lambdaarchiveuploaded',
-        'local_smartmedia', $lambdauploadresponse->message) . PHP_EOL . PHP_EOL;
+        'provision:lambdaresourcearchiveuploaded',
+        'local_smartmedia', $lambdaresourceuploadresponse->message) . PHP_EOL . PHP_EOL;
 }
 
-// Upload Lambda layer to resource bucket.
-cli_heading(get_string('provision:uploadlambdalayer', 'local_smartmedia'));
+// Upload custom transcoder trigger provider lambda to resource bucket.
+cli_heading(get_string('provision:uploadlambdatranscoder', 'local_smartmedia'));
 
-// First we make the Libre archive a zip file so it can be a Lambda layer.
-$librepath = $CFG->dirroot . '/files/converter/librelambda/libre/lo.tar.xz';
-$tmpfname = sys_get_temp_dir() . '/lo.zip';
-$zip = new ZipArchive();
-$zip->open($tmpfname, ZipArchive::CREATE);
-$zip->addFile($librepath, 'lo.tar.xz');
-$zip->close();
-
-// Next upload the Zip to the resource bucket.
-$layeruploadresponse = $provisioner->upload_file($tmpfname, $resourcebucketresposnse->bucketname);
-if ($layeruploadresponse->code != 0 ) {
-    $errormsg = $layeruploadresponse->code . ': ' . $layeruploadresponse->message;
+$lambdapath = $CFG->dirroot . '/local/smartmedia/aws/lambda_transcoder_trigger.zip';
+$lambdatranscodeuploadresponse = $provisioner->upload_file($lambdapath, $resourcebucketresposnse->bucketname);
+if ($lambdatranscodeuploadresponse->code != 0 ) {
+    $errormsg = $lambdatranscodeuploadresponse->code . ': ' . $lambdatranscodeuploadresponse->message;
     throw new \moodle_exception($errormsg);
     exit(1);
 } else {
     echo get_string(
-            'provision:lambdalayeruploaded',
-            'local_smartmedia', $layeruploadresponse->message) . PHP_EOL . PHP_EOL;
+        'provision:lambdatranscoderarchiveuploaded',
+        'local_smartmedia', $lambdatranscodeuploadresponse->message) . PHP_EOL . PHP_EOL;
 }
 
-unlink($tmpfname);  // Remove temp file.
+die;
 
 // Create Lambda function, IAM roles and the rest of the stack.
 cli_heading(get_string('provision:stack', 'local_smartmedia'));
-$cloudformationpath = $CFG->dirroot . '/files/converter/librelambda/lambda/stack.template';
+$cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/stack.template';
 
 $params = array(
     'bucketprefix' => $provisioner->get_bucket_prefix(),

@@ -98,7 +98,7 @@ class provision {
         $this->region = $region;
 
         if ($this->bucketprefix == '') {
-            $this->bucketprefix = md5($CFG->siteidentifier);
+            $this->bucketprefix = 'smartmedia-' . md5($CFG->siteidentifier);
         } else {
             $this->bucketprefix = $bucketprefix;
         }
