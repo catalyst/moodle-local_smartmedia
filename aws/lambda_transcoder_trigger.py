@@ -25,6 +25,7 @@ import io
 from botocore.exceptions import ClientError
 
 s3_client = boto3.client('s3')
+et_client = boto3.client('elastictranscoder')
 logger = logging.getLogger()
 
 
@@ -41,6 +42,10 @@ def lambda_handler(event, context):
     logging_level = os.environ.get('LoggingLevel', logging.ERROR)
     logger.setLevel(int(logging_level))
 
+    #  Get Pipeline ID from environment variable
+    pipeline_id = os.environ.get('PipelineId')
+    logger.error('Executing Pipeline: {}'.format(pipeline_id))
+
     #  Now get and process the file from the input bucket.
     for record in event['Records']:
         bucket = record['s3']['bucket']['name']
@@ -52,3 +57,4 @@ def lambda_handler(event, context):
             continue
 
         logger.error('File uploaded: {}'.format(key))
+

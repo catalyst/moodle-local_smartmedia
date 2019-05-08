@@ -79,7 +79,7 @@ Resources:
         Variables:
           OutputBucket: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'output'] ]
       FunctionName: lambda_transcoder_resource
-      Handler: lambda_transcoder_resource.lambda_handler
+      Handler: lambda_resource_transcoder.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaTranscodeResourceRole.Arn
       Runtime: python3.6
@@ -88,7 +88,7 @@ Resources:
     Type: AWS::IAM::Role
     Description: Lambda Elastic Transcoder trigger role
     Properties:
-      RoleName: lambda-transcode-trigger-role
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'elastic-transcode-trigger-role'] ]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -126,7 +126,7 @@ Resources:
         S3Key: !Ref LambdaTranscodeTriggerArchiveKey
       Environment:
         Variables:
-          OutputBucket: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'output'] ]
+          PipelineId: !GetAtt ElasticTranscoderPipeline.PipelineId
       FunctionName: lambda_transcoder_trigger
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128

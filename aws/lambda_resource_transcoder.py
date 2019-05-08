@@ -53,7 +53,8 @@ def create(event):
     status = 'SUCCESS'
     response = {
         'action': 'create',
-        'physicalresourceid': 'physicalresourceid'
+        'physicalresourceid': 'ElasticTranscodePipeline',
+        'pipelineid' : request['Pipeline']['Id']
         }
 
     return [status, response]
@@ -85,14 +86,13 @@ def send_response(event, status, actiondata):
     logger.info('Sending {} response, for {} action to cloudformation'.format(status, actiondata['action']))
 
     request = {
-       "Status" : status,
-       "PhysicalResourceId" : actiondata['physicalresourceid'],
-       "StackId" : event['StackId'],
-       "RequestId" : event['RequestId'],
-       "LogicalResourceId" : event['LogicalResourceId'],
-       "Data" : {
-          "OutputName1" : "Value1",
-          "OutputName2" : "Value2",
+       'Status' : status,
+       'PhysicalResourceId' : actiondata['physicalresourceid'],
+       'StackId' : event['StackId'],
+       'RequestId' : event['RequestId'],
+       'LogicalResourceId' : event['LogicalResourceId'],
+       'Data' : {
+          'PipelineId' : actiondata['pipelineid']
        }
     }
 
