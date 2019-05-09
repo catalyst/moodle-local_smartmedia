@@ -42,13 +42,13 @@ def create(event):
         Role=event['ResourceProperties']['Role'],
         Notifications={
             'Progressing': event['ResourceProperties']['Notifications']['Progressing'],
-            'Completed': event['ResourceProperties']['Notifications']['Progressing'],
-            'Warning': event['ResourceProperties']['Notifications']['Progressing'],
-            'Error': event['ResourceProperties']['Notifications']['Progressing'],
+            'Completed': event['ResourceProperties']['Notifications']['Completed'],
+            'Warning': event['ResourceProperties']['Notifications']['Warning'],
+            'Error': event['ResourceProperties']['Notifications']['Error'],
         }
     )
 
-    logger.error(request)
+    logger.info('Created Pipeline with ID: {}'.format(request['Pipeline']['Id']))
 
     status = 'SUCCESS'
     response = {
@@ -65,6 +65,12 @@ def delete(event):
     Delete the Elastictranscoder pipline.
     '''
     logger.info('Deleting Pipeline for request: {}'.format(event['RequestId']))
+
+    logger.info(event)
+
+    response = et_client.delete_pipeline(
+        Id='string'
+    )
 
     status = 'SUCCESS'
     response = {
@@ -128,6 +134,7 @@ def lambda_handler(event, context):
     # Execute custom resource handlers.
     action = event['RequestType']
     logger.info("Received a {} Request".format(action))
+    logger.info(event)
 
     if action == 'Create':
         status, actiondata = create(event)

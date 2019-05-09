@@ -44,7 +44,7 @@ Resources:
     Type: AWS::IAM::Role
     Description: Lambda Elastic Transcoder resource role
     Properties:
-      RoleName: lambda-transcode-resource-role
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-resource-role'] ]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -61,11 +61,23 @@ Resources:
         Statement:
         - Effect: Allow
           Action:
+          - logs:*
+          Resource: arn:aws:logs:*:*:*
+        - Effect: Allow
+          Action:
           - elastictranscoder:CreatePipeline
           - elastictranscoder:DeletePipeline
           - elastictranscoder:UpdatePipeline
-          Resource: arn:aws:elastictranscoder:::*
-      PolicyName: lambda-transcode-resource-policy
+          Resource: '*'
+        - Effect: Allow
+          Action:
+          - iam:PassRole
+          Resource: '*'
+          Condition:
+            StringLike:
+              iam:PassedToService:
+                - elastictranscoder.amazonaws.com
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-resource-policy'] ]
       Roles:
         - !Ref LambdaTranscodeResourceRole
   LambdaTranscodeResourceFunction:
@@ -78,7 +90,8 @@ Resources:
       Environment:
         Variables:
           OutputBucket: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'output'] ]
-      FunctionName: lambda_transcoder_resource
+          LoggingLevel: 20
+      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'lambda_transcoder_resource'] ]
       Handler: lambda_resource_transcoder.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaTranscodeResourceRole.Arn
@@ -113,7 +126,7 @@ Resources:
           - s3:PutObject
           - s3:DeleteObject
           Resource: arn:aws:s3:::*
-      PolicyName: lambda-transcode-trigger-policy
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
         - !Ref LambdaTranscodeTriggerRole
   LambdaTranscodeTriggerFunction:
@@ -127,7 +140,7 @@ Resources:
       Environment:
         Variables:
           PipelineId: !GetAtt ElasticTranscoderPipeline.PipelineId
-      FunctionName: lambda_transcoder_trigger
+      FunctionName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda_transcoder_trigger'] ]
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaTranscodeTriggerRole.Arn
@@ -199,9 +212,9 @@ Resources:
   SmartMediaS3User:
     Type: AWS::IAM::User
     Properties:
-      UserName: SmartMediaS3User
+      UserName: !Join [ '', [!Ref 'AWS::StackName', 'SmartMediaS3User'] ]
       Policies:
-       - PolicyName: SmartMediaS3UserPolicy
+       - PolicyName: !Join [ '', [!Ref 'AWS::StackName', 'SmartMediaS3UserPolicy'] ]
          PolicyDocument:
             Version: '2012-10-17'
             Statement:
