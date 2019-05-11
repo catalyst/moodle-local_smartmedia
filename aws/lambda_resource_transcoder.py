@@ -53,7 +53,7 @@ def create(event):
     status = 'SUCCESS'
     response = {
         'action': 'create',
-        'physicalresourceid': 'ElasticTranscodePipeline',
+        'physicalresourceid': request['Pipeline']['Id'],
         'pipelineid' : request['Pipeline']['Id']
         }
 
@@ -66,16 +66,17 @@ def delete(event):
     '''
     logger.info('Deleting Pipeline for request: {}'.format(event['RequestId']))
 
-    logger.info(event)
-
     response = et_client.delete_pipeline(
-        Id='string'
+        Id=event['PhysicalResourceId']
     )
+
+    logger.info('Deleted Pipeline with ID: {}'.format(event['PhysicalResourceId']))
 
     status = 'SUCCESS'
     response = {
         'action': 'delete',
-        'physicalresourceid': 'physicalresourceid'
+        'physicalresourceid': event['PhysicalResourceId'],
+        'pipelineid' : event['PhysicalResourceId']
         }
 
     return [status, response]
@@ -134,7 +135,6 @@ def lambda_handler(event, context):
     # Execute custom resource handlers.
     action = event['RequestType']
     logger.info("Received a {} Request".format(action))
-    logger.info(event)
 
     if action == 'Create':
         status, actiondata = create(event)

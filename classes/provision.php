@@ -334,10 +334,11 @@ class provision {
      * the required roles and user permisions, and the Lmabda function
      * to convert documents.
      *
+     * @param string $stackname The name to give the created stack.
      * @param array $params The params to create the stack with.
      * @return \stdClass $result The result of stack creation.
      */
-    public function create_stack($params) {
+    public function create_stack($stackname, $params) {
         $result = new \stdClass();
         $result->status = true;
         $result->code = 0;
@@ -348,29 +349,23 @@ class provision {
 
         // Create stack.
         $template = file_get_contents($params['templatepath']);
+        $parameters = array();
+        foreach ($params as $key => $value) {
+            if ($key == 'templatepath') {
+                continue;
+            } else {
+                $parameters[] = array(
+                    'ParameterKey' => $key,
+                    'ParameterValue' => $value
+                );
+            }
+        }
 
         $stackparams = array(
             'Capabilities' => array('CAPABILITY_NAMED_IAM'),
             'OnFailure' => 'DELETE',
-            'Parameters' => array(
-                array(
-                    'ParameterKey' => 'BucketPrefix',
-                    'ParameterValue' => $params['bucketprefix'],
-                ),
-                array(
-                    'ParameterKey' => 'ResourceBucket',
-                    'ParameterValue' => $params['resourcebucket'],
-                ),
-                array(
-                    'ParameterKey' => 'LambdaArchiveKey',
-                    'ParameterValue' => $params['lambdaarchive'],
-                ),
-                array(
-                    'ParameterKey' => 'LambdaLayerKey',
-                    'ParameterValue' => $params['lambdalayer'],
-                ),
-            ),
-            'StackName' => 'LambdaConvertStack', // Required.
+            'Parameters' => $parameters,
+            'StackName' => $stackname, // Required.
             'TemplateBody' => $template,
         );
 
@@ -420,20 +415,11 @@ class provision {
             }
 
             if ($stackcreated) {
+                $outputs = array();
                 foreach ($stackdetail['Outputs'] as $output) {
-                    if ($output['OutputKey'] == 'S3UserAccessKey') {
-                        $result->S3UserAccessKey = $output['OutputValue'];
-                    }
-                    if ($output['OutputKey'] == 'S3UserSecretKey') {
-                        $result->S3UserSecretKey = $output['OutputValue'];
-                    }
-                    if ($output['OutputKey'] == 'InputBucket') {
-                        $result->InputBucket = $output['OutputValue'];
-                    }
-                    if ($output['OutputKey'] == 'OutputBucket') {
-                        $result->OutputBucket = $output['OutputValue'];
-                    }
+                    $outputs[$output['OutputKey']] = $output['OutputValue'];
                 }
+                $result->outputs = $outputs;
 
             } else {
                 $result->status = false;

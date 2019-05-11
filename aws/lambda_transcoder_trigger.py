@@ -44,7 +44,7 @@ def lambda_handler(event, context):
 
     #  Get Pipeline ID from environment variable
     pipeline_id = os.environ.get('PipelineId')
-    logger.error('Executing Pipeline: {}'.format(pipeline_id))
+    logger.info('Executing Pipeline: {}'.format(pipeline_id))
 
     #  Now get and process the file from the input bucket.
     for record in event['Records']:
@@ -56,5 +56,23 @@ def lambda_handler(event, context):
         if key == 'permissions_check_file':
             continue
 
-        logger.error('File uploaded: {}'.format(key))
+        logger.info('File uploaded: {}'.format(key))
+        logger.info('Triggering transcode job...')
+
+        response = et_client.create_job(
+            PipelineId=pipeline_id,
+            OutputKeyPrefix=key,
+            Input={
+                'Key': key,
+            },
+            Outputs=[
+                {
+                    'Key': 'string',
+                    'PresetId': 'string',
+                    'ThumbnailPattern': '',
+                },
+            ]
+        )
+
+        logger.info(response)
 

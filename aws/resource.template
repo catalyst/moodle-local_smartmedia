@@ -1,0 +1,95 @@
+---
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+#
+# @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
+# @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: >
+  This template will provision all the required resources and infrastructure
+  to setup the smart media infrastructure.
+
+Parameters:
+  ResourceBucket:
+    Type: String
+    Default: moodlesmartmedia-resource
+    Description: The bucket that contains the Lambda archive.
+  LambdaTranscodeResourceArchiveKey:
+    Type: String
+    Default: lambda_resource_transcoder.zip
+    Description: The S3 Key (filename) for the Lambda transcode resource function archive.
+
+Resources:
+  LambdaTranscodeResourceRole:
+    Type: AWS::IAM::Role
+    Description: Lambda Elastic Transcoder resource role
+    Properties:
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-resource-role'] ]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+  LambdaTranscodeResourcePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - logs:*
+          Resource: arn:aws:logs:*:*:*
+        - Effect: Allow
+          Action:
+          - elastictranscoder:CreatePipeline
+          - elastictranscoder:DeletePipeline
+          - elastictranscoder:UpdatePipeline
+          Resource: '*'
+        - Effect: Allow
+          Action:
+          - iam:PassRole
+          Resource: '*'
+          Condition:
+            StringLike:
+              iam:PassedToService:
+                - elastictranscoder.amazonaws.com
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-resource-policy'] ]
+      Roles:
+        - !Ref LambdaTranscodeResourceRole
+  LambdaTranscodeResourceFunction:
+    Type: AWS::Lambda::Function
+    Description: Lambda Function to resource Elastic Transcoder conversions.
+    Properties:
+      Code:
+        S3Bucket: !Ref ResourceBucket
+        S3Key: !Ref LambdaTranscodeResourceArchiveKey
+      Environment:
+        Variables:
+          LoggingLevel: 20
+      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'lambda_transcoder_resource'] ]
+      Handler: lambda_resource_transcoder.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt LambdaTranscodeResourceRole.Arn
+      Runtime: python3.6
+      Timeout: 600
+
+Outputs:
+  LambdaTranscodeResourceFunction:
+    Description: Lambda function that provides Elastic Transcoder custom resource.
+    Value: !GetAtt LambdaTranscodeResourceFunction.Arn

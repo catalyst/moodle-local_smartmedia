@@ -30,73 +30,16 @@ Parameters:
     Type: String
     Default: moodlesmartmedia-resource
     Description: The bucket that contains the Lambda archive.
-  LambdaTranscodeResourceArchiveKey:
-    Type: String
-    Default: lambda_resource_transcoder.zip
-    Description: The S3 Key (filename) for the Lambda transcode resource function archive.
   LambdaTranscodeTriggerArchiveKey:
     Type: String
     Default: lambda_transcoder_trigger.zip
     Description: The S3 Key (filename) for the Lambda transcode trigger function archive.
+  LambdaTranscodeResourceFunctionArn:
+    Type: String
+    Default: arn:aws:lambda:ap-southeast-2:693620471840:function:resourcestack_lambda_transcoder_resource
+    Description: Lambda function ARN that provides Elastic Transcoder custom resource.
 
 Resources:
-  LambdaTranscodeResourceRole:
-    Type: AWS::IAM::Role
-    Description: Lambda Elastic Transcoder resource role
-    Properties:
-      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-resource-role'] ]
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: ''
-          Effect: Allow
-          Principal:
-            Service: lambda.amazonaws.com
-          Action: sts:AssumeRole
-  LambdaTranscodeResourcePolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Action:
-          - logs:*
-          Resource: arn:aws:logs:*:*:*
-        - Effect: Allow
-          Action:
-          - elastictranscoder:CreatePipeline
-          - elastictranscoder:DeletePipeline
-          - elastictranscoder:UpdatePipeline
-          Resource: '*'
-        - Effect: Allow
-          Action:
-          - iam:PassRole
-          Resource: '*'
-          Condition:
-            StringLike:
-              iam:PassedToService:
-                - elastictranscoder.amazonaws.com
-      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-resource-policy'] ]
-      Roles:
-        - !Ref LambdaTranscodeResourceRole
-  LambdaTranscodeResourceFunction:
-    Type: AWS::Lambda::Function
-    Description: Lambda Function to resource Elastic Transcoder conversions.
-    Properties:
-      Code:
-        S3Bucket: !Ref ResourceBucket
-        S3Key: !Ref LambdaTranscodeResourceArchiveKey
-      Environment:
-        Variables:
-          OutputBucket: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'output'] ]
-          LoggingLevel: 20
-      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'lambda_transcoder_resource'] ]
-      Handler: lambda_resource_transcoder.lambda_handler
-      MemorySize: 128
-      Role: !GetAtt LambdaTranscodeResourceRole.Arn
-      Runtime: python3.6
-      Timeout: 600
   LambdaTranscodeTriggerRole:
     Type: AWS::IAM::Role
     Description: Lambda Elastic Transcoder trigger role
@@ -130,17 +73,16 @@ Resources:
       Roles:
         - !Ref LambdaTranscodeTriggerRole
   LambdaTranscodeTriggerFunction:
-    DependsOn: LambdaTranscodeResourceFunction
     Type: AWS::Lambda::Function
     Description: Lambda Function to trigger Elastic Transcoder conversions.
     Properties:
       Code:
         S3Bucket: !Ref ResourceBucket
         S3Key: !Ref LambdaTranscodeTriggerArchiveKey
-      Environment:
-        Variables:
-          PipelineId: !GetAtt ElasticTranscoderPipeline.PipelineId
-      FunctionName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda_transcoder_trigger'] ]
+#      Environment:
+#        Variables:
+#          PipelineId: !GetAtt ElasticTranscoderPipeline.PipelineId
+      FunctionName: !Join [ '', [!Ref 'AWS::StackName', 'lambda_transcoder_trigger'] ]
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaTranscodeTriggerRole.Arn
@@ -171,6 +113,10 @@ Resources:
     Properties:
       BucketName: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'input'] ]
       AccessControl: Private
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - Event: 's3:ObjectCreated:*'
+          Function: !GetAtt LambdaTranscodeTriggerFunction.Arn
   OutputS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -190,16 +136,12 @@ Resources:
             Service: elastictranscoder.amazonaws.com
           Action: sts:AssumeRole
   ElasticTranscoderPipeline:
+    DependsOn:
+      - InputS3Bucket
+      - OutputS3Bucket
     Type: Custom::ElasticTranscoderPipeline
     Properties:
-      ServiceToken:
-        !Join
-          - ':'
-          - - 'arn:aws:lambda'
-            - !Ref 'AWS::Region'
-            - !Ref 'AWS::AccountId'
-            - 'function'
-            - !Ref LambdaTranscodeResourceFunction
+      ServiceToken: !Ref LambdaTranscodeResourceFunctionArn
       Name: !Join [ '-', [!Ref 'AWS::StackName', 'ElasticTranscoderPipeline'] ]
       Role: !GetAtt ElasticTranscoderRole.Arn
       InputBucket: !Ref InputS3Bucket

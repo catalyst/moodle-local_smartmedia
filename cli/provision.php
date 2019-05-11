@@ -128,21 +128,49 @@ if ($lambdatranscodeuploadresponse->code != 0 ) {
         'local_smartmedia', $lambdatranscodeuploadresponse->message) . PHP_EOL . PHP_EOL;
 }
 
+// Create the Lambda function and associated services for the
+// custom elastic transcoder resource cloudformation provider.
+cli_heading(get_string('provision:resourcestack', 'local_smartmedia'));
+$cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/resource.template';
+
+$stackname = 'SmartmediaResourceStack';
+$params = array(
+    'LambdaTranscodeResourceArchiveKey' => 'lambda_resource_transcoder.zip',
+    'ResourceBucket' => $resourcebucketresposnse->bucketname,
+    'templatepath' => $cloudformationpath
+);
+
+$createstackresponse = $provisioner->create_stack($stackname, $params);
+if ($createstackresponse->code != 0 ) {
+    $errormsg = $createstackresponse->code . ': ' . $createstackresponse->message;
+    throw new \moodle_exception($errormsg);
+    exit(1);
+} else {
+    echo get_string('provision:resourcestackcreated', 'local_smartmedia', $createstackresponse->message) . PHP_EOL . PHP_EOL;
+}
+
+// Get Lmbda ARN.
+$lambdaresourcesrn = $createstackresponse->outputs['LambdaTranscodeResourceFunction'];
+
+//Print Summary
+echo get_string('provision:lambdaresourcearn', 'local_smartmedia', $lambdaresourcesrn) . PHP_EOL;
+
 die;
 
 // Create Lambda function, IAM roles and the rest of the stack.
 cli_heading(get_string('provision:stack', 'local_smartmedia'));
 $cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/stack.template';
 
+$stackname = 'smstack';
 $params = array(
-    'bucketprefix' => $provisioner->get_bucket_prefix(),
-    'lambdaarchive' => 'lambdaconvert.zip',
-    'lambdalayer' => 'lo.zip',
-    'resourcebucket' => $resourcebucketresposnse->bucketname,
+    'BucketPrefix' => $provisioner->get_bucket_prefix(),
+    'LambdaTranscodeTriggerArchiveKey' => 'lambda_transcoder_trigger.zip',
+    'LambdaTranscodeResourceFunctionArn' => $lambdaresourcesrn,
+    'ResourceBucket' => $resourcebucketresposnse->bucketname,
     'templatepath' => $cloudformationpath
 );
 
-$createstackresponse = $provisioner->create_stack($params);
+$createstackresponse = $provisioner->create_stack($stackname, $params);
 if ($createstackresponse->code != 0 ) {
     $errormsg = $createstackresponse->code . ': ' . $createstackresponse->message;
     throw new \moodle_exception($errormsg);
@@ -153,20 +181,20 @@ if ($createstackresponse->code != 0 ) {
 
 // Print summary.
 cli_heading(get_string('provision:stack', 'local_smartmedia'));
-echo get_string('provision:s3useraccesskey', 'local_smartmedia', $createstackresponse->S3UserAccessKey) . PHP_EOL;
-echo get_string('provision:s3usersecretkey', 'local_smartmedia', $createstackresponse->S3UserSecretKey) . PHP_EOL;
-echo get_string('provision:inputbucket', 'local_smartmedia', $createstackresponse->InputBucket) . PHP_EOL;
-echo get_string('provision:outputbucket', 'local_smartmedia', $createstackresponse->OutputBucket) . PHP_EOL;
+echo get_string('provision:s3useraccesskey', 'local_smartmedia', $createstackresponse->outputs['SmartMediaS3UserAccessKey']) . PHP_EOL;
+echo get_string('provision:s3usersecretkey', 'local_smartmedia', $createstackresponse->outputs['SmartMediaS3UserSecretKey']) . PHP_EOL;
+echo get_string('provision:inputbucket', 'local_smartmedia', $createstackresponse->outputs['InputBucket']) . PHP_EOL;
+echo get_string('provision:outputbucket', 'local_smartmedia', $createstackresponse->outputs['OutputBucket']) . PHP_EOL;
 
 // Set config.
 if ($options['set-config']) {
-    cli_heading(get_string('provision:setconfig', 'local_smartmedia'));
-    set_config('api_key', $createstackresponse->S3UserAccessKey, 'local_smartmedia');
-    set_config('api_secret', $createstackresponse->S3UserSecretKey, 'local_smartmedia');
-    set_config('s3_input_bucket', $createstackresponse->InputBucket, 'local_smartmedia');
-    set_config('s3_output_bucket', $createstackresponse->OutputBucket, 'local_smartmedia');
-    set_config('api_region', $options['region'], 'local_smartmedia');
-    purge_all_caches();  // Purge caches to ensure UI updates with new settings.
+//     cli_heading(get_string('provision:setconfig', 'local_smartmedia'));
+//     set_config('api_key', $createstackresponse->S3UserAccessKey, 'local_smartmedia');
+//     set_config('api_secret', $createstackresponse->S3UserSecretKey, 'local_smartmedia');
+//     set_config('s3_input_bucket', $createstackresponse->InputBucket, 'local_smartmedia');
+//     set_config('s3_output_bucket', $createstackresponse->OutputBucket, 'local_smartmedia');
+//     set_config('api_region', $options['region'], 'local_smartmedia');
+//     purge_all_caches();  // Purge caches to ensure UI updates with new settings.
 }
 
 exit(0); // 0 means success.
