@@ -29,6 +29,36 @@ et_client = boto3.client('elastictranscoder')
 logger = logging.getLogger()
 
 
+def submit_transcode_jobs(s3key, pipeline_id):
+    """
+    Submits jobs to Elastic Transcoder.
+    """
+
+    logger.info('Triggering transcode job...')
+
+    response = et_client.create_job(
+        PipelineId=pipeline_id,
+         OutputKeyPrefix=s3key + '/',
+         Input={
+            'Key': s3key,
+        },
+        Outputs=[
+            {
+                'Key': '.mp4',
+                'PresetId': '1351620000001-100070',  # System preset: Facebook, SmugMug, Vimeo, YouTube
+                'ThumbnailPattern': '',
+            },
+            {
+                'Key': '.webm',
+                'PresetId': '1351620000001-100240',  # System preset: Webm 720p
+                'ThumbnailPattern': '',
+             },
+        ]
+    )
+
+    logger.info(response)
+
+
 def lambda_handler(event, context):
     """
     lambda_handler is the entry point that is invoked when the lambda function is called,
@@ -41,6 +71,8 @@ def lambda_handler(event, context):
     #  Set logging
     logging_level = os.environ.get('LoggingLevel', logging.ERROR)
     logger.setLevel(int(logging_level))
+
+    logging.info(event)
 
     #  Get Pipeline ID from environment variable
     pipeline_id = os.environ.get('PipelineId')
@@ -57,22 +89,6 @@ def lambda_handler(event, context):
             continue
 
         logger.info('File uploaded: {}'.format(key))
-        logger.info('Triggering transcode job...')
 
-        response = et_client.create_job(
-            PipelineId=pipeline_id,
-            OutputKeyPrefix=key,
-            Input={
-                'Key': key,
-            },
-            Outputs=[
-                {
-                    'Key': 'string',
-                    'PresetId': 'string',
-                    'ThumbnailPattern': '',
-                },
-            ]
-        )
-
-        logger.info(response)
+        submit_transcode_jobs(key, pipeline_id)
 

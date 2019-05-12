@@ -35,7 +35,6 @@ list($options, $unrecognized) = cli_get_params(
         'secret'            => false,
         'help'              => false,
         'region'            => false,
-        'bucket-prefix'     => '',
         'set-config'        => false,
     ),
     array(
@@ -57,8 +56,6 @@ Options:
 --secret=STRING           AWS API Secret Access Key.
 --region=STRING           The AWS region to create the environment in.
                           e.g. ap-southeast-2
---bucket-prefix=STRING    The prefix to use for the created AWS S3 buckets.
-                          Bucket names need to be globally unique.
                           If this isn't provided the a random prefix will be generated.
 --set-config              Will update the plugin configuration with the resources
                           created by this script.
@@ -80,14 +77,21 @@ Example:
 $provisioner = new \local_smartmedia\provision(
     $options['keyid'],
     $options['secret'],
-    $options['region'],
-    $options['bucket-prefix']
+    $options['region']
     );
+$now = time();
+
+// Resource stack name.
+$stackname = 'smr'. $now;
+
+// Transcoder stack name.
+$transcoderstackname = 'smt'. $now;
 
 // Create S3 resource bucket.
 cli_heading(get_string('provision:creatings3', 'local_smartmedia'));
 
-$resourcebucketresposnse = $provisioner->create_bucket('resource');
+$bucketname = $stackname . '-' . 'resource';
+$resourcebucketresposnse = $provisioner->create_bucket($bucketname);
 if ($resourcebucketresposnse->code != 0 ) {
     $errormsg = $resourcebucketresposnse->code . ': ' . $resourcebucketresposnse->message;
     throw new \moodle_exception($errormsg);
@@ -133,7 +137,6 @@ if ($lambdatranscodeuploadresponse->code != 0 ) {
 cli_heading(get_string('provision:resourcestack', 'local_smartmedia'));
 $cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/resource.template';
 
-$stackname = 'SmartmediaResourceStack';
 $params = array(
     'LambdaTranscodeResourceArchiveKey' => 'lambda_resource_transcoder.zip',
     'ResourceBucket' => $resourcebucketresposnse->bucketname,
@@ -155,28 +158,42 @@ $lambdaresourcesrn = $createstackresponse->outputs['LambdaTranscodeResourceFunct
 //Print Summary
 echo get_string('provision:lambdaresourcearn', 'local_smartmedia', $lambdaresourcesrn) . PHP_EOL;
 
-die;
-
 // Create Lambda function, IAM roles and the rest of the stack.
 cli_heading(get_string('provision:stack', 'local_smartmedia'));
 $cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/stack.template';
 
-$stackname = 'smstack';
 $params = array(
-    'BucketPrefix' => $provisioner->get_bucket_prefix(),
     'LambdaTranscodeTriggerArchiveKey' => 'lambda_transcoder_trigger.zip',
     'LambdaTranscodeResourceFunctionArn' => $lambdaresourcesrn,
     'ResourceBucket' => $resourcebucketresposnse->bucketname,
     'templatepath' => $cloudformationpath
 );
 
-$createstackresponse = $provisioner->create_stack($stackname, $params);
+$createstackresponse = $provisioner->create_stack($transcoderstackname, $params);
 if ($createstackresponse->code != 0 ) {
     $errormsg = $createstackresponse->code . ': ' . $createstackresponse->message;
     throw new \moodle_exception($errormsg);
     exit(1);
 } else {
     echo get_string('provision:stackcreated', 'local_smartmedia', $createstackresponse->message) . PHP_EOL . PHP_EOL;
+}
+
+// We need to update the created Lambda Transcode trigger function environment variables
+// as trying to do it at stack build time causes a circular refernece in cloudformation.
+$function = $createstackresponse->outputs['TranscodeLambdaArn'];
+$pipelineid = $createstackresponse->outputs['TranscodePipelineId'];
+$lambdaenvvars = array(
+    'PipelineId' => $pipelineid
+);
+
+echo get_string('provision:lambdaenvupdate', 'local_smartmedia', $lambdaresourcesrn) . PHP_EOL;
+$updatelambdaresponse = $provisioner->update_lambda($function, $lambdaenvvars);
+if ($updatelambdaresponse->code != 0 ) {
+    $errormsg = $updatelambdaresponse->code . ': ' . $updatelambdaresponse->message;
+    throw new \moodle_exception($errormsg);
+    exit(1);
+} else {
+    echo $updatelambdaresponse->message . PHP_EOL . PHP_EOL;
 }
 
 // Print summary.

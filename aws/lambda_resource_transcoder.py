@@ -34,27 +34,36 @@ def create(event):
     Create the Elastictranscoder pipline.
     '''
     logger.info('Creating Pipeline for request: {}'.format(event['RequestId']))
+    try:
+        request = et_client.create_pipeline(
+            Name=event['ResourceProperties']['Name'],
+            InputBucket=event['ResourceProperties']['InputBucket'],
+            OutputBucket=event['ResourceProperties']['OutputBucket'],
+            Role=event['ResourceProperties']['Role'],
+            Notifications={
+                'Progressing': event['ResourceProperties']['Notifications']['Progressing'],
+                'Completed': event['ResourceProperties']['Notifications']['Completed'],
+                'Warning': event['ResourceProperties']['Notifications']['Warning'],
+                'Error': event['ResourceProperties']['Notifications']['Error'],
+            }
+        )
 
-    request = et_client.create_pipeline(
-        Name=event['ResourceProperties']['Name'],
-        InputBucket=event['ResourceProperties']['InputBucket'],
-        OutputBucket=event['ResourceProperties']['OutputBucket'],
-        Role=event['ResourceProperties']['Role'],
-        Notifications={
-            'Progressing': event['ResourceProperties']['Notifications']['Progressing'],
-            'Completed': event['ResourceProperties']['Notifications']['Completed'],
-            'Warning': event['ResourceProperties']['Notifications']['Warning'],
-            'Error': event['ResourceProperties']['Notifications']['Error'],
+        logger.info('Created Pipeline with ID: {}'.format(request['Pipeline']['Id']))
+
+        status = 'SUCCESS'
+        response = {
+            'action': 'create',
+            'physicalresourceid': request['Pipeline']['Id'],
+            'pipelineid' : request['Pipeline']['Id']
         }
-    )
+    except Exception as e:
+        logger.error(e)
 
-    logger.info('Created Pipeline with ID: {}'.format(request['Pipeline']['Id']))
-
-    status = 'SUCCESS'
-    response = {
-        'action': 'create',
-        'physicalresourceid': request['Pipeline']['Id'],
-        'pipelineid' : request['Pipeline']['Id']
+        status = 'FAILED'
+        response = {
+            'action': 'create',
+            'physicalresourceid': status,
+            'pipelineid' : status
         }
 
     return [status, response]
@@ -66,13 +75,18 @@ def delete(event):
     '''
     logger.info('Deleting Pipeline for request: {}'.format(event['RequestId']))
 
-    response = et_client.delete_pipeline(
-        Id=event['PhysicalResourceId']
-    )
+    try:
+        response = et_client.delete_pipeline(
+            Id=event['PhysicalResourceId']
+        )
 
-    logger.info('Deleted Pipeline with ID: {}'.format(event['PhysicalResourceId']))
+        logger.info('Deleted Pipeline with ID: {}'.format(event['PhysicalResourceId']))
 
-    status = 'SUCCESS'
+        status = 'SUCCESS'
+    except Exception as e:
+        logger.error(e)
+        status = 'FAILED'
+
     response = {
         'action': 'delete',
         'physicalresourceid': event['PhysicalResourceId'],
@@ -94,6 +108,7 @@ def send_response(event, status, actiondata):
 
     request = {
        'Status' : status,
+       'Reason' : status,
        'PhysicalResourceId' : actiondata['physicalresourceid'],
        'StackId' : event['StackId'],
        'RequestId' : event['RequestId'],

@@ -31,6 +31,7 @@ $string['provision:creatings3'] = 'Creating resource S3 Bucket';
 $string['provision:bucketcreated'] = 'Created {$a->bucket} bucket, at location {$a->location}';
 $string['provision:bucketexists'] = 'Bucket exists';
 $string['provision:inputbucket'] = 'Input bucket: {$a}';
+$string['provision:lambdaenvupdate'] = 'Updating Lambda transcode funciton enivronment variables.';
 $string['provision:lambdaresourcearn'] = 'Lambda Resource ARN: {$a}';
 $string['provision:lambdaresourcearchiveuploaded'] = 'Lambda transcode resource archive uploaded sucessfully to: {$a}';
 $string['provision:lambdatranscoderarchiveuploaded'] = 'Lambda transcode resource archive uploaded sucessfully to: {$a}';

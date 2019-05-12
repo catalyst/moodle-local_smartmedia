@@ -22,10 +22,6 @@ Description: >
   to setup the smart media infrastructure.
 
 Parameters:
-  BucketPrefix:
-    Type: String
-    Default: moodlesmartmedia
-    Description: The prefix to use for the input and output buckets.
   ResourceBucket:
     Type: String
     Default: moodlesmartmedia-resource
@@ -69,6 +65,12 @@ Resources:
           - s3:PutObject
           - s3:DeleteObject
           Resource: arn:aws:s3:::*
+        - Effect: Allow
+          Action:
+          - elastictranscoder:CreateJob
+          - elastictranscoder:ReadJob
+          - elastictranscoder:ReadPipeline
+          Resource: '*'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
         - !Ref LambdaTranscodeTriggerRole
@@ -79,10 +81,7 @@ Resources:
       Code:
         S3Bucket: !Ref ResourceBucket
         S3Key: !Ref LambdaTranscodeTriggerArchiveKey
-#      Environment:
-#        Variables:
-#          PipelineId: !GetAtt ElasticTranscoderPipeline.PipelineId
-      FunctionName: !Join [ '', [!Ref 'AWS::StackName', 'lambda_transcoder_trigger'] ]
+      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_trigger'] ]
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaTranscodeTriggerRole.Arn
@@ -94,7 +93,7 @@ Resources:
       Action: 'lambda:InvokeFunction'
       FunctionName: !Ref LambdaTranscodeTriggerFunction
       Principal: s3.amazonaws.com
-      SourceArn: !Join [ '', ['arn:aws:s3:::', !Ref 'AWS::StackName', '-',!Ref BucketPrefix, '-','input'] ]
+      SourceArn: !Join [ '', ['arn:aws:s3:::', !Ref 'AWS::StackName', '-','input'] ]
   SqsQueue:
     Type: AWS::SQS::Queue
     Properties:
@@ -111,7 +110,7 @@ Resources:
   InputS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'input'] ]
+      BucketName: !Join [ '-', [!Ref 'AWS::StackName', 'input'] ]
       AccessControl: Private
       NotificationConfiguration:
         LambdaConfigurations:
@@ -120,7 +119,7 @@ Resources:
   OutputS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Join [ '-', [!Ref 'AWS::StackName',!Ref BucketPrefix, 'output'] ]
+      BucketName: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
       AccessControl: Private
   ElasticTranscoderRole:
     Type: AWS::IAM::Role
@@ -142,7 +141,7 @@ Resources:
     Type: Custom::ElasticTranscoderPipeline
     Properties:
       ServiceToken: !Ref LambdaTranscodeResourceFunctionArn
-      Name: !Join [ '-', [!Ref 'AWS::StackName', 'ElasticTranscoderPipeline'] ]
+      Name: !Join [ '-', [!Ref 'AWS::StackName', 'Pipeline'] ]
       Role: !GetAtt ElasticTranscoderRole.Arn
       InputBucket: !Ref InputS3Bucket
       OutputBucket: !Ref OutputS3Bucket
@@ -192,3 +191,9 @@ Outputs:
   OutputBucket:
     Description: S3 Output Bucket
     Value: !Ref OutputS3Bucket
+  TranscodeLambdaArn:
+   Description: The ARN of the Lambda transcode funciton
+   Value: !GetAtt LambdaTranscodeTriggerFunction.Arn
+  TranscodePipelineId:
+    Description: Elastic Transcoder Pipeline ID
+    Value: !GetAtt ElasticTranscoderPipeline.PipelineId

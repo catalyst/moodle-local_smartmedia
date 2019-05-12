@@ -31,6 +31,8 @@ use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 use Aws\CloudFormation\CloudFormationClient;
 use Aws\CloudFormation\Exception\CloudFormationException;
+use Aws\Lambda\LambdaClient;
+use Aws\Lambda\Exception\LambdaException;
 
 /**
  * Class for provisioning AWS resources.
@@ -63,13 +65,6 @@ class provision {
     protected $region;
 
     /**
-     * The prefix to use for the created AWS S3 buckets.
-     *
-     * @var string
-     */
-    protected $bucketprefix;
-
-    /**
      *
      * @var \Aws\S3\S3Client S3 client.
      */
@@ -77,9 +72,15 @@ class provision {
 
     /**
      *
-     * @var \Aws\Lambda\LambdaClient Lambda client.
+     * @var \Aws\CloudFormation\CloudformationClient Cloudformation client.
      */
     private $cloudformationclient;
+
+    /**
+     *
+     * @var \Aws\Lambda\LambdaClient Lambda client.
+     */
+    private $lambdaclient;
 
 
     /**
@@ -88,30 +89,14 @@ class provision {
      * @param string $keyid AWS API Access Key ID.
      * @param string $secret AWS API Secret Access Key.
      * @param string $region The AWS region to create the environment in.
-     * @param string $bucketprefix The prefix to use for the created AWS S3 buckets.
      */
-    public function __construct($keyid, $secret, $region, $bucketprefix) {
+    public function __construct($keyid, $secret, $region) {
         global $CFG;
 
         $this->keyid = $keyid;
         $this->secret = $secret;
         $this->region = $region;
 
-        if ($this->bucketprefix == '') {
-            $this->bucketprefix = 'smartmedia-' . md5($CFG->siteidentifier);
-        } else {
-            $this->bucketprefix = $bucketprefix;
-        }
-
-    }
-
-    /**
-     * Get the S3 bucket prefix.
-     *
-     * @return string The bucket prefix.
-     */
-    public function get_bucket_prefix() {
-        return $this->bucketprefix;
     }
 
     /**
@@ -202,9 +187,7 @@ class provision {
      * @param string $suffix The bucket suffix to use.
      *
      */
-    public function create_bucket($suffix) {
-        $bucketname = $this->bucketprefix . '-' . $suffix;
-
+    public function create_bucket($bucketname) {
         $result = new \stdClass();
         $result->status = true;
         $result->code = 0;
@@ -367,6 +350,7 @@ class provision {
             'Parameters' => $parameters,
             'StackName' => $stackname, // Required.
             'TemplateBody' => $template,
+            'TimeoutInMinutes' => 6
         );
 
         $client = $this->cloudformationclient;
@@ -427,6 +411,67 @@ class provision {
                 $result->message = 'Stack creation failed';
             }
 
+        }
+
+        return $result;
+    }
+
+
+    /**
+     * Create and AWS Lambda API client.
+     *
+     * @param \GuzzleHttp\Handler $handler Optional handler.
+     * @return \Aws\Lambda\LambdaClient The created Lambda client.
+     */
+    public function create_lambda_client($handler=null) {
+        $connectionoptions = array(
+            'version' => 'latest',
+            'region' => $this->region,
+            'credentials' => [
+                'key' => $this->keyid,
+                'secret' => $this->secret
+            ]);
+
+        // Allow handler overriding for testing.
+        if ($handler != null) {
+            $connectionoptions['handler'] = $handler;
+        }
+
+        // Only create client if it hasn't already been done.
+        if ($this->lambdaclient == null) {
+            $this->lambdaclient = new LambdaClient($connectionoptions);
+        }
+
+        return $this->lambdaclient;
+    }
+
+    /**
+     * Update the environment variables in a Lambda function.
+     *
+     * @param string $function The ARN of the lambda function.
+     * @param array $lambdaenvvars
+     */
+    public function update_lambda($function, $lambdaenvvars) {
+        $result = new \stdClass();
+        $result->status = true;
+        $result->code = 0;
+        $result->message = '';
+
+        // Setup the Lambda client.
+        $client = $this->create_lambda_client();
+
+        try {
+            $client->updateFunctionConfiguration([
+                'Environment' => [
+                    'Variables' => $lambdaenvvars,
+                ],
+                'FunctionName' => $function, // REQUIRED
+            ]);
+            $result->message = 'Environment variables updated';
+        } catch (LambdaException $e) {
+            $result->status = false;
+            $result->code = $e->getAwsErrorCode();
+            $result->message = $e->getAwsErrorMessage();
         }
 
         return $result;
