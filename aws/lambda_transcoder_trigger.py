@@ -38,19 +38,24 @@ def submit_transcode_jobs(s3key, pipeline_id):
 
     response = et_client.create_job(
         PipelineId=pipeline_id,
-         OutputKeyPrefix=s3key + '/',
+         OutputKeyPrefix=s3key + '/conversions/',
          Input={
             'Key': s3key,
         },
         Outputs=[
             {
-                'Key': '.mp4',
+                'Key': '{}.mp4'.format(s3key),
                 'PresetId': '1351620000001-100070',  # System preset: Facebook, SmugMug, Vimeo, YouTube
                 'ThumbnailPattern': '',
             },
             {
-                'Key': '.webm',
+                'Key': '{}.webm'.format(s3key),
                 'PresetId': '1351620000001-100240',  # System preset: Webm 720p
+                'ThumbnailPattern': '',
+             },
+            {
+                'Key': '{}.mp3'.format(s3key),
+                'PresetId': '1351620000001-300020',  # System preset: Audio MP3 - 192 kilobits/second
                 'ThumbnailPattern': '',
              },
         ]

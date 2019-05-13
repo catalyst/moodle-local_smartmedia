@@ -98,6 +98,22 @@ Resources:
     Type: AWS::SQS::Queue
     Properties:
       QueueName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSqsQueue'] ]
+  SqsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal: '*'
+          Action: sqs:SendMessage
+          Resource: !GetAtt SqsQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: !Ref SnsTopic
+      Queues:
+        - !Ref SqsQueue
   SnsTopic:
     Type: AWS::SNS::Topic
     Properties:
@@ -121,6 +137,31 @@ Resources:
     Properties:
       BucketName: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
       AccessControl: Private
+  ElasticTranscoderPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Action:
+          - logs:*
+          Resource: arn:aws:logs:*:*:*
+          Effect: Allow
+        - Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          Resource: arn:aws:s3:::*
+          Effect: Allow
+        - Action:
+          - elastictranscoder:CreateJob
+          - elastictranscoder:ReadJob
+          - elastictranscoder:ReadPipeline
+          Resource: "*"
+          Effect: Allow
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'transcoder-process-policy'] ]
+      Roles:
+        - !Ref ElasticTranscoderRole
   ElasticTranscoderRole:
     Type: AWS::IAM::Role
     Description: Elastic Transcoder Role
@@ -129,7 +170,7 @@ Resources:
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
-        - Sid: ''
+        - Sid: '1'
           Effect: Allow
           Principal:
             Service: elastictranscoder.amazonaws.com
