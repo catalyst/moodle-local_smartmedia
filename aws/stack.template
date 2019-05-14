@@ -104,21 +104,38 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
-        - Sid: ''
+        - Sid: '1'
           Effect: Allow
           Principal: '*'
           Action: sqs:SendMessage
           Resource: !GetAtt SqsQueue.Arn
           Condition:
             ArnEquals:
-              aws:SourceArn: !Ref SnsTopic
+              aws:SourceArn: !Ref SnsTopicConversion
+        - Sid: '2'
+          Effect: Allow
+          Principal: '*'
+          Action: sqs:SendMessage
+          Resource: !GetAtt SqsQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: !Ref SnsTopicComplete
       Queues:
         - !Ref SqsQueue
-  SnsTopic:
+  SnsTopicConversion:
     Type: AWS::SNS::Topic
     Properties:
-      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopic'] ]
-      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopic'] ]
+      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicConversion'] ]
+      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicConversion'] ]
+      Subscription :
+        -
+          Endpoint: !GetAtt SqsQueue.Arn
+          Protocol: 'sqs'
+  SnsTopicComplete:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicComplete'] ]
+      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicComplete'] ]
       Subscription :
         -
           Endpoint: !GetAtt SqsQueue.Arn
@@ -196,10 +213,10 @@ Resources:
       InputBucket: !Ref InputS3Bucket
       OutputBucket: !Ref OutputS3Bucket
       Notifications:
-        Completed: !Ref SnsTopic
-        Error: !Ref SnsTopic
-        Progressing: !Ref SnsTopic
-        Warning: !Ref SnsTopic
+        Completed: !Ref SnsTopicComplete
+        Error: !Ref SnsTopicConversion
+        Progressing: !Ref SnsTopicConversion
+        Warning: !Ref SnsTopicConversion
   SmartMediaS3User:
     Type: AWS::IAM::User
     Properties:
