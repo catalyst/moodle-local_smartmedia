@@ -143,22 +143,31 @@ Resources:
       PolicyDocument:
         Version: '2012-10-17'
         Statement:
-        - Action:
-          - logs:*
-          Resource: arn:aws:logs:*:*:*
+        - Sid: '1'
           Effect: Allow
-        - Action:
-          - s3:GetObject
-          - s3:PutObject
-          - s3:DeleteObject
-          Resource: arn:aws:s3:::*
+          Action:
+          - s3:ListBucket
+          - s3:Put*
+          - s3:Get*
+          - s3:*MultipartUpload*
+          Resource:
+          - "*"
+        - Sid: '2'
           Effect: Allow
-        - Action:
-          - elastictranscoder:CreateJob
-          - elastictranscoder:ReadJob
-          - elastictranscoder:ReadPipeline
-          Resource: "*"
-          Effect: Allow
+          Action:
+          - sns:Publish
+          Resource:
+          - "*"
+        - Sid: '3'
+          Effect: Deny
+          Action:
+          - s3:*Policy*
+          - sns:*Permission*
+          - sns:*Delete*
+          - s3:*Delete*
+          - sns:*Remove*
+          Resource:
+          - "*"
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'transcoder-process-policy'] ]
       Roles:
         - !Ref ElasticTranscoderRole
