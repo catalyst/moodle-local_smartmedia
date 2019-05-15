@@ -87,6 +87,57 @@ Resources:
       Role: !GetAtt LambdaTranscodeTriggerRole.Arn
       Runtime: python3.6
       Timeout: 600
+  LambdaAiRole:
+    Type: AWS::IAM::Role
+    Description: Lambda Ai role
+    Properties:
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-role'] ]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+  LambdaAiPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - logs:*
+          Resource: arn:aws:logs:*:*:*
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          Resource: arn:aws:s3:::*
+        - Effect: Allow
+          Action:
+          - elastictranscoder:CreateJob
+          - elastictranscoder:ReadJob
+          - elastictranscoder:ReadPipeline
+          Resource: '*'
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
+      Roles:
+        - !Ref LambdaTranscodeTriggerRole
+  LambdaAiFunction:
+    Type: AWS::Lambda::Function
+    Description: Lambda Function to trigger Ai processing.
+    Properties:
+      Code:
+        S3Bucket: !Ref ResourceBucket
+        S3Key: !Ref LambdaAiArchiveKey
+      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_ai'] ]
+      Handler: lambda_ai_trigger.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt LambdaAiRole.Arn
+      Runtime: python3.6
+      Timeout: 600
   LambdaTranscodeTriggerInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -140,6 +191,9 @@ Resources:
         -
           Endpoint: !GetAtt SqsQueue.Arn
           Protocol: 'sqs'
+        -
+          Endpoint: !GetAtt LambdaAiFunction.Arn
+          Protocol: 'lambda'
   InputS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
