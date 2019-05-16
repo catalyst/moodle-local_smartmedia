@@ -102,34 +102,22 @@ if ($resourcebucketresposnse->code != 0 ) {
         'location' => $resourcebucketresposnse->message)) . PHP_EOL . PHP_EOL;
 }
 
-// Upload custom transcoder resource provider lambda to resource bucket.
-cli_heading(get_string('provision:uploadlambdatranscodearchive', 'local_smartmedia'));
+// Upload lambda function archives to the S3 resource bucket.
+cli_heading(get_string('provision:uploadlambdaarchives', 'local_smartmedia'));
+$archivepath = $CFG->dirroot . '/local/smartmedia/aws/';
+$archives = glob($archivepath . '/*.{zip}', GLOB_BRACE);
 
-$lambdapath = $CFG->dirroot . '/local/smartmedia/aws/lambda_resource_transcoder.zip';
-$lambdaresourceuploadresponse = $provisioner->upload_file($lambdapath, $resourcebucketresposnse->bucketname);
-if ($lambdaresourceuploadresponse->code != 0 ) {
-    $errormsg = $lambdaresourceuploadresponse->code . ': ' . $lambdaresourceuploadresponse->message;
-    throw new \moodle_exception($errormsg);
-    exit(1);
-} else {
-    echo get_string(
-        'provision:lambdaresourcearchiveuploaded',
-        'local_smartmedia', $lambdaresourceuploadresponse->message) . PHP_EOL . PHP_EOL;
-}
-
-// Upload custom transcoder trigger provider lambda to resource bucket.
-cli_heading(get_string('provision:uploadlambdatranscoder', 'local_smartmedia'));
-
-$lambdapath = $CFG->dirroot . '/local/smartmedia/aws/lambda_transcoder_trigger.zip';
-$lambdatranscodeuploadresponse = $provisioner->upload_file($lambdapath, $resourcebucketresposnse->bucketname);
-if ($lambdatranscodeuploadresponse->code != 0 ) {
-    $errormsg = $lambdatranscodeuploadresponse->code . ': ' . $lambdatranscodeuploadresponse->message;
-    throw new \moodle_exception($errormsg);
-    exit(1);
-} else {
-    echo get_string(
-        'provision:lambdatranscoderarchiveuploaded',
-        'local_smartmedia', $lambdatranscodeuploadresponse->message) . PHP_EOL . PHP_EOL;
+foreach ($archives as $archive) {
+    $lambdaarchiveuploadresponse = $provisioner->upload_file($archive, $resourcebucketresposnse->bucketname);
+    if ($lambdaarchiveuploadresponse->code != 0 ) {
+        $errormsg = $lambdaarchiveuploadresponse->code . ': ' . $lambdaarchiveuploadresponse->message;
+        throw new \moodle_exception($errormsg);
+        exit(1);
+    } else {
+        echo get_string(
+            'provision:lambdaarchiveuploaded',
+            'local_smartmedia', $lambdaarchiveuploadresponse->message) . PHP_EOL . PHP_EOL;
+    }
 }
 
 // Create the Lambda function and associated services for the
@@ -164,6 +152,7 @@ $cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/stack.template';
 
 $params = array(
     'LambdaTranscodeTriggerArchiveKey' => 'lambda_transcoder_trigger.zip',
+    'LambdaAiArchiveKey' => 'lambda_ai_trigger.zip',
     'LambdaTranscodeResourceFunctionArn' => $lambdaresourcesrn,
     'ResourceBucket' => $resourcebucketresposnse->bucketname,
     'templatepath' => $cloudformationpath

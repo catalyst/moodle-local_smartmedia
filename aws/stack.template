@@ -28,6 +28,10 @@ Parameters:
     Description: The bucket that contains the Lambda archive.
   LambdaTranscodeTriggerArchiveKey:
     Type: String
+    Default: lambda_ai_trigger.zip
+    Description: The S3 Key (filename) for the Lambda AI trigger function archive.
+  LambdaAiArchiveKey:
+    Type: String
     Default: lambda_transcoder_trigger.zip
     Description: The S3 Key (filename) for the Lambda transcode trigger function archive.
   LambdaTranscodeResourceFunctionArn:
@@ -124,7 +128,7 @@ Resources:
           Resource: '*'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
       Roles:
-        - !Ref LambdaTranscodeTriggerRole
+        - !Ref LambdaAiRole
   LambdaAiFunction:
     Type: AWS::Lambda::Function
     Description: Lambda Function to trigger Ai processing.
@@ -138,6 +142,13 @@ Resources:
       Role: !GetAtt LambdaAiRole.Arn
       Runtime: python3.6
       Timeout: 600
+  LambdaAiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref LambdaAiFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SnsTopicComplete
   LambdaTranscodeTriggerInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
