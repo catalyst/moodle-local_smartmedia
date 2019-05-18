@@ -22,9 +22,11 @@ import botocore
 import os
 import logging
 import io
+import json
 from botocore.exceptions import ClientError
 
 s3_client = boto3.client('s3')
+rekognition_client = boto3.client('rekognition')
 logger = logging.getLogger()
 
 
@@ -41,4 +43,14 @@ def lambda_handler(event, context):
     logging_level = os.environ.get('LoggingLevel', logging.ERROR)
     logger.setLevel(int(logging_level))
 
-    logging.error(event)
+    # Get output bucket
+    output_bucket = os.environ.get('OutputBucket')
+
+    for record in event['Records']:
+        sns_message_json = record['Sns']['Message']
+        sns_message_object = json.loads(sns_message_json)
+        input_key = sns_message_object['input']['key']
+        output_key_prefix = sns_message_object['outputKeyPrefix']
+
+        logging.error(sns_message_object)
+

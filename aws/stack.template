@@ -21,6 +21,8 @@ Description: >
   This template will provision all the required resources and infrastructure
   to setup the smart media infrastructure.
 
+# These are the required parameters that need to be passed to the stack
+# as part of the initial stack build
 Parameters:
   ResourceBucket:
     Type: String
@@ -39,10 +41,15 @@ Parameters:
     Default: arn:aws:lambda:ap-southeast-2:693620471840:function:resourcestack_lambda_transcoder_resource
     Description: Lambda function ARN that provides Elastic Transcoder custom resource.
 
+# These are the resources and AWS services that the stack creates.
 Resources:
+# Roles and Policies.
+# These are the IAM roles and policies used by resources and services in the stack.
+# Roles and polices grant the services and services permissions to carry out their
+# operations.
   LambdaTranscodeTriggerRole:
+    Description: The role that the 'LambdaTranscodeTriggerFunction' assumes when it runs
     Type: AWS::IAM::Role
-    Description: Lambda Elastic Transcoder trigger role
     Properties:
       RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'elastic-transcode-trigger-role'] ]
       AssumeRolePolicyDocument:
@@ -54,6 +61,7 @@ Resources:
             Service: lambda.amazonaws.com
           Action: sts:AssumeRole
   LambdaTranscodeTriggerPolicy:
+    # This is the policy that is applied to the LambdaTranscodeTriggerRole
     Type: AWS::IAM::Policy
     Properties:
       PolicyDocument:
@@ -78,19 +86,34 @@ Resources:
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
         - !Ref LambdaTranscodeTriggerRole
-  LambdaTranscodeTriggerFunction:
-    Type: AWS::Lambda::Function
-    Description: Lambda Function to trigger Elastic Transcoder conversions.
+  RekognitionCompleteRole:
+    Type: AWS::IAM::Role
+    Description: Rekognition Complete SNS role
     Properties:
-      Code:
-        S3Bucket: !Ref ResourceBucket
-        S3Key: !Ref LambdaTranscodeTriggerArchiveKey
-      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_trigger'] ]
-      Handler: lambda_transcoder_trigger.lambda_handler
-      MemorySize: 128
-      Role: !GetAtt LambdaTranscodeTriggerRole.Arn
-      Runtime: python3.6
-      Timeout: 600
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'rekognition-complete-sns-role'] ]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service: rekognition.amazonaws.com
+          Action: sts:AssumeRole
+  RekognitionCompletePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: '1'
+          Effect: Allow
+          Action:
+          - sns:Publish
+          Resource:
+          - "*"
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'rekognition-complete-sns-policy'] ]
+      Roles:
+        - !Ref RekognitionCompleteRole
   LambdaAiRole:
     Type: AWS::IAM::Role
     Description: Lambda Ai role
@@ -122,103 +145,15 @@ Resources:
           Resource: arn:aws:s3:::*
         - Effect: Allow
           Action:
-          - elastictranscoder:CreateJob
-          - elastictranscoder:ReadJob
-          - elastictranscoder:ReadPipeline
+          - rekognition:StartCelebrityRecognition
+          - rekognition:StartContentModeration
+          - rekognition:StartFaceDetection
+          - rekognition:StartLabelDetection
+          - rekognition:StartPersonTracking
           Resource: '*'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
       Roles:
         - !Ref LambdaAiRole
-  LambdaAiFunction:
-    Type: AWS::Lambda::Function
-    Description: Lambda Function to trigger Ai processing.
-    Properties:
-      Code:
-        S3Bucket: !Ref ResourceBucket
-        S3Key: !Ref LambdaAiArchiveKey
-      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_ai'] ]
-      Handler: lambda_ai_trigger.lambda_handler
-      MemorySize: 128
-      Role: !GetAtt LambdaAiRole.Arn
-      Runtime: python3.6
-      Timeout: 600
-  LambdaAiPermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref LambdaAiFunction
-      Principal: sns.amazonaws.com
-      SourceArn: !Ref SnsTopicComplete
-  LambdaTranscodeTriggerInvokePermission:
-    Type: AWS::Lambda::Permission
-    Properties:
-      Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref LambdaTranscodeTriggerFunction
-      Principal: s3.amazonaws.com
-      SourceArn: !Join [ '', ['arn:aws:s3:::', !Ref 'AWS::StackName', '-','input'] ]
-  SqsQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      QueueName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSqsQueue'] ]
-  SqsQueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: '1'
-          Effect: Allow
-          Principal: '*'
-          Action: sqs:SendMessage
-          Resource: !GetAtt SqsQueue.Arn
-          Condition:
-            ArnEquals:
-              aws:SourceArn: !Ref SnsTopicConversion
-        - Sid: '2'
-          Effect: Allow
-          Principal: '*'
-          Action: sqs:SendMessage
-          Resource: !GetAtt SqsQueue.Arn
-          Condition:
-            ArnEquals:
-              aws:SourceArn: !Ref SnsTopicComplete
-      Queues:
-        - !Ref SqsQueue
-  SnsTopicConversion:
-    Type: AWS::SNS::Topic
-    Properties:
-      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicConversion'] ]
-      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicConversion'] ]
-      Subscription :
-        -
-          Endpoint: !GetAtt SqsQueue.Arn
-          Protocol: 'sqs'
-  SnsTopicComplete:
-    Type: AWS::SNS::Topic
-    Properties:
-      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicComplete'] ]
-      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicComplete'] ]
-      Subscription :
-        -
-          Endpoint: !GetAtt SqsQueue.Arn
-          Protocol: 'sqs'
-        -
-          Endpoint: !GetAtt LambdaAiFunction.Arn
-          Protocol: 'lambda'
-  InputS3Bucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Join [ '-', [!Ref 'AWS::StackName', 'input'] ]
-      AccessControl: Private
-      NotificationConfiguration:
-        LambdaConfigurations:
-        - Event: 's3:ObjectCreated:*'
-          Function: !GetAtt LambdaTranscodeTriggerFunction.Arn
-  OutputS3Bucket:
-    Type: AWS::S3::Bucket
-    Properties:
-      BucketName: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
-      AccessControl: Private
   ElasticTranscoderPolicy:
     Type: AWS::IAM::Policy
     Properties:
@@ -266,6 +201,123 @@ Resources:
           Principal:
             Service: elastictranscoder.amazonaws.com
           Action: sts:AssumeRole
+  SqsQueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: '1'
+          Effect: Allow
+          Principal: '*'
+          Action: sqs:SendMessage
+          Resource: !GetAtt SqsQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: !Ref SnsTopicConversion
+        - Sid: '2'
+          Effect: Allow
+          Principal: '*'
+          Action: sqs:SendMessage
+          Resource: !GetAtt SqsQueue.Arn
+          Condition:
+            ArnEquals:
+              aws:SourceArn: !Ref SnsTopicComplete
+      Queues:
+        - !Ref SqsQueue
+# Lambda permissions.
+# Theses are specific permissions used t.o allow services and resources
+# To invoke Lambda functions.
+  LambdaAiPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref LambdaAiFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SnsTopicComplete
+  LambdaTranscodeTriggerInvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref LambdaTranscodeTriggerFunction
+      Principal: s3.amazonaws.com
+      SourceArn: !Join [ '', ['arn:aws:s3:::', !Ref 'AWS::StackName', '-','input'] ]
+# Lambda functions.
+# These functions respond to various events and orchestrate various
+# parts of the conversion process.
+  LambdaTranscodeTriggerFunction:
+    Type: AWS::Lambda::Function
+    Description: Lambda Function to trigger Elastic Transcoder conversions.
+    Properties:
+      Code:
+        S3Bucket: !Ref ResourceBucket
+        S3Key: !Ref LambdaTranscodeTriggerArchiveKey
+      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_trigger'] ]
+      Handler: lambda_transcoder_trigger.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt LambdaTranscodeTriggerRole.Arn
+      Runtime: python3.6
+      Timeout: 600
+  LambdaAiFunction:
+    Type: AWS::Lambda::Function
+    Description: Lambda Function to trigger Ai processing.
+    Properties:
+      Code:
+        S3Bucket: !Ref ResourceBucket
+        S3Key: !Ref LambdaAiArchiveKey
+      Environment:
+        Variables:
+          OutputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
+          SnsTopicRekognitionCompleteArn: !Ref SnsTopicRekognitionComplete
+          RekognitionCompleteRoleArn: !Ref RekognitionCompleteRole
+      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_ai'] ]
+      Handler: lambda_ai_trigger.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt LambdaAiRole.Arn
+      Runtime: python3.6
+      Timeout: 600
+# SQS Queues.
+# These provide messaging notifications to various sevices.
+  SqsQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSqsQueue'] ]
+# SNS Topics.
+# Resources and services publish status notifications to topics.
+# Other resources ans sservices subscribe to the topics and tak action
+# When messages are published to them.
+  SnsTopicConversion:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicConversion'] ]
+      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicConversion'] ]
+      Subscription :
+        -
+          Endpoint: !GetAtt SqsQueue.Arn
+          Protocol: 'sqs'
+  SnsTopicComplete:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicComplete'] ]
+      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicComplete'] ]
+      Subscription :
+        -
+          Endpoint: !GetAtt SqsQueue.Arn
+          Protocol: 'sqs'
+        -
+          Endpoint: !GetAtt LambdaAiFunction.Arn
+          Protocol: 'lambda'
+  SnsTopicRekognitionComplete:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicRekognitionComplete'] ]
+      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicRekognitionComplete'] ]
+#      Subscription :
+#        -
+#          Endpoint: !GetAtt LambdaRekognitionFunction.Arn
+#          Protocol: 'lambda'
+# Custom Resources.
+# Custom resources setup AWS services that are not natively supported by Cloudformation.
   ElasticTranscoderPipeline:
     DependsOn:
       - InputS3Bucket
@@ -282,6 +334,26 @@ Resources:
         Error: !Ref SnsTopicConversion
         Progressing: !Ref SnsTopicConversion
         Warning: !Ref SnsTopicConversion
+# S3 Buckets.
+# These are the S3 buckets created by the stack.
+# The are used to store assets processed byt the resources and services.
+  InputS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join [ '-', [!Ref 'AWS::StackName', 'input'] ]
+      AccessControl: Private
+      NotificationConfiguration:
+        LambdaConfigurations:
+        - Event: 's3:ObjectCreated:*'
+          Function: !GetAtt LambdaTranscodeTriggerFunction.Arn
+  OutputS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
+      AccessControl: Private
+# Users
+# These are the IAM users created by the stack.
+# They are used by external systems interacting with the stack.
   SmartMediaS3User:
     Type: AWS::IAM::User
     Properties:
@@ -309,7 +381,9 @@ Resources:
     Type: AWS::IAM::AccessKey
     Properties:
       UserName: !Ref SmartMediaS3User
-
+# Stack Outputs.
+# These are the outputs generated by the stack.
+# They are used by processes external to the stack.
 Outputs:
   SmartMediaS3UserAccessKey:
     Description: Smart media S3 user access key
