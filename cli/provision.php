@@ -153,6 +153,7 @@ $cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/stack.template';
 $params = array(
     'LambdaTranscodeTriggerArchiveKey' => 'lambda_transcoder_trigger.zip',
     'LambdaAiArchiveKey' => 'lambda_ai_trigger.zip',
+    'LambdaRekognitionCompleteArchiveKey' => 'lambda_rekognition_complete.zip',
     'LambdaTranscodeResourceFunctionArn' => $lambdaresourcesrn,
     'ResourceBucket' => $resourcebucketresposnse->bucketname,
     'templatepath' => $cloudformationpath
@@ -167,23 +168,34 @@ if ($createstackresponse->code != 0 ) {
     echo get_string('provision:stackcreated', 'local_smartmedia', $createstackresponse->message) . PHP_EOL . PHP_EOL;
 }
 
-// We need to update the created Lambda Transcode trigger function environment variables
-// as trying to do it at stack build time causes a circular refernece in cloudformation.
-$function = $createstackresponse->outputs['TranscodeLambdaArn'];
-$pipelineid = $createstackresponse->outputs['TranscodePipelineId'];
-$lambdaenvvars = array(
-    'PipelineId' => $pipelineid
+// We need to update the created Lambda functions environment variables
+// as trying to do it at stack build time causes a circular references in cloudformation.
+
+$envvararray = array(
+    array(
+        'function'=>$createstackresponse->outputs['TranscodeLambdaArn'],
+        'values'=>array('PipelineId' => $createstackresponse->outputs['TranscodePipelineId'])
+    ),
+    array(
+        'function'=>$createstackresponse->outputs['RekognitionCompleteLambdaArn'],
+        'values'=>array(
+            'SnsTopicRekognitionComplete'=>$createstackresponse->outputs['SnsTopicRekognitionCompleteArn'],
+            'OutputBucket'=>$createstackresponse->outputs['OutputBucket']
+        )
+    )
 );
 
-echo get_string('provision:lambdaenvupdate', 'local_smartmedia', $lambdaresourcesrn) . PHP_EOL;
-$updatelambdaresponse = $provisioner->update_lambda($function, $lambdaenvvars);
-if ($updatelambdaresponse->code != 0 ) {
-    $errormsg = $updatelambdaresponse->code . ': ' . $updatelambdaresponse->message;
-    throw new \moodle_exception($errormsg);
-    exit(1);
-} else {
-    echo $updatelambdaresponse->message . PHP_EOL . PHP_EOL;
-}
+foreach ($envvararray as $envvars) {
+    echo get_string('provision:lambdaenvupdate', 'local_smartmedia', $envvars['function']) . PHP_EOL;
+    $updatelambdaresponse = $provisioner->update_lambda($envvars['function'], $envvars['values']);
+    if ($updatelambdaresponse->code != 0 ) {
+        $errormsg = $updatelambdaresponse->code . ': ' . $updatelambdaresponse->message;
+        throw new \moodle_exception($errormsg);
+        exit(1);
+    } else {
+        echo $updatelambdaresponse->message . PHP_EOL . PHP_EOL;
+    }
+};
 
 // Print summary.
 cli_heading(get_string('provision:stack', 'local_smartmedia'));

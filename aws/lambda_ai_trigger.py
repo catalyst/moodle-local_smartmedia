@@ -45,12 +45,54 @@ def lambda_handler(event, context):
 
     # Get output bucket
     output_bucket = os.environ.get('OutputBucket')
+    rekognition_Complete_Role_arn = os.environ.get('RekognitionCompleteRoleArn')
+    sns_rekognition_complete_arn = os.environ.get('SnsTopicRekognitionCompleteArn')
 
     for record in event['Records']:
         sns_message_json = record['Sns']['Message']
         sns_message_object = json.loads(sns_message_json)
         input_key = sns_message_object['input']['key']
         output_key_prefix = sns_message_object['outputKeyPrefix']
+        job_id = sns_message_object['jobId']
 
-        logging.error(sns_message_object)
+        rekognition_input = '{}/conversions/{}.mp4'.format(input_key, input_key)
 
+        # Start Rekognition Label extraction.
+        logger.info('Starting label detection')
+        label_response = rekognition_client.start_label_detection(
+             Video={
+                'S3Object': {
+                    'Bucket': output_bucket,
+                    'Name': rekognition_input
+                }
+            },
+            ClientRequestToken=job_id,
+            MinConfidence=80,  # 50 is default.
+            NotificationChannel={
+                'SNSTopicArn': sns_rekognition_complete_arn,
+                'RoleArn': rekognition_Complete_Role_arn
+            },
+            JobTag=job_id
+            )
+
+        logging.error(label_response)
+
+        # Start content moderation operatations.
+        logger.info('Starting moderation detection')
+        moderation_response = rekognition_client.start_content_moderation(
+            Video={
+                'S3Object': {
+                    'Bucket': output_bucket,
+                    'Name': rekognition_input
+                }
+            },
+            MinConfidence=80,  # 50 is default.
+            ClientRequestToken=job_id,
+            NotificationChannel={
+                'SNSTopicArn': sns_rekognition_complete_arn,
+                'RoleArn': rekognition_Complete_Role_arn
+            },
+            JobTag=job_id
+            )
+
+        logging.error(moderation_response)

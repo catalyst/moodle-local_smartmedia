@@ -36,6 +36,10 @@ Parameters:
     Type: String
     Default: lambda_transcoder_trigger.zip
     Description: The S3 Key (filename) for the Lambda transcode trigger function archive.
+  LambdaRekognitionCompleteArchiveKey:
+    Type: String
+    Default: lambda_rekognition_complete.zip
+    Description: The S3 Key (filename) for the Lambda Rekognition complete function archive.
   LambdaTranscodeResourceFunctionArn:
     Type: String
     Default: arn:aws:lambda:ap-southeast-2:693620471840:function:resourcestack_lambda_transcoder_resource
@@ -150,7 +154,15 @@ Resources:
           - rekognition:StartFaceDetection
           - rekognition:StartLabelDetection
           - rekognition:StartPersonTracking
+          - rekognition:GetCelebrityRecognition
+          - rekognition:GetContentModeration
+          - rekognition:GetFaceDetection
+          - rekognition:GetLabelDetection
+          - rekognition:GetPersonTracking
           Resource: '*'
+        -   Effect: Allow
+            Action: iam:PassRole
+            Resource: '*'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
       Roles:
         - !Ref LambdaAiRole
@@ -235,6 +247,13 @@ Resources:
       FunctionName: !Ref LambdaAiFunction
       Principal: sns.amazonaws.com
       SourceArn: !Ref SnsTopicComplete
+  LambdaRekognitionCompletePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref LambdaRekognitionCompleteFunction
+      Principal: sns.amazonaws.com
+      SourceArn: !Ref SnsTopicRekognitionComplete
   LambdaTranscodeTriggerInvokePermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -269,9 +288,22 @@ Resources:
         Variables:
           OutputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
           SnsTopicRekognitionCompleteArn: !Ref SnsTopicRekognitionComplete
-          RekognitionCompleteRoleArn: !Ref RekognitionCompleteRole
+          RekognitionCompleteRoleArn: !GetAtt RekognitionCompleteRole.Arn
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_ai'] ]
       Handler: lambda_ai_trigger.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt LambdaAiRole.Arn
+      Runtime: python3.6
+      Timeout: 600
+  LambdaRekognitionCompleteFunction:
+    Type: AWS::Lambda::Function
+    Description: Lambda Function to handle Rekognition completion events.
+    Properties:
+      Code:
+        S3Bucket: !Ref ResourceBucket
+        S3Key: !Ref LambdaRekognitionCompleteArchiveKey
+      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'rekognition_complete'] ]
+      Handler: lambda_rekognition_complete.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaAiRole.Arn
       Runtime: python3.6
@@ -312,10 +344,10 @@ Resources:
     Properties:
       DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicRekognitionComplete'] ]
       TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicRekognitionComplete'] ]
-#      Subscription :
-#        -
-#          Endpoint: !GetAtt LambdaRekognitionFunction.Arn
-#          Protocol: 'lambda'
+      Subscription :
+        -
+          Endpoint: !GetAtt LambdaRekognitionCompleteFunction.Arn
+          Protocol: 'lambda'
 # Custom Resources.
 # Custom resources setup AWS services that are not natively supported by Cloudformation.
   ElasticTranscoderPipeline:
@@ -403,3 +435,9 @@ Outputs:
   TranscodePipelineId:
     Description: Elastic Transcoder Pipeline ID
     Value: !GetAtt ElasticTranscoderPipeline.PipelineId
+  RekognitionCompleteLambdaArn:
+   Description: The ARN of the Lambda transcode funciton
+   Value: !GetAtt LambdaRekognitionCompleteFunction.Arn
+  SnsTopicRekognitionCompleteArn:
+    Description: Rekognition complete SNS topic ARN
+    Value: !Ref SnsTopicRekognitionComplete
