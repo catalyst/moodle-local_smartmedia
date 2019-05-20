@@ -58,7 +58,7 @@ def lambda_handler(event, context):
         rekognition_input = '{}/conversions/{}.mp4'.format(input_key, input_key)
 
         # Start Rekognition Label extraction.
-        logger.info('Starting label detection')
+        logger.info('Starting Rekognition label detection')
         label_response = rekognition_client.start_label_detection(
              Video={
                 'S3Object': {
@@ -77,8 +77,8 @@ def lambda_handler(event, context):
 
         logging.error(label_response)
 
-        # Start content moderation operatations.
-        logger.info('Starting moderation detection')
+        # Start Rekognition content moderation operatations.
+        logger.info('Starting Rekognition moderation detection')
         moderation_response = rekognition_client.start_content_moderation(
             Video={
                 'S3Object': {
@@ -96,3 +96,42 @@ def lambda_handler(event, context):
             )
 
         logging.error(moderation_response)
+
+        # Start Rekognition face detection.
+        logger.info('Starting Rekognition face detection')
+        face_response = rekognition_client.start_face_detection(
+            Video={
+                'S3Object': {
+                    'Bucket': output_bucket,
+                    'Name': rekognition_input
+                }
+            },
+            ClientRequestToken=job_id,
+            NotificationChannel={
+                'SNSTopicArn': sns_rekognition_complete_arn,
+                'RoleArn': rekognition_Complete_Role_arn
+            },
+            FaceAttributes='DEFAULT',  # Other option is ALL.
+            JobTag=job_id
+        )
+
+        logger.error(face_response)
+
+        # Start Rekognition Person tracking.
+        logger.info('Starting Rekognition person tracking')
+        person_tracking_response = rekognition_client.start_person_tracking(
+            Video={
+                'S3Object': {
+                    'Bucket': output_bucket,
+                    'Name': rekognition_input
+                }
+            },
+            ClientRequestToken=job_id,
+            NotificationChannel={
+                'SNSTopicArn': sns_rekognition_complete_arn,
+                'RoleArn': rekognition_Complete_Role_arn
+            },
+            JobTag=job_id
+        )
+
+        logger.error(person_tracking_response)

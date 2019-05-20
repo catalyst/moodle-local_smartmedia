@@ -99,10 +99,12 @@ def get_moderation_detection_results(job_id):
     labels = list()  # List to hold returned labels.
     retries = 1
 
+    getter_method = getattr(rekognition_client, 'get_content_moderation')
+
     while True:
         # Get results from Rekognition.
         try:
-            results = rekognition_client.get_content_moderation(
+            results = rekognition_client.getter_method(
                 JobId=job_id,
                 MaxResults=1000,  # Get 1000 results at a time, max is 1000.
                 NextToken=next_token,
@@ -189,3 +191,36 @@ def lambda_handler(event, context):
             s3_object.put(
                 Body=(bytes(json.dumps(moderation_results).encode('UTF-8')))
             )
+        elif rekognition_type == 'StartFaceDetection':
+            logger.info('Getting face detection results')
+            face_detection_results = get_face_detection_results(job_id)  # Get detected face data.
+            # Take the collected metadata and labels and write them to a json file in the output bucket.
+            output_bucket = sns_message_object['Video']['S3Bucket']
+            object_name = sns_message_object['Video']['S3ObjectName']
+            object_key = object_name.split('/', 1)[0]
+
+            # Put detected lanels in output S3 bucket as json file.
+            s3_object = s3_resource.Object(output_bucket, '{}/metadata/faces.json'.format(object_key))
+            s3_object.put(
+                Body=(bytes(json.dumps(face_detection_results).encode('UTF-8')))
+            )
+        elif rekognition_type == 'StartPersonTracking':
+            logger.info('Getting person tracking results')
+            person_tracking_results = get_person_detection_results(job_id)  # Get detected person data.
+            # Take the collected metadata and labels and write them to a json file in the output bucket.
+            output_bucket = sns_message_object['Video']['S3Bucket']
+            object_name = sns_message_object['Video']['S3ObjectName']
+            object_key = object_name.split('/', 1)[0]
+
+            # Put detected lanels in output S3 bucket as json file.
+            s3_object = s3_resource.Object(output_bucket, '{}/metadata/person.json'.format(object_key))
+            s3_object.put(
+                Body=(bytes(json.dumps(person_tracking_results).encode('UTF-8')))
+            )
+        else:
+            logger.error('Other event')
+            sns_message_json = record['Sns']['Message']
+            sns_message_object = json.loads(sns_message_json)
+            job_id = sns_message_object['JobId']
+            rekognition_type = sns_message_object['API']
+            logger.error(rekognition_type)
