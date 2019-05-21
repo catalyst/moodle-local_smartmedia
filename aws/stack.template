@@ -160,6 +160,11 @@ Resources:
           - rekognition:GetLabelDetection
           - rekognition:GetPersonTracking
           Resource: '*'
+        - Effect: Allow
+          Action:
+          - transcribe:StartTranscriptionJob
+          - transcribe:GetTranscriptionJob
+          Resource: '*'
         -   Effect: Allow
             Action: iam:PassRole
             Resource: '*'

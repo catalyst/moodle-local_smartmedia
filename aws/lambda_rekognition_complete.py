@@ -38,60 +38,9 @@ RETRY_EXCEPTIONS = ('ProvisionedThroughputExceededException',
 MAX_RETRIES = 8
 
 
-def get_label_detection_results(job_id):
+def get_detection_results(job_id, method, sort, result_key):
     """
-    Get the results returned by a Rekognition start_label_detection call.
-    """
-
-    next_token = ''
-    video_metadata = {}
-    labels = list()  # List to hold returned labels.
-    retries = 1
-
-    while True:
-        # Get results from Rekognition.
-        try:
-            results = rekognition_client.get_label_detection(
-                JobId=job_id,
-                MaxResults=1000,  # Get 1000 results at a time, max is 1000.
-                NextToken=next_token,
-                SortBy='TIMESTAMP'  # Other option is 'NAME'.
-            )
-
-            labels += results['Labels']  # Append the labels to the list.
-            video_metadata = results['VideoMetadata']
-
-            # Check if we have more results to get.
-            if 'NextToken' in results:
-                next_token = results['NextToken']
-            else:
-                next_token = ''
-
-        except ClientError as err:
-            if err.response['Error']['Code'] not in RETRY_EXCEPTIONS:
-                raise
-            logging.error('Rate limiting hit!, retries={}'.format(retries))
-            if retires < MAX_RETRIES:
-                sleep(2 ** retries)
-                retries += 1  # TODO max limit.
-                continue  # Try again
-            else:
-                break
-
-        if next_token == '':  # Only continue to try and get more results if there is a valid next token.
-            break
-
-    result_data = {
-        'metadata': video_metadata,
-        'labels': labels
-        }
-
-    return result_data
-
-
-def get_moderation_detection_results(job_id):
-    """
-    Get the results returned by a Rekognition start_moderation_detection call.
+    Get the results returned by a Rekognition start detection calls.
     """
 
     next_token = ''
@@ -99,19 +48,22 @@ def get_moderation_detection_results(job_id):
     labels = list()  # List to hold returned labels.
     retries = 1
 
-    getter_method = getattr(rekognition_client, 'get_content_moderation')
+    getter_method = getattr(rekognition_client, method)
 
     while True:
+        method_args = {
+            'JobId': job_id,
+            'MaxResults': 1000,  # Get 1000 results at a time, max is 1000.
+            'NextToken': next_token,
+            }
+        if sort != '':
+            method_args['SortBy'] = sort
+
         # Get results from Rekognition.
         try:
-            results = rekognition_client.getter_method(
-                JobId=job_id,
-                MaxResults=1000,  # Get 1000 results at a time, max is 1000.
-                NextToken=next_token,
-                SortBy='TIMESTAMP'  # Other option is 'NAME'.
-            )
+            results = getter_method(**method_args)
 
-            labels += results['Labels']  # Append the labels to the list.
+            labels += results[result_key]  # Append the labels to the list.
             video_metadata = results['VideoMetadata']
 
             # Check if we have more results to get.
@@ -164,63 +116,42 @@ def lambda_handler(event, context):
         rekognition_type = sns_message_object['API']
 
         labels = list()  # List to hold returned labels.
+        output_bucket = sns_message_object['Video']['S3Bucket']
+        object_name = sns_message_object['Video']['S3ObjectName']
+        object_key = object_name.split('/', 1)[0]
+        result_key = ''
 
         if rekognition_type == 'StartLabelDetection':
             logger.info('Getting label detection results')
-            label_results = get_label_detection_results(job_id)  # Get detected label data.
-            # Take the collected metadata and labels and write them to a json file in the output bucket.
-            output_bucket = sns_message_object['Video']['S3Bucket']
-            object_name = sns_message_object['Video']['S3ObjectName']
-            object_key = object_name.split('/', 1)[0]
+            method = 'get_label_detection'
+            sort = 'TIMESTAMP'
+            result_key = 'Labels'
+            label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected label data.
 
-            # Put detected lanels in output S3 bucket as json file.
-            s3_object = s3_resource.Object(output_bucket, '{}/metadata/labels.json'.format(object_key))
+        elif rekognition_type == 'StartContentModeration':
+            logger.info('Getting label moderation results')
+            method = 'get_content_moderation'
+            sort = 'TIMESTAMP'
+            result_key = 'ModerationLabels'
+            label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected moderation data.
+
+        elif rekognition_type == 'StartFaceDetection':
+            logger.info('Getting face detection results')
+            method = 'get_face_detection'
+            sort = ''
+            result_key = 'Faces'
+            label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected face data.
+
+        elif rekognition_type == 'StartPersonTracking':
+            logger.info('Getting person tracking results')
+            method = 'get_person_tracking'
+            sort = 'INDEX'
+            result_key = 'Persons'
+            label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected person data.
+
+        if result_key != '':
+            # Put detected labels in output S3 bucket as json file.
+            s3_object = s3_resource.Object(output_bucket, '{}/metadata/{}.json'.format(object_key, result_key))
             s3_object.put(
                 Body=(bytes(json.dumps(label_results).encode('UTF-8')))
             )
-        elif rekognition_type == 'StartContentModeration':
-            logger.info('Getting label moderation results')
-            moderation_results = get_moderation_detection_results(job_id)  # Get detected moderation data.
-            # Take the collected metadata and labels and write them to a json file in the output bucket.
-            output_bucket = sns_message_object['Video']['S3Bucket']
-            object_name = sns_message_object['Video']['S3ObjectName']
-            object_key = object_name.split('/', 1)[0]
-
-            # Put detected lanels in output S3 bucket as json file.
-            s3_object = s3_resource.Object(output_bucket, '{}/metadata/moderation.json'.format(object_key))
-            s3_object.put(
-                Body=(bytes(json.dumps(moderation_results).encode('UTF-8')))
-            )
-        elif rekognition_type == 'StartFaceDetection':
-            logger.info('Getting face detection results')
-            face_detection_results = get_face_detection_results(job_id)  # Get detected face data.
-            # Take the collected metadata and labels and write them to a json file in the output bucket.
-            output_bucket = sns_message_object['Video']['S3Bucket']
-            object_name = sns_message_object['Video']['S3ObjectName']
-            object_key = object_name.split('/', 1)[0]
-
-            # Put detected lanels in output S3 bucket as json file.
-            s3_object = s3_resource.Object(output_bucket, '{}/metadata/faces.json'.format(object_key))
-            s3_object.put(
-                Body=(bytes(json.dumps(face_detection_results).encode('UTF-8')))
-            )
-        elif rekognition_type == 'StartPersonTracking':
-            logger.info('Getting person tracking results')
-            person_tracking_results = get_person_detection_results(job_id)  # Get detected person data.
-            # Take the collected metadata and labels and write them to a json file in the output bucket.
-            output_bucket = sns_message_object['Video']['S3Bucket']
-            object_name = sns_message_object['Video']['S3ObjectName']
-            object_key = object_name.split('/', 1)[0]
-
-            # Put detected lanels in output S3 bucket as json file.
-            s3_object = s3_resource.Object(output_bucket, '{}/metadata/person.json'.format(object_key))
-            s3_object.put(
-                Body=(bytes(json.dumps(person_tracking_results).encode('UTF-8')))
-            )
-        else:
-            logger.error('Other event')
-            sns_message_json = record['Sns']['Message']
-            sns_message_object = json.loads(sns_message_json)
-            job_id = sns_message_object['JobId']
-            rekognition_type = sns_message_object['API']
-            logger.error(rekognition_type)

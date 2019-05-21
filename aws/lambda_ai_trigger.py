@@ -27,6 +27,7 @@ from botocore.exceptions import ClientError
 
 s3_client = boto3.client('s3')
 rekognition_client = boto3.client('rekognition')
+transcribe_client = boto3.client('transcribe')
 logger = logging.getLogger()
 
 
@@ -56,22 +57,24 @@ def lambda_handler(event, context):
         job_id = sns_message_object['jobId']
 
         rekognition_input = '{}/conversions/{}.mp4'.format(input_key, input_key)
-
-        # Start Rekognition Label extraction.
-        logger.info('Starting Rekognition label detection')
-        label_response = rekognition_client.start_label_detection(
-             Video={
+        video_dict = {
                 'S3Object': {
                     'Bucket': output_bucket,
                     'Name': rekognition_input
                 }
-            },
-            ClientRequestToken=job_id,
-            MinConfidence=80,  # 50 is default.
-            NotificationChannel={
+            }
+        notification_dict = {
                 'SNSTopicArn': sns_rekognition_complete_arn,
                 'RoleArn': rekognition_Complete_Role_arn
-            },
+            }
+
+        # Start Rekognition Label extraction.
+        logger.info('Starting Rekognition label detection')
+        label_response = rekognition_client.start_label_detection(
+            Video=video_dict,
+            ClientRequestToken=job_id,
+            MinConfidence=80,  # 50 is default.
+            NotificationChannel=notification_dict,
             JobTag=job_id
             )
 
@@ -80,18 +83,10 @@ def lambda_handler(event, context):
         # Start Rekognition content moderation operatations.
         logger.info('Starting Rekognition moderation detection')
         moderation_response = rekognition_client.start_content_moderation(
-            Video={
-                'S3Object': {
-                    'Bucket': output_bucket,
-                    'Name': rekognition_input
-                }
-            },
+            Video=video_dict,
             MinConfidence=80,  # 50 is default.
             ClientRequestToken=job_id,
-            NotificationChannel={
-                'SNSTopicArn': sns_rekognition_complete_arn,
-                'RoleArn': rekognition_Complete_Role_arn
-            },
+            NotificationChannel=notification_dict,
             JobTag=job_id
             )
 
@@ -100,17 +95,9 @@ def lambda_handler(event, context):
         # Start Rekognition face detection.
         logger.info('Starting Rekognition face detection')
         face_response = rekognition_client.start_face_detection(
-            Video={
-                'S3Object': {
-                    'Bucket': output_bucket,
-                    'Name': rekognition_input
-                }
-            },
+            Video=video_dict,
             ClientRequestToken=job_id,
-            NotificationChannel={
-                'SNSTopicArn': sns_rekognition_complete_arn,
-                'RoleArn': rekognition_Complete_Role_arn
-            },
+            NotificationChannel=notification_dict,
             FaceAttributes='DEFAULT',  # Other option is ALL.
             JobTag=job_id
         )
@@ -120,18 +107,31 @@ def lambda_handler(event, context):
         # Start Rekognition Person tracking.
         logger.info('Starting Rekognition person tracking')
         person_tracking_response = rekognition_client.start_person_tracking(
-            Video={
-                'S3Object': {
-                    'Bucket': output_bucket,
-                    'Name': rekognition_input
-                }
-            },
+            Video=video_dict,
             ClientRequestToken=job_id,
-            NotificationChannel={
-                'SNSTopicArn': sns_rekognition_complete_arn,
-                'RoleArn': rekognition_Complete_Role_arn
-            },
+            NotificationChannel=notification_dict,
             JobTag=job_id
         )
 
         logger.error(person_tracking_response)
+
+        # Start transcription job.
+        logger.info('Starting transcription.')
+        media_uri = 'https://s3-{}.amazonaws.com/{}/{}/conversions/{}.mp3'.format(
+            os.environ.get('AWS_REGION'),
+            output_bucket,
+            input_key,
+            input_key
+            )
+        transcription_response = transcribe_client.start_transcription_job(
+            TranscriptionJobName=job_id,
+            LanguageCode='en-AU',
+            MediaSampleRateHertz=44100,
+            MediaFormat='mp3',
+            Media={
+                'MediaFileUri': media_uri
+            },
+            Settings={}
+            )
+
+        logger.error(transcription_response)
