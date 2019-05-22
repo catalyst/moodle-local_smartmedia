@@ -274,7 +274,7 @@ Resources:
     Type: AWS::Lambda::Permission
     Properties: 
       Action: 'lambda:InvokeFunction'
-      FunctionName: !Ref 'LambdaTranscribeCompleteFunction'
+      FunctionName: !Ref LambdaTranscribeCompleteFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt TranscribeEventRule.Arn
 # Lambda functions.

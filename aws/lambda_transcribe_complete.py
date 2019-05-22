@@ -24,13 +24,14 @@ import logging
 import io
 import json
 import time
+from botocore.vendored import requests
 from botocore.exceptions import ClientError
 
 logger = logging.getLogger()
 
 # Get clients and resources.
 s3_resource = boto3.resource('s3')
-rekognition_client = boto3.client('rekognition')
+transcribe_client = boto3.client('transcribe')
 
 
 def lambda_handler(event, context):
@@ -47,3 +48,27 @@ def lambda_handler(event, context):
     logger.setLevel(int(logging_level))
 
     logging.error(json.dumps(event))
+
+    job_name = event['detail']['TranscriptionJobName']
+
+    transcription_response = transcribe_client.get_transcription_job(
+        TranscriptionJobName=job_name
+        )
+
+    logging.error(transcription_response)
+
+    input_url = transcription_response['TranscriptionJob']['Media']['MediaFileUri']
+    transcription_url = transcription_response['TranscriptionJob']['Transcript']['TranscriptFileUri']
+
+    output_vars = input_url.split('/')
+    output_bucket = output_vars[3]
+    output_key = '{}/metadata/transcription.json'.format(output_vars[4])
+
+    # Given an Internet-accessible URL, download the data and upload it to S3,
+    # without needing to persist the image to disk locally.
+    json_request = requests.get(transcription_url, stream=True)
+    file_object = json_request.raw
+    request_data = file_object.read()
+
+    # Do the actual upload to s3
+    s3_resource.Bucket(output_bucket).put_object(Key=output_key, Body=request_data)
