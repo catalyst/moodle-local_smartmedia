@@ -154,6 +154,7 @@ $params = array(
     'LambdaTranscodeTriggerArchiveKey' => 'lambda_transcoder_trigger.zip',
     'LambdaAiArchiveKey' => 'lambda_ai_trigger.zip',
     'LambdaRekognitionCompleteArchiveKey' => 'lambda_rekognition_complete.zip',
+    'LambdaTranscribeCompleteArchiveKey' => 'lambda_transcribe_complete.zip',
     'LambdaTranscodeResourceFunctionArn' => $lambdaresourcesrn,
     'ResourceBucket' => $resourcebucketresposnse->bucketname,
     'templatepath' => $cloudformationpath

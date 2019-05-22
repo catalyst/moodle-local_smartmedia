@@ -40,6 +40,10 @@ Parameters:
     Type: String
     Default: lambda_rekognition_complete.zip
     Description: The S3 Key (filename) for the Lambda Rekognition complete function archive.
+  LambdaTranscribeCompleteArchiveKey:
+    Type: String
+    Default: lambda_transcribe_complete.zip
+    Description: The S3 Key (filename) for the Lambda Transcribe complete function archive.
   LambdaTranscodeResourceFunctionArn:
     Type: String
     Default: arn:aws:lambda:ap-southeast-2:693620471840:function:resourcestack_lambda_transcoder_resource
@@ -266,6 +270,13 @@ Resources:
       FunctionName: !Ref LambdaTranscodeTriggerFunction
       Principal: s3.amazonaws.com
       SourceArn: !Join [ '', ['arn:aws:s3:::', !Ref 'AWS::StackName', '-','input'] ]
+  PermissionForEventsToInvokeLambda: 
+    Type: AWS::Lambda::Permission
+    Properties: 
+      Action: 'lambda:InvokeFunction'
+      FunctionName: !Ref 'LambdaTranscribeCompleteFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt TranscribeEventRule.Arn
 # Lambda functions.
 # These functions respond to various events and orchestrate various
 # parts of the conversion process.
@@ -309,6 +320,19 @@ Resources:
         S3Key: !Ref LambdaRekognitionCompleteArchiveKey
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'rekognition_complete'] ]
       Handler: lambda_rekognition_complete.lambda_handler
+      MemorySize: 128
+      Role: !GetAtt LambdaAiRole.Arn
+      Runtime: python3.6
+      Timeout: 600
+  LambdaTranscribeCompleteFunction:
+    Type: AWS::Lambda::Function
+    Description: Lambda Function to handle Transcribe completion events.
+    Properties:
+      Code:
+        S3Bucket: !Ref ResourceBucket
+        S3Key: !Ref LambdaTranscribeCompleteArchiveKey
+      FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcribe_complete'] ]
+      Handler: lambda_transcribe_complete.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaAiRole.Arn
       Runtime: python3.6
@@ -371,6 +395,27 @@ Resources:
         Error: !Ref SnsTopicConversion
         Progressing: !Ref SnsTopicConversion
         Warning: !Ref SnsTopicConversion
+# Cloudwatch events.
+# Trigger actions based on custom events.
+  TranscribeEventRule:
+    Type: AWS::Events::Rule
+    Properties: 
+      Name: 'TranscribeEventRule'
+      Description: 'Cloudwatch event rule for transcribe completion.'
+      EventPattern: 
+        source: 
+          - "aws.transcribe"
+        detail-type: 
+          - "Transcribe Job State Change"
+        detail: 
+          TranscriptionJobStatus: 
+            - COMPLETED
+      State: 'ENABLED'
+      Targets: 
+        - 
+          Arn: !GetAtt LambdaTranscribeCompleteFunction.Arn
+          Id: 'LambdaTranscribeCompleteFunction'
+
 # S3 Buckets.
 # These are the S3 buckets created by the stack.
 # The are used to store assets processed byt the resources and services.
