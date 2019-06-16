@@ -23,8 +23,6 @@
  */
 namespace local_smartmedia;
 
-use Exception;
-
 defined('MOODLE_INTERNAL') || die();
 
 /**
@@ -72,6 +70,13 @@ class conversion {
     const CONVERSION_ERROR = 500;
 
     /**
+     * Class constructor
+     */
+    public function __construct() {
+        $this->config = get_config('local_smartmedia');
+    }
+
+    /**
      * Create the smart media conversion record.
      * These records will be processed by a scheduled task.
      *
@@ -89,10 +94,12 @@ class conversion {
         // This is OK and expected, we will handle the error.
         try {
             $DB->insert_record('local_smartmedia_conv', $hrefarguments);
-        } catch (Exception $e) {
+        } catch (\dml_write_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,
             // so re-throw the error.
-            error_log(print_r($e, true));
+            if(!strpos($e->getMessage(), 'locasmarconv_ite_uix')){
+                throw $e;
+            }
         }
     }
 
@@ -156,6 +163,7 @@ class conversion {
      * @return array
      */
     public function get_smart_media(\moodle_url $href, bool $triggerconversion = false) : array {
+        $smartmedia = array();
 
         // Split URL up into components.
         $hrefarguments = $this->get_arguments($href);
@@ -163,14 +171,18 @@ class conversion {
         // Query conversion table for status.
         $conversionstatus = $this->get_conversion_status($hrefarguments->itemhash);
 
-        // If no record in table and trigger conversion is true add record (remember try/catch)
-        // If still processing return empty array.
-        // if processing complete get all urls and data for source href
-        // cache the result for a very long time as once processing is finished it will never change
-        // and when processing is finished we will explictly clear the cache.
-        // return results to caller.
+        // If no record in table and trigger conversion is true add record.
+        if($triggerconversion && $conversionstatus == self::CONVERSION_NOT_FOUND) {
+            $this->create_conversion($hrefarguments);
+        }
 
-        return array();
+        // If processing complete get all urls and data for source href.
+
+        // TODO: Cache the result for a very long time as once processing is finished it will never change
+        // and when processing is finished we will explictly clear the cache.
+
+
+        return $smartmedia;
 
     }
 
