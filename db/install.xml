@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="local/smartmedia/db" VERSION="20190615" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="local_smartmedia_conv" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="itemhash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="complete file path sha1 hash - unique for each file"/>
+        <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The context id of the source asset"/>
+        <FIELD NAME="component" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="Full name of the component owning the area"/>
+        <FIELD NAME="filearea" TYPE="char" LENGTH="50" NOTNULL="true" SEQUENCE="false" COMMENT="Like &quot;coursefiles&quot;. &quot;submission&quot;, &quot;intro&quot; and &quot;content&quot; (images and swf linked from summaries), etc."/>
+        <FIELD NAME="itemid" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Optional - some plugin specific item id (eg. forum post, blog entry or assignment submission, user id for user files)"/>
+        <FIELD NAME="filename" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The full Unicode name of this file (case sensitive) - some chars are not allowed though"/>
+        <FIELD NAME="status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="100" SEQUENCE="false" COMMENT="The processing status of the record."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when the record was created"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when record was last modified"/>
+        <FIELD NAME="timecompleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Unix timestamp of when record processing was completed"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="resource" UNIQUE="false" FIELDS="contextid, component, filearea, itemid" COMMENT="Index for the components that make up a plugin file href."/>
+        <INDEX NAME="status" UNIQUE="false" FIELDS="status" COMMENT="Index for processing status"/>
+        <INDEX NAME="itemhash" UNIQUE="true" FIELDS="itemhash" COMMENT="Index for asset item hash"/>
+      </INDEXES>
+    </TABLE>
+  </TABLES>
+</XMLDB>
