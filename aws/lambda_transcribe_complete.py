@@ -32,6 +32,7 @@ logger = logging.getLogger()
 # Get clients and resources.
 s3_resource = boto3.resource('s3')
 transcribe_client = boto3.client('transcribe')
+comprehend_client = boto3.client('comprehend')
 
 
 def lambda_handler(event, context):
@@ -47,7 +48,7 @@ def lambda_handler(event, context):
     logging_level = os.environ.get('LoggingLevel', logging.ERROR)
     logger.setLevel(int(logging_level))
 
-    logging.error(json.dumps(event))
+    # logging.error(json.dumps(event))
 
     job_name = event['detail']['TranscriptionJobName']
 
@@ -55,7 +56,7 @@ def lambda_handler(event, context):
         TranscriptionJobName=job_name
         )
 
-    logging.error(transcription_response)
+    # logging.error(transcription_response)
 
     input_url = transcription_response['TranscriptionJob']['Media']['MediaFileUri']
     transcription_url = transcription_response['TranscriptionJob']['Transcript']['TranscriptFileUri']
@@ -69,6 +70,42 @@ def lambda_handler(event, context):
     json_request = requests.get(transcription_url, stream=True)
     file_object = json_request.raw
     request_data = file_object.read()
+    transcription_object = json.loads(request_data)
+    transcription_text = transcription_object['results']['transcripts'][0]['transcript']
 
     # Do the actual upload to s3
     s3_resource.Bucket(output_bucket).put_object(Key=output_key, Body=request_data)
+
+    # Send the transcription for sentiment analysis.
+    # Detect sentiment
+    sentiment_response = comprehend_client.detect_sentiment(
+        Text=transcription_text,
+        LanguageCode='en'
+    )
+
+    s3_object = s3_resource.Object(output_bucket, '{}/metadata/sentiment.json'.format(output_vars[4]))
+    s3_object.put(
+        Body=(bytes(json.dumps(sentiment_response).encode('UTF-8')))
+    )
+
+    # Detect key phrases
+    keyphrases_response = comprehend_client.detect_key_phrases(
+        Text=transcription_text,
+        LanguageCode='en'
+    )
+
+    s3_object = s3_resource.Object(output_bucket, '{}/metadata/phrases.json'.format(output_vars[4]))
+    s3_object.put(
+        Body=(bytes(json.dumps(keyphrases_response).encode('UTF-8')))
+    )
+
+    # Detect entities
+    entities_response = comprehend_client.detect_entities(
+        Text=transcription_text,
+        LanguageCode='en'
+    )
+
+    s3_object = s3_resource.Object(output_bucket, '{}/metadata/entities.json'.format(output_vars[4]))
+    s3_object.put(
+        Body=(bytes(json.dumps(entities_response).encode('UTF-8')))
+    )

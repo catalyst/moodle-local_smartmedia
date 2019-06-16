@@ -169,6 +169,14 @@ Resources:
           - transcribe:StartTranscriptionJob
           - transcribe:GetTranscriptionJob
           Resource: '*'
+        - Effect: Allow
+          Action:
+          - comprehend:DetectDominantLanguage
+          - comprehend:DetectEntities
+          - comprehend:DetectKeyPhrases
+          - comprehend:DetectSentiment
+          - comprehend:DetectSyntax
+          Resource: '*'
         -   Effect: Allow
             Action: iam:PassRole
             Resource: '*'
