@@ -33,12 +33,25 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     function test_get_smart_media() {
         $this->resetAfterTest(true);
+
+        // Setup for testing.
+        $fs = new file_storage();
+        $filerecord = array(
+            'contextid' =>  31,
+            'component' => 'mod_forum',
+            'filearea' => 'attachment',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'myfile1.txt');
+
+        $file = $fs->create_file_from_string($filerecord, 'the first test file');
+        $filepathnamehash = $file->get_pathnamehash();
+        $href = moodle_url::make_pluginfile_url(
+            $filerecord['contextid'], $filerecord['component'], $filerecord['filearea'],
+            $filerecord['itemid'], $filerecord['filepath'], $filerecord['filename']);
+
         $conversion = new \local_smartmedia\conversion();
-
-        $href = new \moodle_url('http://moodle.local/pluginfile.php/1461/mod_label/intro/SampleVideo1mb.mp4');
-
-
-        $smartmedia = $conversion->get_smart_media($href, false);
+      //  $smartmedia = $conversion->get_smart_media($href, false);
 
         //$this->assertEquals(1, $proxy);
     }
@@ -46,32 +59,69 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     /**
      * Test argument extraction from various plugin types.
      */
-    function test_get_arguments() {
+    function test_get_pathnamehash() {
         $this->resetAfterTest(true);
+        #http://moodle.local/pluginfile.php/1461/mod_label/intro/SampleVideo1mb.mp4
+
+        // Setup the files for testing.
+        $fs = new file_storage();
+        $filerecord1 = array(
+            'contextid' =>  31,
+            'component' => 'mod_forum',
+            'filearea' => 'attachment',
+            'itemid' => 0,
+            'filepath' => '/',
+            'filename' => 'myfile1.txt');
+
+        $file1 = $fs->create_file_from_string($filerecord1, 'the first test file');
+        $filepathnamehash1 = $file1->get_pathnamehash();
+        $href1 = moodle_url::make_pluginfile_url(
+            $filerecord1['contextid'], $filerecord1['component'], $filerecord1['filearea'],
+            null, $filerecord1['filepath'], $filerecord1['filename']);
+
+        $filerecord2 = array(
+            'contextid' =>  1386, // ID of context
+            'component' => 'mod_folder',
+            'filearea' => 'content',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'myfile2.txt');
+
+        $file2 = $fs->create_file_from_string($filerecord2, 'the second test file');
+        $filepathnamehash2 = $file2->get_pathnamehash();
+        $href2 = moodle_url::make_pluginfile_url(
+            $filerecord2['contextid'], $filerecord2['component'], $filerecord2['filearea'],
+            $filerecord2['itemid'], $filerecord2['filepath'], $filerecord2['filename']);
+
+        $filerecord3 = array(
+            'contextid' =>  1386, // ID of context
+            'component' => 'mod_folder',
+            'filearea' => 'content',
+            'itemid' => 45,
+            'filepath' => '/a/b/c/',
+            'filename' => 'myfile3.txt');
+
+        $file3 = $fs->create_file_from_string($filerecord3, 'the third test file');
+        $filepathnamehash3 = $file3->get_pathnamehash();
+        $href3 = moodle_url::make_pluginfile_url(
+            $filerecord3['contextid'], $filerecord3['component'], $filerecord3['filearea'],
+            $filerecord3['itemid'], $filerecord3['filepath'], $filerecord3['filename']);
+
+        // Instansiate new conversion class
         $conversion = new \local_smartmedia\conversion();
 
         // We're testing a private method, so we need to setup reflector magic.
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_arguments');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_pathnamehash');
         $method->setAccessible(true); // Allow accessing of private method.
 
-        $href = new \moodle_url('http://moodle.local/pluginfile.php/1461/mod_label/intro/SampleVideo1mb.mp4');
-        $result = $method->invoke($conversion, $href); // Get result of invoked method.
+        $result1 = $method->invoke($conversion, $href1); // Get result of invoked method.
+        $result2 = $method->invoke($conversion, $href2); // Get result of invoked method.
+        $result3 = $method->invoke($conversion, $href3); // Get result of invoked method.
 
-        $this->assertEquals(1461, $result->contextid);
-        $this->assertEquals('mod_label', $result->component);
-        $this->assertEquals('intro', $result->filearea);
-        $this->assertEquals(0, $result->itemid);
-        $this->assertEquals('SampleVideo1mb.mp4', $result->filename);
+        $this->assertEquals($filepathnamehash1, $result1);
+        $this->assertEquals($filepathnamehash2, $result2);
+        $this->assertEquals($filepathnamehash3, $result3);
 
-
-        $href = new \moodle_url('http://moodle.local/pluginfile.php/31/mod_forum/attachment/2/SampleVideo1mb.mp4?forcedownload=1');
-        $result = $method->invoke($conversion, $href); // Get result of invoked method.
-
-        $this->assertEquals(31, $result->contextid);
-        $this->assertEquals('mod_forum', $result->component);
-        $this->assertEquals('attachment', $result->filearea);
-        $this->assertEquals(2, $result->itemid);
-        $this->assertEquals('SampleVideo1mb.mp4', $result->filename);
     }
 
     /**
@@ -101,21 +151,15 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         global $DB;
 
         $conversion = new \local_smartmedia\conversion();
-        $hrefarguments = new \stdClass();
-        $hrefarguments->contextid = 31;
-        $hrefarguments->component = 'mod_forum';
-        $hrefarguments->filearea = 'attachement';
-        $hrefarguments->itemid = 2;
-        $hrefarguments->filename = 'SampleVideo1mb.mp4';
-        $hrefarguments->itemhash = '7eaaf63136bfcfe8be4978e72bdbad68453dbd72';
+        $pathnamehash = '7eaaf63136bfcfe8be4978e72bdbad68453dbd72';
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'create_conversion');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, $hrefarguments);
-        $result = $method->invoke($conversion, $hrefarguments);  // Invoke twice to check error handling
+        $result = $method->invoke($conversion, $pathnamehash);
+        $result = $method->invoke($conversion, $pathnamehash);  // Invoke twice to check error handling
 
-        $result = $DB->record_exists('local_smartmedia_conv', array('itemhash' => '7eaaf63136bfcfe8be4978e72bdbad68453dbd72'));
+        $result = $DB->record_exists('local_smartmedia_conv', array('pathnamehash' => '7eaaf63136bfcfe8be4978e72bdbad68453dbd72'));
 
         $this->assertTrue($result);
 

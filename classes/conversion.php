@@ -80,24 +80,26 @@ class conversion {
      * Create the smart media conversion record.
      * These records will be processed by a scheduled task.
      *
-     * @param \stdClass $hrefarguments
+     * @param string pathnamehash The pathname hash of the reference file.
      */
-    private function create_conversion(\stdClass $hrefarguments) : void {
+    private function create_conversion(string $pathnamehash) : void {
         global $DB;
         $now = time();
 
-        $hrefarguments->status = $this::CONVERSION_ACCEPTED;
-        $hrefarguments->timecreated = $now;
-        $hrefarguments->timemodified = $now;
+        $record = new \stdClass();
+        $record->pathnamehash = $pathnamehash;
+        $record->status = $this::CONVERSION_ACCEPTED;
+        $record->timecreated = $now;
+        $record->timemodified = $now;
 
         // Race conditions mean that we could try to create a conversion record multiple times.
         // This is OK and expected, we will handle the error.
         try {
-            $DB->insert_record('local_smartmedia_conv', $hrefarguments);
+            $DB->insert_record('local_smartmedia_conv', $record);
         } catch (\dml_write_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,
             // so re-throw the error.
-            if(!strpos($e->getMessage(), 'locasmarconv_ite_uix')){
+            if(!strpos($e->getMessage(), 'locasmarconv_pat_uix')){
                 throw $e;
             }
         }
@@ -106,13 +108,13 @@ class conversion {
     /**
      * Get the smart media conversion status for a given resource.
      *
-     * @param string $itemhash The item hash of the asset.
+     * @param string $pathnamehash The pathname hash of the asset.
      * @return int $status The response status to the request.
      */
-    private function get_conversion_status(string $itemhash) : int {
+    private function get_conversion_status(string $pathnamehash) : int {
         global $DB;
 
-        $conditions = array('itemhash' => $itemhash);
+        $conditions = array('pathnamehash' => $pathnamehash);
         $status = $DB->get_field('local_smartmedia_conv', 'status', $conditions);
 
         if (!$status) {
@@ -123,37 +125,49 @@ class conversion {
     }
 
     /**
-     * Given a Moodle URL etract the relevant arguments for
-     * further processing.
+     * Given a Moodle URL check file exists in the Moodle file table
+     * and retreive the pathnamehash.
+     * This requires some horrible reverse engineering.
      *
      * @param \moodle_url $href Plugin file url to extract from.
-     * @return \stdClass $arguments The extracted arguments.
+     * @return string $pathnamehash The pathname hash of the file.
      */
-    private function get_arguments(\moodle_url $href) : \stdClass {
-        $arguments = new \stdClass();
-
+    /**
+     */
+    private function get_pathnamehash(\moodle_url $href) : string {
         // Extract the elements we need from the Moodle URL.
         $argumentsstring = $href->get_path(true);
         $rawarguments = explode('/', $argumentsstring);
+        $pluginfileposition = array_search('pluginfile.php', $rawarguments);
+        $hrefarguments = array_slice($rawarguments, ($pluginfileposition+1));
+        $argumentcount = count($hrefarguments);
 
-        $arguments->contextid = $rawarguments[2];
-        $arguments->component = clean_param($rawarguments[3], PARAM_COMPONENT);
-        $arguments->filearea = clean_param($rawarguments[4], PARAM_AREA);
+        $contextid = $hrefarguments[0];
+        $component = clean_param($hrefarguments[1], PARAM_COMPONENT);
+        $filearea = clean_param($hrefarguments[2], PARAM_AREA);
+        $filename = $hrefarguments[($argumentcount -1)];
 
-        if (count($rawarguments) > 6 ) {
-            $arguments->itemid = (int)$rawarguments[5];
-        } else {
-            $arguments->itemid = 0;
+        // Sensible defaults for item id and filepath
+        $itemid = 0;
+        $filepath = '/';
+
+        // If item id is non zero then it will be the fourth element in the array.
+        if ($argumentcount > 4 ) {
+            $itemid = (int)$hrefarguments[3];
         }
 
-        $arguments->filename = end($rawarguments);
+        //  Handle complex file paths in href.
+        if ($argumentcount > 5 ) {
+            $filepatharray = array_slice($hrefarguments, 4, -1);
+            $filepath = '/' . implode('/', $filepatharray) . '/';
+        }
 
-        // This is NOT the same as the pathname hash in the files table.
-        $arguments->itemhash = sha1(
-            $arguments->contextid . $arguments->component
-            . $arguments->filearea . $arguments->itemid . $arguments->filename);
+        // Use the information we have extracted to get the pathname hash.
+        $fs = new \file_storage();
+        $file = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
+        $pathnamehash = $file->get_pathnamehash();
 
-        return $arguments;
+        return $pathnamehash;
     }
 
     /**
@@ -166,14 +180,14 @@ class conversion {
         $smartmedia = array();
 
         // Split URL up into components.
-        $hrefarguments = $this->get_arguments($href);
+        $pathnamehash = $this->get_pathnamehash($href);
 
         // Query conversion table for status.
-        $conversionstatus = $this->get_conversion_status($hrefarguments->itemhash);
+        $conversionstatus = $this->get_conversion_status($pathnamehash);
 
         // If no record in table and trigger conversion is true add record.
         if($triggerconversion && $conversionstatus == self::CONVERSION_NOT_FOUND) {
-            $this->create_conversion($hrefarguments);
+            $this->create_conversion($pathnamehash);
         }
 
         // If processing complete get all urls and data for source href.
@@ -184,6 +198,21 @@ class conversion {
 
         return $smartmedia;
 
+    }
+
+
+    private function send_file_for_processing() : void {
+
+    }
+
+    public function process_conversions() : void {
+        // Get not yet started conversion records.
+        // Itterate through not yet started records.
+        // Sending them all for processing.
+
+        // Get pending conversion records.
+        // Itterate through pending records.
+        // Check AWS for the completion status
     }
 
 }
