@@ -29,7 +29,11 @@ if ($hassiteconfig) {
     $settings = new admin_settingpage('local_smartmedia', get_string('pluginname', 'local_smartmedia'));
     $ADMIN->add('localplugins', $settings);
 
-    // Basic settings.
+    // AWS Settings settings.
+    $settings->add(new admin_setting_heading('awsheader',
+            get_string('settings:aws:header', 'local_smartmedia'),
+            get_string('settings:aws:header_desc', 'local_smartmedia')));
+
     $settings->add(new admin_setting_configtext('local_smartmedia/api_key',
             get_string('settings:aws:key', 'local_smartmedia'),
             get_string('settings:aws:key_help', 'local_smartmedia'),
@@ -76,4 +80,13 @@ if ($hassiteconfig) {
             get_string('settings:aws:region_help', 'local_smartmedia'),
             'ap-southeast-2',
             $regionoptions));
+
+    // FFprobe settings.
+    $settings->add(new admin_setting_heading('ffprobeheader',
+        get_string('settings:ffprobe:header', 'local_smartmedia'),
+        get_string('settings:ffprobe:header_desc', 'local_smartmedia')));
+    $settings->add(new admin_setting_configexecutable('pathtoffprobe',
+        get_string('settings:ffprobe:pathtoffprobe', 'local_smartmedia'),
+        get_string('settings:ffprobe:pathtoffprobe_desc', 'local_smartmedia'), '/usr/bin/ffprobe'));
+
 }

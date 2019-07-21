@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Unit test for the filter_smartmedia
+ * Unit tesst for local_smartmedia convserion class.
  *
  * @package    filter
  * @subpackage smartmedia

@@ -163,7 +163,7 @@ class conversion {
         }
 
         // Use the information we have extracted to get the pathname hash.
-        $fs = new \file_storage();
+        $fs = new \file_storage();  // TDO refactor to use get_file storage.
         $file = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
         $pathnamehash = $file->get_pathnamehash();
 
@@ -197,6 +197,7 @@ class conversion {
 
 
         return $smartmedia;
+
 
     }
 

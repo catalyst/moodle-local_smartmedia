@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Smart Media';
 
+$string['ffprobe:invalidpath'] = 'Invalid FFProbe path';
 $string['provision:creatings3'] = 'Creating resource S3 Bucket';
 $string['provision:bucketcreated'] = 'Created {$a->bucket} bucket, at location {$a->location}';
 $string['provision:bucketexists'] = 'Bucket exists';
@@ -44,6 +45,7 @@ $string['provision:s3usersecretkey'] = 'Smart media S3 user secret key: {$a}';
 $string['provision:stackcreated'] = 'Cloudformation stack created. Stack ID is: {$a}';
 $string['provision:uploadlambdaarchives'] = 'Uploading Lambda function archives to resource S3 bucket';
 $string['settings:aws:header'] = 'AWS settings';
+$string['settings:aws:header_desc'] = 'The settings for the AWS components used to convert media files and extract information.';
 $string['settings:aws:key'] = 'Key';
 $string['settings:aws:key_help'] = 'Amazon API key credential.';
 $string['settings:aws:secret'] = 'Secret';
@@ -54,3 +56,7 @@ $string['settings:aws:output_bucket'] = 'Output bucket';
 $string['settings:aws:output_bucket_help'] = 'Amazon S3 bucket to fetch converted assignment submissions.';
 $string['settings:aws:region'] = 'Region';
 $string['settings:aws:region_help'] = 'Amazon API gateway region.';
+$string['settings:ffprobe:header'] = 'FFProbe settings';
+$string['settings:ffprobe:header_desc'] = 'The settings for the FFProbe binary.';
+$string['settings:ffprobe:pathtoffprobe'] = 'FFProbe binary path';
+$string['settings:ffprobe:pathtoffprobe_desc'] = 'The path to the FFProbe binary on the server running Moodle.';
