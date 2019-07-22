@@ -208,7 +208,12 @@ class local_smartmedia_ffprobe_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $proxy = $method->invoke($stub, $resultobject); // Get result of invoked method.
 
-        error_log(print_r($proxy, true));
+        $this->assertEquals('success', $proxy['status']);
+        $this->assertEquals(2, $proxy['data']['totalstreams']);
+        $this->assertEquals(1, $proxy['data']['totalvideostreams']);
+        $this->assertEquals(1, $proxy['data']['totalaudiostreams']);
+        $this->assertEquals('h264', $proxy['data']['videostreams'][0]['codecname']);
+        $this->assertEquals('aac', $proxy['data']['audiostreams'][0]['codecname']);
     }
 
 }

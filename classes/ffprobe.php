@@ -75,6 +75,7 @@ class ffprobe {
         $metadata['data']['videostreams'] = array();
         $metadata['data']['audiostreams'] = array();
 
+        // Grab data from the available streams.
         foreach($resultobject->streams as $stream) {
             if($stream->codec_type == 'video'){
                 $totalvideostreams++;
@@ -100,6 +101,7 @@ class ffprobe {
 
         }
 
+        // Populate general data.
         $metadata['data']['formatname'] = $formatname;
         $metadata['data']['formatlingname'] = $formatlingname;
         $metadata['data']['duration'] = $duration;
