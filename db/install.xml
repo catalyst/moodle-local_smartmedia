@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/smartmedia/db" VERSION="20190615" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+<XMLDB PATH="local/smartmedia/db" VERSION="20190723" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -19,6 +19,25 @@
       <INDEXES>
         <INDEX NAME="status" UNIQUE="false" FIELDS="status" COMMENT="Index for processing status"/>
         <INDEX NAME="pathnamehash" UNIQUE="true" FIELDS="pathnamehash" COMMENT="Index for asset item hash"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_smartmedia_data" COMMENT="Contains data about Moodle multimedia files">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="fileid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Corresponding ID in the Moodle file table"/>
+        <FIELD NAME="duration" TYPE="number" LENGTH="10" NOTNULL="true" SEQUENCE="false" DECIMALS="3" COMMENT="The duration of the file"/>
+        <FIELD NAME="bitrate" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="Total bitrate of the file"/>
+        <FIELD NAME="videostreams" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Number of video streams in file"/>
+        <FIELD NAME="audiostreams" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Number of audio streams in file"/>
+        <FIELD NAME="width" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Width of primary video stream if it exists"/>
+        <FIELD NAME="height" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Height of primary video stream if it exists"/>
+        <FIELD NAME="metadata" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Full extracted metadata in json format"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="fileid" UNIQUE="true" FIELDS="fileid"/>
       </INDEXES>
     </TABLE>
   </TABLES>
