@@ -15,20 +15,26 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Definition of LibreLambda converter scheduled tasks.
  *
- * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   fileconverter_librelambda
+ * @category  task
+ * @copyright   2018 Matt Porritt <mattp@catalyst-au.net>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_smartmedia';
-$plugin->release = '2019072400';
-$plugin->version = 2019072400;
-$plugin->requires = 2018051700;
-$plugin->maturity = MATURITY_ALPHA;
-$plugin->dependencies = array(
-    'local_aws' => 2018061900
+/* List of handlers */
+
+$tasks = array(
+    array(
+        'classname' => 'local_smartmedia\task\extract_metadata',
+        'blocking' => 0,
+        'minute' => '15',
+        'hour' => '*',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*'
+    ),
 );
