@@ -17,7 +17,7 @@
 /**
  * Unit tesst for local_smartmedia convserion class.
  *
- * @package    filter
+ * @package    local
  * @subpackage smartmedia
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later

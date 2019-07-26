@@ -44,6 +44,26 @@ class extract_metadata extends scheduled_task {
     }
 
     /**
+     * Get the max id from the smartmedia data table,
+     * used to determine the start point for the next
+     * metadata processing scan.
+     *
+     * @return int $startid The id from the smartmedia data table.
+     */
+    private function get_start_id() : int {
+        global $DB;
+
+        $sql = 'SELECT max(id) FROM {local_smartmedia_data}';
+        $startfileid = $DB->get_field_sql($sql);
+
+        if(!$startfileid) {
+            $startfileid = 0;
+        }
+
+        return $startfileid;
+    }
+
+    /**
      * Do the job.
      * Throw exceptions on errors (the job will be retried).
      */
@@ -51,9 +71,11 @@ class extract_metadata extends scheduled_task {
         global $DB;
         mtrace('local_smartmedia: Processing media file metadata');
 
-        // Get highest file ID from the metadata table.
+        $startfileid = $this->get_start_id(); // Get highest file ID from the metadata table.
 
         // Select a stack of files higher than that id.
+        $fs = get_file_storage();
+
 
         // Process the metadata for the selected files.
 
