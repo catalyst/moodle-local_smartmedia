@@ -35,6 +35,54 @@ defined('MOODLE_INTERNAL') || die();
 class extract_metadata extends scheduled_task {
 
     /**
+     * Max files to get from Moodle files table per processing run.
+     */
+    private const MAX_FILES = 1000;
+
+    /**
+     * Metadata extraction is supported for the following mime types.
+     */
+    private const SUPPORTED_MIME_TYPES = array(
+        'audio/aac',
+        'audio/au',
+        'audio/mp3',
+        'audio/mp4',
+        'audio/ogg',
+        'audio/wav',
+        'audio/x-aiff',
+        'audio/x-mpegurl',
+        'audio/x-ms-wma',
+        'audio/x-pn-realaudio-plugin',
+        'video/mp4',
+        'video/mpeg',
+        'video/ogg',
+        'video/quicktime',
+        'video/webm',
+        'video/x-dv',
+        'video/x-flv',
+        'video/x-ms-asf',
+        'video/x-ms-wm',
+        'video/x-ms-wmv',
+    );
+
+    /**
+     * Get the mime types that support extraction.
+     *
+     * @param boolean $asstring If true return types as string, false return array.
+     * @return boolean | string $mimetypes The supported mime types.
+     */
+    private function get_supported_mime_types($asstring=false) {
+
+        if ($asstring) {
+            $mimetypes = "'" . implode("','", self::SUPPORTED_MIME_TYPES) . "'";;
+        } else {
+            $mimetypes = self::SUPPORTED_MIME_TYPES;
+        }
+
+        return $mimetypes;
+    }
+
+    /**
      * Get a descriptive name for this task (shown to admins).
      *
      * @return string
@@ -51,17 +99,54 @@ class extract_metadata extends scheduled_task {
      * @return int $startid The id from the smartmedia data table.
      */
     private function get_start_id() : int {
-        global $DB;
 
-        $sql = 'SELECT max(id) FROM {local_smartmedia_data}';
-        $startfileid = $DB->get_field_sql($sql);
+        $startfileid = get_config('local_smartmedia', 'startfileid');
 
         if(!$startfileid) {
             $startfileid = 0;
+            set_config('startfileid', 0, 'local_smartmedia');
         }
 
         return $startfileid;
     }
+
+    /**
+     * Get the pathnamehash and contenthash of the files we want
+     * to extract metadata from.
+     *
+     * @return array $filehashes The hashes of the files we want to process
+     */
+    private function get_files_to_process() : array {
+        global $DB;
+
+        // Danger! Joins on file table.
+        // We want to get the pathnamehash and contenthash of files in the
+        // moodle file table, where id is greater than startfileid and contenthash isn't in
+        // the local_smart_media table. Limit the results to MAX_FILES.
+
+        // We are not using a recordset here as we are getting a limit number of records,
+        // a small number of fields and processing the results can take time so we don't
+        // want to hold a transaction open for a long period.
+        $mimetypes = $this->get_supported_mime_types(true);
+        $startid = $this->get_start_id();
+        $limit = self::MAX_FILES;
+        $params = array(
+            $startid,
+            $limit
+        );
+
+        $sql = "SELECT f.pathnamehash, f.contenthash
+                  FROM {files} f
+             LEFT JOIN {local_smartmedia_data} lsd ON f.contenthash = lsd.contenthash
+                 WHERE mimetype IN ($mimetypes)
+                       AND lsd.contenthash IS NULL
+                       AND f.id > ?
+                 LIMIT ?";
+        $filehashes = $DB->get_records_sql($sql, $params);
+
+        return $filehashes;
+    }
+
 
     /**
      * Do the job.
@@ -74,8 +159,8 @@ class extract_metadata extends scheduled_task {
         $startfileid = $this->get_start_id(); // Get highest file ID from the metadata table.
 
         // Select a stack of files higher than that id.
+        $filehashes = $this->get_files_to_process();
         $fs = get_file_storage();
-
 
         // Process the metadata for the selected files.
 
