@@ -147,6 +147,75 @@ class extract_metadata extends scheduled_task {
         return $filehashes;
     }
 
+    /**
+     * Given a list of pathname hashes, extract the metadata and
+     * store the result in the database.
+     *
+     * @param array $filehashes Filehases to process.
+     * @return array $results Results of file processing.
+     */
+    private function process_files(array $filehashes) : array {
+        global $DB;
+
+        $successcount = 0;
+        $failcount = 0;
+        $metadatarecords = array();
+        $failhashses = array();
+
+        $fs = get_file_storage();
+        $ffprobe = new \local_smartmedia\ffprobe();
+
+        foreach ($filehashes as $filehash) {
+            $file = $fs->get_file_by_hash($filehash->pathnamehash);
+            $filemetadata = $ffprobe->get_media_metadata($file);
+
+            // Setup initial metadata record.
+            $metadatarecord = new \stdClass();
+            $metadatarecord->contenthash = $file->get_contenthash();
+            $metadatarecord->duration = 0;
+            $metadatarecord->bitrate = 0;
+            $metadatarecord->videostreams = 0;
+            $metadatarecord->audiostreams = 0;
+            $metadatarecord->width = 0;
+            $metadatarecord->height = 0;
+            $metadatarecord->metadata = '{}';
+
+            if ($filemetadata['status'] == 'success') {
+                // Process sucessful metadata.
+                $successcount++;
+
+                $metadatarecord->duration = $filemetadata['data']['duration'];
+                $metadatarecord->bitrate = $filemetadata['data']['bitrate'];
+                $metadatarecord->videostreams = $filemetadata['data']['totalvideostreams'];
+                $metadatarecord->audiostreams = $filemetadata['data']['totalaudiostreams'];
+                $metadatarecord->metadata = json_encode($filemetadata['data']);
+
+                // Get width and height from primary video stream if we have one.
+                if ($filemetadata['data']['totalvideostreams'] > 0) {
+                    $metadatarecord->width = $filemetadata['data']['videostreams'][0]['width'];
+                    $metadatarecord->height = $filemetadata['data']['videostreams'][0]['height'];
+                }
+
+                $metadatarecords[] = $metadatarecord;
+            } else {
+                $failcount++;
+                $failhashses[] = $filehash->pathnamehash; // Record the failed hashes for logging.
+            }
+
+            // Insert records into database;
+            if (!empty($metadatarecords)) {
+                $DB->insert_records('local_smartmedia_data', $metadatarecords);
+            }
+
+            $results = array(
+                'successcount' => $successcount,
+                'failcount' => $failcount,
+                'failedhashes' => $failhashses
+            );
+
+            return $results;
+        }
+    }
 
     /**
      * Do the job.
@@ -157,12 +226,15 @@ class extract_metadata extends scheduled_task {
         mtrace('local_smartmedia: Processing media file metadata');
 
         $startfileid = $this->get_start_id(); // Get highest file ID from the metadata table.
+        $filehashes = $this->get_files_to_process();  // Select a stack of files.
+        $processresults = $this->process_files($filehashes); // Process the metadata for the selected files.
 
-        // Select a stack of files higher than that id.
-        $filehashes = $this->get_files_to_process();
-        $fs = get_file_storage();
-
-        // Process the metadata for the selected files.
+        // Output processing results;
+        mtrace('local_smartmedia: Number files successfully processed: ' . $processresults['successcount']);
+        mtrace('local_smartmedia: Number files with process failures: ' . $processresults['failcount']);
+        foreach ($processresults['failedhashes'] as $failedhash) {
+            mtrace('local_smartmedia: Failed to process file with hash: ' . $failedhash);
+        }
 
         // Remove files from metadata table, this is likely to be a nasty join.
 

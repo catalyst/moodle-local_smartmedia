@@ -28,12 +28,24 @@ defined('MOODLE_INTERNAL') || die();
 
 class local_smartmedia_tasks_testcase extends advanced_testcase {
 
+    public function setUp() {
+        $this->resetAfterTest();
+
+        // Allow setting of FFProbe via Env Var or define
+        // to cater for mulitiple test setups.
+        $pathtoffprobe = getenv('TEST_LOCAL_SMARTMEDIA_FFPROBE');
+
+        if (!$pathtoffprobe && defined('TEST_LOCAL_SMARTMEDIA_FFPROBE')) {
+            $pathtoffprobe = TEST_LOCAL_SMARTMEDIA_FFPROBE;
+        }
+
+        set_config('pathtoffprobe', (string)$pathtoffprobe, 'local_smartmedia');
+    }
+
     /**
      * Test getting start file id.
      */
     public function test_get_start_id() {
-        $this->resetAfterTest(true);
-
         $task = new \local_smartmedia\task\extract_metadata();
 
         // We're testing a private method, so we need to setup reflector magic.
@@ -54,8 +66,6 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
      * Test getting supported mime types.
      */
     public function test_get_supported_mime_types() {
-        $this->resetAfterTest(true);
-
         $task = new \local_smartmedia\task\extract_metadata();
 
         // We're testing a private method, so we need to setup reflector magic.
@@ -73,7 +83,6 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
      * Test get files to process method.
      */
     public function test_get_files_to_process() {
-        $this->resetAfterTest(true);
         global $DB;
 
         // Create some test files.
@@ -132,6 +141,49 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
         $this->assertArrayHasKey($file2->get_pathnamehash(), $proxy);
         $this->assertArrayHasKey($file3->get_pathnamehash(), $proxy);
 
+    }
+
+    /**
+     * Test get files to process method.
+     */
+    public function test_process_files() {
+        global $CFG, $DB;
+
+        // Skip if no valid FFProbe executable.
+        if(get_config('local_smartmedia', 'pathtoffprobe') == '') {
+            $this->markTestSkipped('Test skipped as no valid FFProbe executable set');
+        }
+
+        // Setup for testing.
+        $fs = new file_storage();
+        $filerecord = array(
+            'contextid' =>  1461,
+            'component' => 'mod_label',
+            'filearea' => 'intro',
+            'itemid' => 0,
+            'filepath' => '/',
+            'filename' => 'SampleVideo1mb.mp4');
+        $pathname = $CFG->dirroot . '/local/smartmedia/tests/fixtures/SampleVideo1mb.mp4';
+
+        $file = $fs->create_file_from_pathname($filerecord, $pathname);
+        $fileobject = new \stdClass();
+        $fileobject->pathnamehash = $file->get_pathnamehash();
+        $filehashes = array(
+            $file->get_pathnamehash() => $fileobject
+        );
+
+        $task = new \local_smartmedia\task\extract_metadata();
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'process_files');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $proxy = $method->invoke($task, $filehashes); // Get result of invoked method.
+
+        $this->assertEquals(1, $proxy['successcount']);
+        $this->assertEquals(0, $proxy['failcount']);
+
+        $metadatarecord = $DB->get_record('local_smartmedia_data', array('contenthash' => $file->get_contenthash()));
+        $this->assertEquals(1280, $metadatarecord->width);
     }
 
 }
