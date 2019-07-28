@@ -102,7 +102,7 @@ class extract_metadata extends scheduled_task {
 
         $startfileid = get_config('local_smartmedia', 'startfileid');
 
-        if(!$startfileid) {
+        if (!$startfileid) {
             $startfileid = 0;
             set_config('startfileid', 0, 'local_smartmedia');
         }
@@ -224,7 +224,7 @@ class extract_metadata extends scheduled_task {
                 $failhashses[] = $filehash->pathnamehash; // Record the failed hashes for logging.
             }
 
-            // Insert records into database;
+            // Insert records into database.
             if (!empty($metadatarecords)) {
                 $DB->insert_records('local_smartmedia_data', $metadatarecords);
             }
@@ -264,7 +264,7 @@ class extract_metadata extends scheduled_task {
         $filehashes = $this->get_files_to_process();  // Select a stack of files.
         $processresults = $this->process_files($filehashes); // Process the metadata for the selected files.
 
-        // Output processing results;
+        // Output processing results.
         mtrace('local_smartmedia: Number files successfully processed: ' . $processresults['successcount']);
         mtrace('local_smartmedia: Number files with process failures: ' . $processresults['failcount']);
         foreach ($processresults['failedhashes'] as $failedhash) {
@@ -274,13 +274,13 @@ class extract_metadata extends scheduled_task {
         // Remove files from metadata table.
         mtrace('local_smartmedia: Cleaning metadata table');
         $toremove = $this->get_files_to_remove();
-        if(!empty($toremove)) {
+        if (!empty($toremove)) {
             mtrace('local_smartmedia: Count of metadata records to remove: ' . count($toremove));
             $this->remove_metadata_records($toremove);
         }
 
         // Update the start ID ready for next processing run.
-        if(!empty($processresults)) {
+        if (!empty($processresults)) {
             $endresult = array_pop($processresults);
             $endid = $endresult->id;
             set_config('startfileid', $endid, 'local_smartmedia');

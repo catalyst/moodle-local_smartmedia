@@ -41,7 +41,7 @@ class ffprobe {
         $this->ffprobe_path = get_config('local_smartmedia', 'pathtoffprobe');
 
         // Explode if we don't have a valid path to FFProbe.
-        if(!file_exists($this->ffprobe_path) || is_dir($this->ffprobe_path) || !file_is_executable($this->ffprobe_path)) {
+        if (!file_exists($this->ffprobe_path) || is_dir($this->ffprobe_path) || !file_is_executable($this->ffprobe_path)) {
             throw new \moodle_exception('ffprobe:invalidpath', 'local_smartmedia', '');
         }
     }
@@ -61,11 +61,11 @@ class ffprobe {
         );
 
         // Format data.
-        $formatname = $resultobject->format->format_name; // Format name, e.g. "mov,mp4,m4a,3gp,3g2,mj2"
-        $formatlingname = $resultobject->format->format_long_name; // Format long name, e.g. "QuickTime / MOV"
-        $duration = $resultobject->format->duration; // Duration in decimal seconds, e.g. "5.312"
-        $bitrate = $resultobject->format->bit_rate; // Encoded bitrate, e.g. "1589963"
-        $probescore = $resultobject->format->probe_score; // Confidence of metadata extracted, e.g. "100"
+        $formatname = $resultobject->format->format_name; // Format name, e.g. "mov,mp4,m4a,3gp,3g2,mj2".
+        $formatlingname = $resultobject->format->format_long_name; // Format long name, e.g. "QuickTime / MOV".
+        $duration = $resultobject->format->duration; // Duration in decimal seconds, e.g. "5.312".
+        $bitrate = $resultobject->format->bit_rate; // Encoded bitrate, e.g. "1589963".
+        $probescore = $resultobject->format->probe_score; // Confidence of metadata extracted, e.g. "100".
 
         // Stream data.
         // Files can have multiple streams, not just one audo and one video.
@@ -76,8 +76,8 @@ class ffprobe {
         $metadata['data']['audiostreams'] = array();
 
         // Grab data from the available streams.
-        foreach($resultobject->streams as $stream) {
-            if($stream->codec_type == 'video'){
+        foreach ($resultobject->streams as $stream) {
+            if ($stream->codec_type == 'video') {
                 $totalvideostreams++;
                 $metadata['data']['videostreams'][] = array(
                     'codecname' => $stream->codec_name,
@@ -89,7 +89,7 @@ class ffprobe {
                 );
             }
 
-            if($stream->codec_type == 'audio'){
+            if ($stream->codec_type == 'audio') {
                 $totalaudiostreams++;
                 $metadata['data']['audiostreams'][] = array(
                     'codecname' => $stream->codec_name,
@@ -140,13 +140,13 @@ class ffprobe {
         $rawresults = shell_exec($command);
         unlink($tempfile); // Remove temp file.
 
-        if($rawresults) {
+        if ($rawresults) {
             $resultobject = json_decode($rawresults);
         } else {
             return $metadata;  // Return early if we couldn't get any data from FFProbe.
         }
 
-        if($resultobject) {
+        if ($resultobject) {
             $metadata = $this->decode_ffprobe_json($resultobject);
         } else {
             $metadata['reason'] = 'JSON Decoding failed';

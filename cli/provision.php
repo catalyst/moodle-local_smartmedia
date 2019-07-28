@@ -143,7 +143,7 @@ if ($createstackresponse->code != 0 ) {
 // Get Lmbda ARN.
 $lambdaresourcesrn = $createstackresponse->outputs['LambdaTranscodeResourceFunction'];
 
-//Print Summary
+// Print Summary.
 echo get_string('provision:lambdaresourcearn', 'local_smartmedia', $lambdaresourcesrn) . PHP_EOL;
 
 // Create Lambda function, IAM roles and the rest of the stack.
@@ -174,14 +174,14 @@ if ($createstackresponse->code != 0 ) {
 
 $envvararray = array(
     array(
-        'function'=>$createstackresponse->outputs['TranscodeLambdaArn'],
-        'values'=>array('PipelineId' => $createstackresponse->outputs['TranscodePipelineId'])
+        'function' => $createstackresponse->outputs['TranscodeLambdaArn'],
+        'values' => array('PipelineId' => $createstackresponse->outputs['TranscodePipelineId'])
     ),
     array(
-        'function'=>$createstackresponse->outputs['RekognitionCompleteLambdaArn'],
-        'values'=>array(
-            'SnsTopicRekognitionComplete'=>$createstackresponse->outputs['SnsTopicRekognitionCompleteArn'],
-            'OutputBucket'=>$createstackresponse->outputs['OutputBucket']
+        'function' => $createstackresponse->outputs['RekognitionCompleteLambdaArn'],
+        'values' => array(
+            'SnsTopicRekognitionComplete' => $createstackresponse->outputs['SnsTopicRekognitionCompleteArn'],
+            'OutputBucket' => $createstackresponse->outputs['OutputBucket']
         )
     )
 );
@@ -200,20 +200,15 @@ foreach ($envvararray as $envvars) {
 
 // Print summary.
 cli_heading(get_string('provision:stack', 'local_smartmedia'));
-echo get_string('provision:s3useraccesskey', 'local_smartmedia', $createstackresponse->outputs['SmartMediaS3UserAccessKey']) . PHP_EOL;
-echo get_string('provision:s3usersecretkey', 'local_smartmedia', $createstackresponse->outputs['SmartMediaS3UserSecretKey']) . PHP_EOL;
+echo get_string(
+    'provision:s3useraccesskey',
+    'local_smartmedia',
+    $createstackresponse->outputs['SmartMediaS3UserAccessKey']) . PHP_EOL;
+echo get_string(
+    'provision:s3usersecretkey',
+    'local_smartmedia',
+    $createstackresponse->outputs['SmartMediaS3UserSecretKey']) . PHP_EOL;
 echo get_string('provision:inputbucket', 'local_smartmedia', $createstackresponse->outputs['InputBucket']) . PHP_EOL;
 echo get_string('provision:outputbucket', 'local_smartmedia', $createstackresponse->outputs['OutputBucket']) . PHP_EOL;
-
-// Set config.
-if ($options['set-config']) {
-//     cli_heading(get_string('provision:setconfig', 'local_smartmedia'));
-//     set_config('api_key', $createstackresponse->S3UserAccessKey, 'local_smartmedia');
-//     set_config('api_secret', $createstackresponse->S3UserSecretKey, 'local_smartmedia');
-//     set_config('s3_input_bucket', $createstackresponse->InputBucket, 'local_smartmedia');
-//     set_config('s3_output_bucket', $createstackresponse->OutputBucket, 'local_smartmedia');
-//     set_config('api_region', $options['region'], 'local_smartmedia');
-//     purge_all_caches();  // Purge caches to ensure UI updates with new settings.
-}
 
 exit(0); // 0 means success.

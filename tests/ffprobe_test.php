@@ -24,9 +24,20 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-
+/**
+ * Unit tesst for local_smartmedia ffprobe class.
+ *
+ * @package    local_smartmedia
+ * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class local_smartmedia_ffprobe_testcase extends advanced_testcase {
 
+    /**
+     * Mock FFProbe return data.
+     *
+     * @var string
+     */
     protected $ffprobedata = '{
     "streams": [
         {
@@ -165,18 +176,18 @@ class local_smartmedia_ffprobe_testcase extends advanced_testcase {
     /**
      * Test get media metadata method.
      */
-    function test_get_media_metadata() {
+    public function test_get_media_metadata() {
         global $CFG;
 
         // Skip if no valid FFProbe executable.
-        if(get_config('local_smartmedia', 'pathtoffprobe') == '') {
+        if (get_config('local_smartmedia', 'pathtoffprobe') == '') {
             $this->markTestSkipped('Test skipped as no valid FFProbe executable set');
         }
 
         // Setup for testing.
         $fs = new file_storage();
         $filerecord = array(
-            'contextid' =>  1461,
+            'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 0,
@@ -195,7 +206,7 @@ class local_smartmedia_ffprobe_testcase extends advanced_testcase {
     /**
      * Test decoding FFProbe results.
      */
-    function test_decode_ffprobe_json() {
+    public function test_decode_ffprobe_json() {
         // Disable the class contructor for this test.
         $builder = $this->getMockBuilder('\local_smartmedia\ffprobe');
         $builder->disableOriginalConstructor();

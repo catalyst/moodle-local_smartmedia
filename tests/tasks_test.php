@@ -17,15 +17,20 @@
 /**
  * Unit tesst for local_smartmedia convserion class.
  *
- * @package    local
- * @subpackage smartmedia
+ * @package    local_smartmedia
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-
+/**
+ * Unit tesst for local_smartmedia convserion class.
+ *
+ * @package    local_smartmedia
+ * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class local_smartmedia_tasks_testcase extends advanced_testcase {
 
     public function setUp() {
@@ -89,7 +94,7 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
         $fs = get_file_storage();
 
         $filerecord1 = array(
-            'contextid' =>  1461,
+            'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 0,
@@ -97,7 +102,7 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
             'filename' => 'video1.mp4');
 
         $filerecord2 = array(
-            'contextid' =>  1461,
+            'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 1,
@@ -105,14 +110,14 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
             'filename' => 'video2.mp4');
 
         $filerecord3 = array(
-            'contextid' =>  1461,
+            'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 2,
             'filepath' => '/',
             'filename' => 'video3.mp4');
 
-        //  For this test it doesn't actually matter these are not real multimedia files.
+        // For this test it doesn't actually matter these are not real multimedia files.
         $file1 = $fs->create_file_from_string($filerecord1, 'I am the first video.');
         $file2 = $fs->create_file_from_string($filerecord2, 'I am the second video.');
         $file3 = $fs->create_file_from_string($filerecord3, 'I am the third video.');
@@ -150,14 +155,14 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
         global $CFG, $DB;
 
         // Skip if no valid FFProbe executable.
-        if(get_config('local_smartmedia', 'pathtoffprobe') == '') {
+        if (get_config('local_smartmedia', 'pathtoffprobe') == '') {
             $this->markTestSkipped('Test skipped as no valid FFProbe executable set');
         }
 
         // Setup for testing.
         $fs = new file_storage();
         $filerecord = array(
-            'contextid' =>  1461,
+            'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 0,

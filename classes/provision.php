@@ -184,8 +184,8 @@ class provision {
     /**
      * Creates a S3 bucket in AWS.
      *
-     * @param string $suffix The bucket suffix to use.
-     *
+     * @param string $bucketname The name of the bucket to create.
+     * @return \stdClass $result The result from the bucket creation.
      */
     public function create_bucket($bucketname) {
         $result = new \stdClass();
@@ -465,7 +465,7 @@ class provision {
                 'Environment' => [
                     'Variables' => $lambdaenvvars,
                 ],
-                'FunctionName' => $function, // REQUIRED
+                'FunctionName' => $function, // REQUIRED.
             ]);
             $result->message = 'Environment variables updated';
         } catch (LambdaException $e) {

@@ -80,7 +80,7 @@ class conversion {
      * Create the smart media conversion record.
      * These records will be processed by a scheduled task.
      *
-     * @param string pathnamehash The pathname hash of the reference file.
+     * @param string $pathnamehash The pathname hash of the reference file.
      */
     private function create_conversion(string $pathnamehash) : void {
         global $DB;
@@ -99,7 +99,7 @@ class conversion {
         } catch (\dml_write_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,
             // so re-throw the error.
-            if(!strpos($e->getMessage(), 'locasmarconv_pat_uix')){
+            if (!strpos($e->getMessage(), 'locasmarconv_pat_uix')) {
                 throw $e;
             }
         }
@@ -132,22 +132,20 @@ class conversion {
      * @param \moodle_url $href Plugin file url to extract from.
      * @return string $pathnamehash The pathname hash of the file.
      */
-    /**
-     */
     private function get_pathnamehash(\moodle_url $href) : string {
         // Extract the elements we need from the Moodle URL.
         $argumentsstring = $href->get_path(true);
         $rawarguments = explode('/', $argumentsstring);
         $pluginfileposition = array_search('pluginfile.php', $rawarguments);
-        $hrefarguments = array_slice($rawarguments, ($pluginfileposition+1));
+        $hrefarguments = array_slice($rawarguments, ($pluginfileposition + 1));
         $argumentcount = count($hrefarguments);
 
         $contextid = $hrefarguments[0];
         $component = clean_param($hrefarguments[1], PARAM_COMPONENT);
         $filearea = clean_param($hrefarguments[2], PARAM_AREA);
-        $filename = $hrefarguments[($argumentcount -1)];
+        $filename = $hrefarguments[($argumentcount - 1)];
 
-        // Sensible defaults for item id and filepath
+        // Sensible defaults for item id and filepath.
         $itemid = 0;
         $filepath = '/';
 
@@ -156,14 +154,14 @@ class conversion {
             $itemid = (int)$hrefarguments[3];
         }
 
-        //  Handle complex file paths in href.
+        // Handle complex file paths in href.
         if ($argumentcount > 5 ) {
             $filepatharray = array_slice($hrefarguments, 4, -1);
             $filepath = '/' . implode('/', $filepatharray) . '/';
         }
 
         // Use the information we have extracted to get the pathname hash.
-        $fs = new \file_storage();  // TDO refactor to use get_file storage.
+        $fs = get_file_storage();
         $file = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
         $pathnamehash = $file->get_pathnamehash();
 
@@ -171,9 +169,10 @@ class conversion {
     }
 
     /**
+     * Get smart media for file.
      *
      * @param \moodle_url $href
-     * @param boolean $triggerconversion
+     * @param bool $triggerconversion
      * @return array
      */
     public function get_smart_media(\moodle_url $href, bool $triggerconversion = false) : array {
@@ -186,7 +185,7 @@ class conversion {
         $conversionstatus = $this->get_conversion_status($pathnamehash);
 
         // If no record in table and trigger conversion is true add record.
-        if($triggerconversion && $conversionstatus == self::CONVERSION_NOT_FOUND) {
+        if ($triggerconversion && $conversionstatus == self::CONVERSION_NOT_FOUND) {
             $this->create_conversion($pathnamehash);
         }
 
@@ -195,17 +194,20 @@ class conversion {
         // TODO: Cache the result for a very long time as once processing is finished it will never change
         // and when processing is finished we will explictly clear the cache.
 
-
         return $smartmedia;
-
 
     }
 
-
+    /**
+     * Send file for processing.
+     */
     private function send_file_for_processing() : void {
 
     }
 
+    /**
+     * Process pending conversions.
+     */
     public function process_conversions() : void {
         // Get not yet started conversion records.
         // Itterate through not yet started records.
@@ -213,7 +215,7 @@ class conversion {
 
         // Get pending conversion records.
         // Itterate through pending records.
-        // Check AWS for the completion status
+        // Check AWS for the completion status.
     }
 
 }

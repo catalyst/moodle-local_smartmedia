@@ -17,7 +17,7 @@
 /**
  * This command line script will test a provisioned Librelambda environment in AWS.
  *
- * @package     fileconverter_librelambda
+ * @package     local_smartmedia
  * @copyright   2018 Matt Porritt <mattp@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

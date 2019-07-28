@@ -17,27 +17,32 @@
 /**
  * Unit tesst for local_smartmedia convserion class.
  *
- * @package    local
- * @subpackage smartmedia
+ * @package    local_smartmedia
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-
+/**
+ * Unit tesst for local_smartmedia convserion class.
+ *
+ * @package    local_smartmedia
+ * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 class local_smartmedia_conversion_testcase extends advanced_testcase {
 
     /**
-     *
+     * Test getting smart media.
      */
-    function test_get_smart_media() {
+    public function test_get_smart_media() {
         $this->resetAfterTest(true);
 
         // Setup for testing.
         $fs = new file_storage();
         $filerecord = array(
-            'contextid' =>  31,
+            'contextid' => 31,
             'component' => 'mod_forum',
             'filearea' => 'attachment',
             'itemid' => 2,
@@ -51,22 +56,20 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             $filerecord['itemid'], $filerecord['filepath'], $filerecord['filename']);
 
         $conversion = new \local_smartmedia\conversion();
-      //  $smartmedia = $conversion->get_smart_media($href, false);
 
-        //$this->assertEquals(1, $proxy);
+        // TODO: fix this test and add an assertion.
     }
 
     /**
      * Test argument extraction from various plugin types.
      */
-    function test_get_pathnamehash() {
+    public function test_get_pathnamehash() {
         $this->resetAfterTest(true);
-        #http://moodle.local/pluginfile.php/1461/mod_label/intro/SampleVideo1mb.mp4
 
         // Setup the files for testing.
         $fs = new file_storage();
         $filerecord1 = array(
-            'contextid' =>  31,
+            'contextid' => 31,
             'component' => 'mod_forum',
             'filearea' => 'attachment',
             'itemid' => 0,
@@ -80,7 +83,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             null, $filerecord1['filepath'], $filerecord1['filename']);
 
         $filerecord2 = array(
-            'contextid' =>  1386, // ID of context
+            'contextid' => 1386,
             'component' => 'mod_folder',
             'filearea' => 'content',
             'itemid' => 2,
@@ -94,7 +97,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             $filerecord2['itemid'], $filerecord2['filepath'], $filerecord2['filename']);
 
         $filerecord3 = array(
-            'contextid' =>  1386, // ID of context
+            'contextid' => 1386,
             'component' => 'mod_folder',
             'filearea' => 'content',
             'itemid' => 45,
@@ -107,7 +110,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             $filerecord3['contextid'], $filerecord3['component'], $filerecord3['filearea'],
             $filerecord3['itemid'], $filerecord3['filepath'], $filerecord3['filename']);
 
-        // Instansiate new conversion class
+        // Instansiate new conversion class.
         $conversion = new \local_smartmedia\conversion();
 
         // We're testing a private method, so we need to setup reflector magic.
@@ -128,7 +131,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      * Test method that gets conversion status when there is no existing
      * conversion record in the database.
      */
-    function test_get_conversion_status_no_record() {
+    public function test_get_conversion_status_no_record() {
         $this->resetAfterTest(true);
         $conversion = new \local_smartmedia\conversion();
 
@@ -146,7 +149,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     /**
      * Test that initial conversion records are successfully created.
      */
-    function test_create_conversion() {
+    public function test_create_conversion() {
         $this->resetAfterTest(true);
         global $DB;
 
@@ -157,7 +160,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'create_conversion');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $pathnamehash);
-        $result = $method->invoke($conversion, $pathnamehash);  // Invoke twice to check error handling
+        $result = $method->invoke($conversion, $pathnamehash);  // Invoke twice to check error handling.
 
         $result = $DB->record_exists('local_smartmedia_conv', array('pathnamehash' => '7eaaf63136bfcfe8be4978e72bdbad68453dbd72'));
 
