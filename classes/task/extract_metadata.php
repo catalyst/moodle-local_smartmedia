@@ -240,6 +240,19 @@ class extract_metadata extends scheduled_task {
     }
 
     /**
+     * Remove records from metadata table that no longer have corresponding
+     * records in the Moodle file table.
+     *
+     * @param array $toremove
+     */
+    private function remove_metadata_records(array $toremove) : void {
+        global $DB;
+
+        $removelist = array_keys($toremove);
+        $DB->delete_records_list('local_smartmedia_data', 'contenthash', $removelist);
+    }
+
+    /**
      * Do the job.
      * Throw exceptions on errors (the job will be retried).
      */
@@ -261,8 +274,17 @@ class extract_metadata extends scheduled_task {
         // Remove files from metadata table.
         mtrace('local_smartmedia: Cleaning metadata table');
         $toremove = $this->get_files_to_remove();
+        if(!empty($toremove)) {
+            mtrace('local_smartmedia: Count of metadata records to remove: ' . count($toremove));
+            $this->remove_metadata_records($toremove);
+        }
 
         // Update the start ID ready for next processing run.
+        if(!empty($processresults)) {
+            $endresult = array_pop($processresults);
+            $endid = $endresult->id;
+            set_config('startfileid', $endid, 'local_smartmedia');
+        }
 
     }
 

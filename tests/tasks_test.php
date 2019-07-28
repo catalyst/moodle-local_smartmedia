@@ -216,4 +216,42 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
         $this->assertEquals($metadatarecord->contenthash, $proxy[$contenthash]->contenthash);
     }
 
+    /**
+     * Test removing metadata entries.
+     */
+    public function test_remove_metadata_records() {
+        global $DB;
+        $contenthash = 'aaaaaaaaaaaaaaaa3255bfef95601890afd80709';
+
+        // Create an existing file metadata record.
+        $metadatarecord = new \stdClass();
+        $metadatarecord->contenthash = $contenthash;
+        $metadatarecord->duration = 3.123;
+        $metadatarecord->bitrate = 1000;
+        $metadatarecord->videostreams = 1;
+        $metadatarecord->audiostreams = 1;
+        $metadatarecord->width = 1920;
+        $metadatarecord->height = 1080;
+        $metadatarecord->metadata = '{}';
+
+        $DB->insert_record('local_smartmedia_data', $metadatarecord);
+
+        $task = new \local_smartmedia\task\extract_metadata();
+
+        $metaobj = new \stdClass();
+        $metaobj->contenthash = 'aaaaaaaaaaaaaaaa3255bfef95601890afd80709';
+        $toremove = array(
+            'aaaaaaaaaaaaaaaa3255bfef95601890afd80709' => $metaobj
+        );
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'remove_metadata_records');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $proxy = $method->invoke($task, $toremove); // Get result of invoked method.
+
+        $result = $DB->record_exists('local_smartmedia_data', array('contenthash' => 'aaaaaaaaaaaaaaaa3255bfef95601890afd80709'));
+
+        $this->assertFalse($result);
+    }
+
 }
