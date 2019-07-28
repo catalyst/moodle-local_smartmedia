@@ -135,7 +135,7 @@ class extract_metadata extends scheduled_task {
             $limit
         );
 
-        $sql = "SELECT f.pathnamehash, f.contenthash
+        $sql = "SELECT f.id, f.pathnamehash, f.contenthash
                   FROM {files} f
              LEFT JOIN {local_smartmedia_data} lsd ON f.contenthash = lsd.contenthash
                  WHERE mimetype IN ($mimetypes)
@@ -145,6 +145,28 @@ class extract_metadata extends scheduled_task {
         $filehashes = $DB->get_records_sql($sql, $params);
 
         return $filehashes;
+    }
+
+    /**
+     * Get contenthashes to remove from the smartmedia data table
+     * as the corresponding records have been removed from the
+     * file table.
+     *
+     * @return array $deletehashes The hashes to remove.
+     */
+    private function get_files_to_remove() : array {
+        global $DB;
+
+        // Danger! Joins on file table.
+        $sql = "SELECT lsd.contenthash
+                  FROM {files} f
+            RIGHT JOIN {local_smartmedia_data} lsd ON f.contenthash = lsd.contenthash
+                 WHERE f.contenthash IS NULL";
+
+        $deletehashes = $DB->get_records_sql($sql);
+
+        return $deletehashes;
+
     }
 
     /**
@@ -236,8 +258,11 @@ class extract_metadata extends scheduled_task {
             mtrace('local_smartmedia: Failed to process file with hash: ' . $failedhash);
         }
 
-        // Remove files from metadata table, this is likely to be a nasty join.
+        // Remove files from metadata table.
+        mtrace('local_smartmedia: Cleaning metadata table');
+        $toremove = $this->get_files_to_remove();
 
+        // Update the start ID ready for next processing run.
 
     }
 

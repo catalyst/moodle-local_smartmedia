@@ -137,9 +137,9 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $proxy = $method->invoke($task); // Get result of invoked method.
 
-        $this->assertArrayNotHasKey($file1->get_pathnamehash(), $proxy);
-        $this->assertArrayHasKey($file2->get_pathnamehash(), $proxy);
-        $this->assertArrayHasKey($file3->get_pathnamehash(), $proxy);
+        $this->assertArrayNotHasKey($file1->get_id(), $proxy);
+        $this->assertArrayHasKey($file2->get_id(), $proxy);
+        $this->assertArrayHasKey($file3->get_id(), $proxy);
 
     }
 
@@ -184,6 +184,36 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
 
         $metadatarecord = $DB->get_record('local_smartmedia_data', array('contenthash' => $file->get_contenthash()));
         $this->assertEquals(1280, $metadatarecord->width);
+    }
+
+    /**
+     * Test getting metadata entries to remove.
+     */
+    public function test_get_files_to_remove() {
+        global $DB;
+        $contenthash = 'aaaaaaaaaaaaaaaa3255bfef95601890afd80709';
+
+        // Create an existing file metadata record.
+        $metadatarecord = new \stdClass();
+        $metadatarecord->contenthash = $contenthash;
+        $metadatarecord->duration = 3.123;
+        $metadatarecord->bitrate = 1000;
+        $metadatarecord->videostreams = 1;
+        $metadatarecord->audiostreams = 1;
+        $metadatarecord->width = 1920;
+        $metadatarecord->height = 1080;
+        $metadatarecord->metadata = '{}';
+
+        $DB->insert_record('local_smartmedia_data', $metadatarecord);
+
+        $task = new \local_smartmedia\task\extract_metadata();
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'get_files_to_remove');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $proxy = $method->invoke($task); // Get result of invoked method.
+
+        $this->assertEquals($metadatarecord->contenthash, $proxy[$contenthash]->contenthash);
     }
 
 }
