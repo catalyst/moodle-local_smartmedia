@@ -81,6 +81,39 @@ if ($hassiteconfig) {
             'ap-southeast-2',
             $regionoptions));
 
+    // Processing settings.
+    $settings->add(new admin_setting_heading('processingheader',
+        get_string('settings:processing:header', 'local_smartmedia'),
+        get_string('settings:processing:header_desc', 'local_smartmedia')));
+    $settings->add(new admin_setting_configtextarea('local_smartmedia/transcodepresets',
+        get_string('settings:processing:transcodepresets', 'local_smartmedia'),
+        get_string('settings:processing:transcodepresets_desc', 'local_smartmedia'), ''));
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectlabels',
+        get_string('settings:processing:detectlabels', 'local_smartmedia'),
+        get_string('settings:processing:detectlabels_desc', 'local_smartmedia'), 1));
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectmoderation',
+        get_string('settings:processing:detectmoderation', 'local_smartmedia'),
+        get_string('settings:processing:detectmoderation_desc', 'local_smartmedia'), 1));
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectfaces',
+        get_string('settings:processing:detectfaces', 'local_smartmedia'),
+        get_string('settings:processing:detectfaces_desc', 'local_smartmedia'), 1));
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectpeople',
+        get_string('settings:processing:detectpeople', 'local_smartmedia'),
+        get_string('settings:processing:detectpeople_desc', 'local_smartmedia'), 1));
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/transcribe',
+        get_string('settings:processing:transcribe', 'local_smartmedia'),
+        get_string('settings:processing:transcribe_desc', 'local_smartmedia'), 1));
+    // TODO: figure out how to disable these settings if transcribe is disabled.
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectsentiment',
+        get_string('settings:processing:detectsentiment', 'local_smartmedia'),
+        get_string('settings:processing:detectsentiment_desc', 'local_smartmedia'), 1));
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectphrases',
+        get_string('settings:processing:detectphrases', 'local_smartmedia'),
+        get_string('settings:processing:detectphrases_desc', 'local_smartmedia'), 1));
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectentities',
+        get_string('settings:processing:detectentities', 'local_smartmedia'),
+        get_string('settings:processing:detectentities_desc', 'local_smartmedia'), 1));
+
     // FFprobe settings.
     $settings->add(new admin_setting_heading('ffprobeheader',
         get_string('settings:ffprobe:header', 'local_smartmedia'),
