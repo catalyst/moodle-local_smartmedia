@@ -173,6 +173,7 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
         $file = $fs->create_file_from_pathname($filerecord, $pathname);
         $fileobject = new \stdClass();
         $fileobject->pathnamehash = $file->get_pathnamehash();
+        $fileobject->contenthash = $file->get_contenthash();
         $filehashes = array(
             $file->get_pathnamehash() => $fileobject
         );

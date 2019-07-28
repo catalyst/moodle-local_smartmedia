@@ -183,11 +183,22 @@ class extract_metadata extends scheduled_task {
         $failcount = 0;
         $metadatarecords = array();
         $failhashses = array();
+        $duplicatehashes = array();
 
         $fs = get_file_storage();
         $ffprobe = new \local_smartmedia\ffprobe();
 
         foreach ($filehashes as $filehash) {
+
+            // Check if we have already processed this content hash this run and exit early if so.
+            // We do it here instead of in the SQL query that gets the candidate hashes, because of
+            // the large ammount of entries that can be in the database.
+            if (in_array($filehash->contenthash, $duplicatehashes)) {
+                continue; // Duplicate found, skip the cycle.
+            } else {
+                $duplicatehashes[] = $filehash->contenthash;
+            }
+
             $file = $fs->get_file_by_hash($filehash->pathnamehash);
             $filemetadata = $ffprobe->get_media_metadata($file);
 
@@ -224,19 +235,20 @@ class extract_metadata extends scheduled_task {
                 $failhashses[] = $filehash->pathnamehash; // Record the failed hashes for logging.
             }
 
-            // Insert records into database.
-            if (!empty($metadatarecords)) {
-                $DB->insert_records('local_smartmedia_data', $metadatarecords);
-            }
-
-            $results = array(
-                'successcount' => $successcount,
-                'failcount' => $failcount,
-                'failedhashes' => $failhashses
-            );
-
-            return $results;
         }
+
+        // Insert records into database.
+        if (!empty($metadatarecords)) {
+            $DB->insert_records('local_smartmedia_data', $metadatarecords);
+        }
+
+        $results = array(
+            'successcount' => $successcount,
+            'failcount' => $failcount,
+            'failedhashes' => $failhashses
+        );
+
+        return $results;
     }
 
     /**
@@ -280,8 +292,8 @@ class extract_metadata extends scheduled_task {
         }
 
         // Update the start ID ready for next processing run.
-        if (!empty($processresults)) {
-            $endresult = array_pop($processresults);
+        if (!empty($filehashes)) {
+            $endresult = array_pop($filehashes);
             $endid = $endresult->id;
             set_config('startfileid', $endid, 'local_smartmedia');
         }

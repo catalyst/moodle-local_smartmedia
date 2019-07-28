@@ -85,7 +85,7 @@ if ($hassiteconfig) {
     $settings->add(new admin_setting_heading('ffprobeheader',
         get_string('settings:ffprobe:header', 'local_smartmedia'),
         get_string('settings:ffprobe:header_desc', 'local_smartmedia')));
-    $settings->add(new admin_setting_configexecutable('pathtoffprobe',
+    $settings->add(new admin_setting_configexecutable('local_smartmedia/pathtoffprobe',
         get_string('settings:ffprobe:pathtoffprobe', 'local_smartmedia'),
         get_string('settings:ffprobe:pathtoffprobe_desc', 'local_smartmedia'), '/usr/bin/ffprobe'));
 
