@@ -207,6 +207,7 @@ class extract_metadata extends scheduled_task {
             $metadatarecord->contenthash = $file->get_contenthash();
             $metadatarecord->duration = 0;
             $metadatarecord->bitrate = 0;
+            $metadatarecord->size = 0;
             $metadatarecord->videostreams = 0;
             $metadatarecord->audiostreams = 0;
             $metadatarecord->width = 0;
@@ -219,6 +220,7 @@ class extract_metadata extends scheduled_task {
 
                 $metadatarecord->duration = $filemetadata['data']['duration'];
                 $metadatarecord->bitrate = $filemetadata['data']['bitrate'];
+                $metadatarecord->size = $filemetadata['data']['size'];
                 $metadatarecord->videostreams = $filemetadata['data']['totalvideostreams'];
                 $metadatarecord->audiostreams = $filemetadata['data']['totalaudiostreams'];
                 $metadatarecord->metadata = json_encode($filemetadata['data']);

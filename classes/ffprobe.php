@@ -56,7 +56,7 @@ class ffprobe {
     private function decode_ffprobe_json($resultobject) : array {
         $metadata = array(
             'status' => 'success',
-            'reason' => 'FFProbe inspection succeded',
+            'reason' => 'FFProbe inspection succeeded',
             'data' => array()
         );
 
@@ -65,6 +65,7 @@ class ffprobe {
         $formatlingname = $resultobject->format->format_long_name; // Format long name, e.g. "QuickTime / MOV".
         $duration = $resultobject->format->duration; // Duration in decimal seconds, e.g. "5.312".
         $bitrate = $resultobject->format->bit_rate; // Encoded bitrate, e.g. "1589963".
+        $size = $resultobject->format->size; // Size in bytes, e.g. "5253880".
         $probescore = $resultobject->format->probe_score; // Confidence of metadata extracted, e.g. "100".
 
         // Stream data.
@@ -106,6 +107,7 @@ class ffprobe {
         $metadata['data']['formatlingname'] = $formatlingname;
         $metadata['data']['duration'] = $duration;
         $metadata['data']['bitrate'] = $bitrate;
+        $metadata['data']['size'] = $size;
         $metadata['data']['probescore'] = $probescore;
         $metadata['data']['totalstreams'] = $totalstreams;
         $metadata['data']['totalvideostreams'] = $totalvideostreams;
