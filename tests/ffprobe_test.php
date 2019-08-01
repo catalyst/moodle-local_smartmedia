@@ -30,6 +30,7 @@ defined('MOODLE_INTERNAL') || die();
  * @package    local_smartmedia
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      local_smartmedia
  */
 class local_smartmedia_ffprobe_testcase extends advanced_testcase {
 

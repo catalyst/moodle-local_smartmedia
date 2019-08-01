@@ -27,6 +27,7 @@
         <FIELD NAME="contenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="Moodle contenthash of the file"/>
         <FIELD NAME="duration" TYPE="number" LENGTH="10" NOTNULL="true" SEQUENCE="false" DECIMALS="3" COMMENT="The duration of the file"/>
         <FIELD NAME="bitrate" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="Total bitrate of the file"/>
+        <FIELD NAME="size" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="Total size of the file in bytes"/>
         <FIELD NAME="videostreams" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Number of video streams in file"/>
         <FIELD NAME="audiostreams" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Number of audio streams in file"/>
         <FIELD NAME="width" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Width of primary video stream if it exists"/>

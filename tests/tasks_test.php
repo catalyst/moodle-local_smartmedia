@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Unit tesst for local_smartmedia convserion class.
+ * Unit test for local_smartmedia task classes.
  *
  * @package    local_smartmedia
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
@@ -25,11 +25,12 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Unit tesst for local_smartmedia convserion class.
+ * Unit test for local_smartmedia task classes.
  *
  * @package    local_smartmedia
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      local_smartmedia
  */
 class local_smartmedia_tasks_testcase extends advanced_testcase {
 
@@ -127,6 +128,7 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
         $metadatarecord->contenthash = $file1->get_contenthash();
         $metadatarecord->duration = 3.123;
         $metadatarecord->bitrate = 1000;
+        $metadatarecord->size = 390;
         $metadatarecord->videostreams = 1;
         $metadatarecord->audiostreams = 1;
         $metadatarecord->width = 1920;
@@ -204,6 +206,7 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
         $metadatarecord->contenthash = $contenthash;
         $metadatarecord->duration = 3.123;
         $metadatarecord->bitrate = 1000;
+        $metadatarecord->size = 390;
         $metadatarecord->videostreams = 1;
         $metadatarecord->audiostreams = 1;
         $metadatarecord->width = 1920;
@@ -234,6 +237,7 @@ class local_smartmedia_tasks_testcase extends advanced_testcase {
         $metadatarecord->contenthash = $contenthash;
         $metadatarecord->duration = 3.123;
         $metadatarecord->bitrate = 1000;
+        $metadatarecord->size = 390;
         $metadatarecord->videostreams = 1;
         $metadatarecord->audiostreams = 1;
         $metadatarecord->width = 1920;
