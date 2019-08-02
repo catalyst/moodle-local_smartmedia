@@ -48,6 +48,14 @@ Once the local/smartmedia plugin is installed, double check the installation loc
 whereis ffprobe # default /usr/bin/ffprobe
 ```
 
+## Additional Information
+The following sections provide an overview of some additional topics for this plugin and it's associated AWS architecture.
+
+### Conversion Architecture
+The below image shows the high level architecture the plugin provisioning process sets up in AWS.
+
+![Conversion Architecture](/pix/SmartMediaAWSArch.png?raw=true)
+
 ## License ##
 
 2019 Matt Porritt <mattp@catalyst-au.net>
