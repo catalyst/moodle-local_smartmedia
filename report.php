@@ -26,21 +26,17 @@ require_once($CFG->libdir . '/adminlib.php');
 require_once($CFG->libdir . '/tablelib.php');
 
 $page = optional_param('page', 0, PARAM_INT);
-$download = optional_param('download', '', PARAM_RAW);
+$download = optional_param('download', null, PARAM_RAW);
 $perpage = optional_param('perpage', 50, PARAM_INT);
-
-$params = new stdClass();
-$params->page = $page;
-$params->download = $download;
-$params->perpage = $perpage;
+$pricinglocation = optional_param('pricinglocation', '', PARAM_RAW);
+$baseurl = $CFG->wwwroot . "/local/smartmedia/report.php";
 
 // Calls require_login and performs permissions checks for admin pages.
 admin_externalpage_setup('local_smartmedia_report', '', null, '',
     array('pagelayout' => 'report'));
 
 $title = get_string('pluginname', 'local_smartmedia');
-
-$url = new moodle_url("/local/smartmedia/report.php");
+$url = new moodle_url($baseurl);
 
 $PAGE->set_url($url);
 $PAGE->set_context(context_system::instance());
@@ -48,8 +44,7 @@ $PAGE->set_title($title);
 $PAGE->set_heading($title);
 
 $output = $PAGE->get_renderer('local_smartmedia');
-echo $output->header();
-echo $output->render_report_table($params);
-echo $output->footer();
-
-
+// TODO: Replace region with setting from admin page.
+$api = new \local_smartmedia\aws_api('us-east-1');
+$pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->get_pricing_client());
+echo $output->render_report($baseurl, $pricingclient, $page, $perpage, $download, $pricinglocation);
