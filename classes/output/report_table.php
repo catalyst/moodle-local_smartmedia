@@ -40,6 +40,11 @@ use renderable;
 class report_table extends table_sql implements renderable {
 
     /**
+     * The required fields from the DB for this report_table.
+     */
+    const FIELDS = 'id, duration, videostreams, audiostreams, width, height, size, metadata';
+
+    /**
      * Minimum width above which transcoding is considered HD.
      */
     const MIN_HD_WIDTH = 720;
@@ -61,7 +66,7 @@ class report_table extends table_sql implements renderable {
         $this->show_download_buttons_at(array(TABLE_P_BOTTOM));
         $this->is_downloading($params->download, 'smartmedia-report');
         $this->define_baseurl($url);
-        $this->define_columns(array('video', 'format', 'width', 'duration', 'size', 'cost'));
+        $this->define_columns(array('videostreams', 'format', 'width', 'duration', 'size', 'cost'));
         $this->define_headers(array(
             get_string('report:type', 'local_smartmedia'),
             get_string('report:format', 'local_smartmedia'),
@@ -75,14 +80,14 @@ class report_table extends table_sql implements renderable {
         $this->sortable(true);
         $this->no_sorting('format');
         $this->no_sorting('cost');
-        $this->set_sql('*', '{local_smartmedia_data}', 'TRUE');
+        $this->set_sql(self::FIELDS, '{local_smartmedia_data}', 'TRUE');
 
     }
 
     /**
-     * Get content for video column.
-     * We use video field for sorting, output is determined by 'videostreams' and
-     * 'audiostreams' fields.
+     * Get content for videostreams column.
+     * We use `videostreams` field for sorting, output is determined by `videostreams` and
+     * `audiostreams` fields.
      *
      * @param \stdClass $row
      *
@@ -90,7 +95,7 @@ class report_table extends table_sql implements renderable {
      *
      * @throws \moodle_exception
      */
-    public function col_video($row) {
+    public function col_videostreams($row) {
         if (empty($row->videostreams)) {
             if (!empty($row->audiostreams)) {
                 $format = get_string('report:typeaudio', 'local_smartmedia');
