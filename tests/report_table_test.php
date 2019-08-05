@@ -71,7 +71,7 @@ class local_smartmedia_report_table_testcase extends advanced_testcase {
 
         // Exact HD resolution width video cost is correctly calculated.
         $row->width = 720;
-        $expected = '$' . round($row->duration / 60 * self::HIGH_DEFINITION_PER_MINUTE ,4);
+        $expected = '$' . round($row->duration / 60 * self::HIGH_DEFINITION_PER_MINUTE , 4);
         $this->assertEquals($expected, $reporttable->col_cost($row));
 
         // High Definition resolution width video cost is correctly calculated.
