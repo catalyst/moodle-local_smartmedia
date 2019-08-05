@@ -26,9 +26,7 @@ namespace local_smartmedia\output;
 defined('MOODLE_INTERNAL') || die;
 
 use table_sql;
-use moodle_url;
 use renderable;
-use html_writer;
 
 /**
  * Renderable class for index page of local_smartmedia plugin.
