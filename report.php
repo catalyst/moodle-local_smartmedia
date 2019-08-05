@@ -48,9 +48,8 @@ $PAGE->set_title($title);
 $PAGE->set_heading($title);
 
 $output = $PAGE->get_renderer('local_smartmedia');
-$renderable = new \local_smartmedia\output\report_table('local_smartmedia', $PAGE->url, $params);
 echo $output->header();
-echo $output->render_report_table($renderable);
+echo $output->render_report_table($params);
 echo $output->footer();
 
 

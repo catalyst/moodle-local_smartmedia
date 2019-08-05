@@ -37,12 +37,15 @@ class renderer extends plugin_renderer_base {
     /**
      * Render the html for the report table.
      *
-     * @param \local_smartmedia\output\report_table $renderable
+     * @param \stdClass $params the parameters to be applied to table.
      *
      * @return string $output HTML for display
+     * @throws \coding_exception
      */
-    public function render_report_table($renderable) {
+    public function render_report_table($params) {
+        global $PAGE;
 
+        $renderable = new report_table('local_smartmedia', $PAGE->url, $params);
         ob_start();
         $renderable->out($renderable->pagesize, true);
         $output = ob_get_contents();
