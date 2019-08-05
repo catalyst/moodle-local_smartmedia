@@ -91,7 +91,7 @@ class report_table extends table_sql implements renderable {
 
     /**
      * Get content for videostreams column.
-     * We use `videostreams` field for sorting, output is determined by `videostreams` and
+     * We use `videostreams` field for sorting, requires `videostreams` and
      * `audiostreams` fields.
      *
      * @param \stdClass $row
@@ -116,6 +116,7 @@ class report_table extends table_sql implements renderable {
 
     /**
      * Get content for format column.
+     * Requires `metadata` field.
      *
      * @param \stdClass $row
      *
@@ -129,6 +130,7 @@ class report_table extends table_sql implements renderable {
 
     /**
      * Get content for width column.
+     * We use width for sorting purposes, requires `width` and `height` fields.
      *
      * @param \stdClass $row
      *
@@ -141,6 +143,7 @@ class report_table extends table_sql implements renderable {
 
     /**
      * Get content for duration column.
+     * Duration in seconds.
      *
      * @param \stdClass $row
      *
@@ -152,6 +155,7 @@ class report_table extends table_sql implements renderable {
 
     /**
      * Get content for size column.
+     * Size displayed in Megabytes (Mb).
      *
      * @param \stdClass $row
      *
@@ -167,6 +171,8 @@ class report_table extends table_sql implements renderable {
 
     /**
      * Get content for cost column.
+     * Calculated cost for transcoding of audio/video file.
+     * Requires `width` and `duration` fields.
      *
      * @param \stdClass $row
      *
