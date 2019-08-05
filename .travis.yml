@@ -7,11 +7,6 @@ language: php
 
 dist: bionic
 
-php:
-  - 7.3
-  - 7.2
-  - 7.1.30 # Make this sticky because current default version (7.1.11) has a bug with redis-extension output (MDL-66062)
-
 addons:
   firefox: latest
   chrome: stable
@@ -36,7 +31,7 @@ matrix:
       env: DB=pgsql    MOODLE_BRANCH=master
     - php: 7.2
       env: DB=pgsql
-    - php: 7.1.30
+    - php: 7.1
       env: DB=pgsql
 
 cache:
