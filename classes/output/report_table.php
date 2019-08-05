@@ -61,7 +61,7 @@ class report_table extends table_sql implements renderable {
         $this->show_download_buttons_at(array(TABLE_P_BOTTOM));
         $this->is_downloading($params->download, 'smartmedia-report');
         $this->define_baseurl($url);
-        $this->define_columns(array('type', 'format', 'width', 'duration', 'size', 'cost'));
+        $this->define_columns(array('video', 'format', 'width', 'duration', 'size', 'cost'));
         $this->define_headers(array(
             get_string('report:type', 'local_smartmedia'),
             get_string('report:format', 'local_smartmedia'),
@@ -73,7 +73,6 @@ class report_table extends table_sql implements renderable {
         $this->currpage = isset($params->page) ? $params->page : 0;
         $this->pagesize = isset($params->pagesize) ? $params->pagesize : 0;
         $this->sortable(true);
-        $this->no_sorting('type');
         $this->no_sorting('format');
         $this->no_sorting('cost');
         $this->set_sql('*', '{local_smartmedia_data}', 'TRUE');
@@ -81,18 +80,19 @@ class report_table extends table_sql implements renderable {
     }
 
     /**
-     * Get content for type column.
+     * Get content for video column.
+     * We use video field for sorting, output is determined by 'videostreams' and
+     * 'audiostreams' fields.
      *
      * @param \stdClass $row
      *
-     * @return string html used to display the type field.
+     * @return string html used to display the video field.
+     *
      * @throws \moodle_exception
      */
-    public function col_type($row) {
-        $metadata = json_decode($row->metadata);
-
-        if (empty($metadata->videostreams)) {
-            if (!empty($metadata->audiostreams)) {
+    public function col_video($row) {
+        if (empty($row->videostreams)) {
+            if (!empty($row->audiostreams)) {
                 $format = get_string('report:typeaudio', 'local_smartmedia');
             } else {
                 // We should never get here unless there has been an error with ffprobe when running scheduled task.
