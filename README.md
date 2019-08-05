@@ -7,7 +7,7 @@ Smart media leverages cloud services provided through Amazon Web Services (AWS) 
 ## Installation ##
 
 1. Install dependency plugin local/aws. See [local/aws](##local/aws)
-2. Install dependency binary FFmpeg on your Moodle Server. See [FFmpeg](##FFmpeg)
+2. Install dependency binary FFmpeg on your Moodle server. See [FFmpeg](##FFmpeg)
 3. Clone the plugin git repo into your Moodle codebase root `git clone git@github.com:catalyst/moodle-local_smartmedia.git local/smartmedia`
 4. Update plugin settings. See [Settings](##Settings)
 
@@ -48,9 +48,17 @@ Once the local/smartmedia plugin is installed, double check the installation loc
 whereis ffprobe # default /usr/bin/ffprobe
 ```
 
+## Additional Information
+The following sections provide an overview of some additional topics for this plugin and it's associated AWS architecture.
+
+### Conversion Architecture
+The below image shows the high level architecture the plugin provisioning process sets up in AWS.
+
+![Conversion Architecture](/pix/SmartMediaAWSArch.png?raw=true)
+
 ## License ##
 
-2019 Matt Porritt <mattp@catalyst-au.net>
+2019 Catalyst IT Australia
 
 This program is free software: you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -63,3 +71,10 @@ PARTICULAR PURPOSE.  See the GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License along with
 this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+This plugin was developed by Catalyst IT Australia:
+
+https://www.catalyst-au.net/
+
+<img alt="Catalyst IT" src="https://raw.githubusercontent.com/catalyst/moodle-local_smartmedia/master/pix/catalyst-logo.png" width="400">
