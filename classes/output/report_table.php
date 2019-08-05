@@ -45,6 +45,11 @@ class report_table extends table_sql implements renderable {
     const FIELDS = 'id, duration, videostreams, audiostreams, width, height, size, metadata';
 
     /**
+     * The default WHERE clause to exclude records without at least one video or audio stream.
+     */
+    const DEFAULT_WHERE = '(videostreams > 0) OR (audiostreams > 0)';
+
+    /**
      * Minimum width above which transcoding is considered HD.
      */
     const MIN_HD_WIDTH = 720;
@@ -80,7 +85,7 @@ class report_table extends table_sql implements renderable {
         $this->sortable(true);
         $this->no_sorting('format');
         $this->no_sorting('cost');
-        $this->set_sql(self::FIELDS, '{local_smartmedia_data}', 'TRUE');
+        $this->set_sql(self::FIELDS, '{local_smartmedia_data}', self::DEFAULT_WHERE);
 
     }
 
@@ -100,8 +105,8 @@ class report_table extends table_sql implements renderable {
             if (!empty($row->audiostreams)) {
                 $format = get_string('report:typeaudio', 'local_smartmedia');
             } else {
-                // We should never get here unless there has been an error with ffprobe when running scheduled task.
-                throw new \coding_exception(get_string('report:typeerror', 'local_smartmedia', $row->id));
+                // We should never get here due to the WHERE clause excluding rows with no video or audio data.
+                throw new \coding_exception('No audio or video stream in {local_smartmedia_data} row id#' . $row->id);
             }
         } else {
             $format = get_string('report:typevideo', 'local_smartmedia');

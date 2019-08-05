@@ -51,7 +51,6 @@ $string['report:size'] = 'Size (Mb)';
 $string['report:transcodecost'] = 'Transcode Cost';
 $string['report:type'] = 'File type';
 $string['report:typeaudio'] = 'Audio';
-$string['report:typeerror'] = 'FFProbe error: Record id#{a} in {local_smartmedia_data} table has no audio or video streams';
 $string['report:typevideo'] = 'Video';
 $string['settings:aws:header'] = 'AWS settings';
 $string['settings:aws:header_desc'] = 'The settings for the AWS components used to convert media files and extract information.';
