@@ -37,4 +37,7 @@ if ($hassiteconfig) {
         get_string('settings:ffprobe:pathtoffprobe', 'local_smartmedia'),
         get_string('settings:ffprobe:pathtoffprobe_desc', 'local_smartmedia'), '/usr/bin/ffprobe'));
 
+
+    $ADMIN->add('reports', new admin_externalpage('local_smartmedia_report',
+        get_string('pluginname', 'local_smartmedia'), "$CFG->wwwroot/local/smartmedia/report.php"));
 }

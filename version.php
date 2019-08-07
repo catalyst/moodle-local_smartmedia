@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_smartmedia';
 $plugin->release = '2019072800';
-$plugin->version = 2019072800;
+$plugin->version = 2019080200;
 $plugin->requires = 2018051700;
 $plugin->maturity = MATURITY_ALPHA;
 $plugin->dependencies = array(
