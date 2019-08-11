@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/catalyst/moodle-local_smartmedia.svg?branch=master)](https://travis-ci.org/catalyst/moodle-local_smartmedia)
+
 # Smart Media #
 
 Smart media aims to enhance Moodle's processing and delivery of multimedia while simplifying the process of managing multimedia for teachers and students.
@@ -77,4 +79,4 @@ This plugin was developed by Catalyst IT Australia:
 
 https://www.catalyst-au.net/
 
-<img alt="Catalyst IT" src="https://raw.githubusercontent.com/catalyst/moodle-local_smartmedia/master/pix/catalyst-logo.png" width="400">
+<img alt="Catalyst IT" src="https://raw.githubusercontent.com/catalyst/moodle-local_smartmedia/master/pix/catalyst-logo.svg" width="400">
