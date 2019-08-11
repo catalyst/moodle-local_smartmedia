@@ -15,6 +15,7 @@ addons:
     - mysql-server-5.6
     - mysql-client-core-5.6
     - mysql-client-5.6
+    - ffmpeg
 
 services:
   - mysql
@@ -27,12 +28,13 @@ php:
 env:
  global:
   - MOODLE_BRANCH=master
+  - TEST_LOCAL_SMARTMEDIA_FFPROBE=/usr/bin/ffprobe
  matrix:
   - DB=pgsql MOODLE_BRANCH=MOODLE_37_STABLE
   - DB=mysqli MOODLE_BRANCH=MOODLE_37_STABLE
   - DB=pgsql MOODLE_BRANCH=master
   - DB=mysqli MOODLE_BRANCH=master
-  
+
 matrix:
   exclude:
     - php: 7.0
