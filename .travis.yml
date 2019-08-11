@@ -15,7 +15,6 @@ addons:
     - mysql-server-5.6
     - mysql-client-core-5.6
     - mysql-client-5.6
-    - ffmpeg
 
 services:
   - mysql
@@ -52,6 +51,8 @@ cache:
     - $HOME/.npm
 
 before_install:
+  - sudo apt-get update
+  - sudo apt-get install -y ffmpeg
   - phpenv config-rm xdebug.ini
   - nvm install 8.9
   - nvm use 8.9
