@@ -64,7 +64,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     /**
      * Test argument extraction from various plugin types.
      */
-    public function test_get_pathnamehash() {
+    public function test_get_file_from_url() {
         $this->resetAfterTest(true);
 
         // Setup the files for testing.
@@ -115,16 +115,16 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversion = new \local_smartmedia\conversion();
 
         // We're testing a private method, so we need to setup reflector magic.
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_pathnamehash');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_file_from_url');
         $method->setAccessible(true); // Allow accessing of private method.
 
         $result1 = $method->invoke($conversion, $href1); // Get result of invoked method.
         $result2 = $method->invoke($conversion, $href2); // Get result of invoked method.
         $result3 = $method->invoke($conversion, $href3); // Get result of invoked method.
 
-        $this->assertEquals($filepathnamehash1, $result1);
-        $this->assertEquals($filepathnamehash2, $result2);
-        $this->assertEquals($filepathnamehash3, $result3);
+        $this->assertEquals($filepathnamehash1, $result1->get_pathnamehash());
+        $this->assertEquals($filepathnamehash2, $result2->get_pathnamehash());
+        $this->assertEquals($filepathnamehash3, $result3->get_pathnamehash());
 
     }
 
@@ -136,12 +136,22 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         $conversion = new \local_smartmedia\conversion();
 
-        $itemhash = '7eaaf63136bfcfe8be4978e72bdbad68453dbd72';
+        // Setup for testing.
+        $fs = new file_storage();
+        $filerecord = array(
+            'contextid' => 31,
+            'component' => 'mod_forum',
+            'filearea' => 'attachment',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'myfile1.txt');
+
+        $file = $fs->create_file_from_string($filerecord, 'the first test file');
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_status');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, $itemhash);
+        $result = $method->invoke($conversion, $file);
 
         $this->assertEquals(404, $result);
 
@@ -155,15 +165,30 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         global $DB;
 
         $conversion = new \local_smartmedia\conversion();
-        $pathnamehash = '7eaaf63136bfcfe8be4978e72bdbad68453dbd72';
+
+        // Setup for testing.
+        $fs = new file_storage();
+        $filerecord = array(
+            'contextid' => 31,
+            'component' => 'mod_forum',
+            'filearea' => 'attachment',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'myfile1.txt');
+
+        $file1 = $fs->create_file_from_string($filerecord, 'the first test file');
+
+        $filerecord['itemid'] = 3;
+        $file2 = $fs->create_file_from_string($filerecord, 'the first test file');
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'create_conversion');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, $pathnamehash);
-        $result = $method->invoke($conversion, $pathnamehash);  // Invoke twice to check error handling.
+        $result = $method->invoke($conversion, $file1);
+        $result = $method->invoke($conversion, $file1);  // Invoke twice to check error handling.
+        $result = $method->invoke($conversion, $file2);  // Invoke again to check error handling.
 
-        $result = $DB->record_exists('local_smartmedia_conv', array('pathnamehash' => '7eaaf63136bfcfe8be4978e72bdbad68453dbd72'));
+        $result = $DB->record_exists('local_smartmedia_conv', array('pathnamehash' => $file1->get_pathnamehash()));
 
         $this->assertTrue($result);
 

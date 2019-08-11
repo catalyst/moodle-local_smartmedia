@@ -1,26 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/smartmedia/db" VERSION="20190727" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+<XMLDB PATH="local/smartmedia/db" VERSION="20190811" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    <TABLE NAME="local_smartmedia_conv" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions.">
-      <FIELDS>
-        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="pathnamehash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="complete file path sha1 hash - unique for each file"/>
-        <FIELD NAME="status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="100" SEQUENCE="false" COMMENT="The processing status of the record."/>
-        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when the record was created"/>
-        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when record was last modified"/>
-        <FIELD NAME="timecompleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Unix timestamp of when record processing was completed"/>
-      </FIELDS>
-      <KEYS>
-        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-      </KEYS>
-      <INDEXES>
-        <INDEX NAME="status" UNIQUE="false" FIELDS="status" COMMENT="Index for processing status"/>
-        <INDEX NAME="pathnamehash" UNIQUE="true" FIELDS="pathnamehash" COMMENT="Index for asset item hash"/>
-      </INDEXES>
-    </TABLE>
     <TABLE NAME="local_smartmedia_data" COMMENT="Contains data about Moodle multimedia files">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
@@ -35,10 +18,46 @@
         <FIELD NAME="metadata" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Full extracted metadata in json format"/>
       </FIELDS>
       <KEYS>
+        <KEY NAME="id" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="contenthash" TYPE="unique" FIELDS="contenthash"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_smartmedia_conv" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="pathnamehash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="complete file path sha1 hash - unique for each file"/>
+        <FIELD NAME="contenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="Moodle contenthash of the file"/>
+        <FIELD NAME="status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="100" SEQUENCE="false" COMMENT="The processing status of the record."/>
+        <FIELD NAME="transcribe" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include automated transcription"/>
+        <FIELD NAME="rekog_label" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include label recognition"/>
+        <FIELD NAME="rekog_moderation" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include moderation detection"/>
+        <FIELD NAME="rekog_face" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include face detection"/>
+        <FIELD NAME="rekog_person" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include person tracking"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when the record was created"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when record was last modified"/>
+        <FIELD NAME="timecompleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Unix timestamp of when record processing was completed"/>
+      </FIELDS>
+      <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="contenthash" TYPE="foreign-unique" FIELDS="contenthash" REFTABLE="local_smartmedia_data" REFFIELDS="contenthash"/>
       </KEYS>
       <INDEXES>
-        <INDEX NAME="contenthash" UNIQUE="true" FIELDS="contenthash"/>
+        <INDEX NAME="status" UNIQUE="false" FIELDS="status" COMMENT="Index for processing status"/>
+        <INDEX NAME="pathnamehash" UNIQUE="true" FIELDS="pathnamehash" COMMENT="Index for asset item hash"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_smartmedia_presets" COMMENT="The AWS Elastic Transcoder presets that were used to convert this file There is a many to one relationship with the local_smartmedia_conv table">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="convid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the corresponding record in the smartmedia conversion table"/>
+        <FIELD NAME="preset" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="convid" TYPE="foreign-unique" FIELDS="convid" REFTABLE="local_smartmedia_conv" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="preset" UNIQUE="false" FIELDS="preset"/>
       </INDEXES>
     </TABLE>
   </TABLES>

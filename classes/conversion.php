@@ -80,17 +80,27 @@ class conversion {
      * Create the smart media conversion record.
      * These records will be processed by a scheduled task.
      *
-     * @param string $pathnamehash The pathname hash of the reference file.
+     * @param \stored_file $file The file object to create the converion for.
      */
-    private function create_conversion(string $pathnamehash) : void {
+    private function create_conversion(\stored_file $file) : void {
         global $DB;
         $now = time();
 
         $record = new \stdClass();
-        $record->pathnamehash = $pathnamehash;
+        $record->pathnamehash = $file->get_pathnamehash();
+        $record->contenthash = $file->get_contenthash();
         $record->status = $this::CONVERSION_ACCEPTED;
+        // TODO: Base this on plugin settings
+        $record->transcribe = false;
+        $record->rekog_label = false;
+        $record->rekog_moderation = false;
+        $record->rekog_face = false;
+        $record->rekog_person = false;
+
         $record->timecreated = $now;
         $record->timemodified = $now;
+
+        // TODO: Add transcoding record also (as a transaction).
 
         // Race conditions mean that we could try to create a conversion record multiple times.
         // This is OK and expected, we will handle the error.
@@ -99,7 +109,7 @@ class conversion {
         } catch (\dml_write_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,
             // so re-throw the error.
-            if (!strpos($e->getMessage(), 'locasmarconv_pat_uix')) {
+            if (!strpos($e->getMessage(), 'locasmarconv_pat_uix') && !strpos($e->getMessage(), 'locasmarconv_con_uix')) {
                 throw $e;
             }
         }
@@ -108,12 +118,13 @@ class conversion {
     /**
      * Get the smart media conversion status for a given resource.
      *
-     * @param string $pathnamehash The pathname hash of the asset.
+     * @param \stored_file $file The Moodle file object of the asset.
      * @return int $status The response status to the request.
      */
-    private function get_conversion_status(string $pathnamehash) : int {
+    private function get_conversion_status(\stored_file $file) : int {
         global $DB;
 
+        $pathnamehash = $file->get_pathnamehash();
         $conditions = array('pathnamehash' => $pathnamehash);
         $status = $DB->get_field('local_smartmedia_conv', 'status', $conditions);
 
@@ -126,13 +137,13 @@ class conversion {
 
     /**
      * Given a Moodle URL check file exists in the Moodle file table
-     * and retreive the pathnamehash.
+     * and retreive the file object.
      * This requires some horrible reverse engineering.
      *
      * @param \moodle_url $href Plugin file url to extract from.
-     * @return string $pathnamehash The pathname hash of the file.
+     * @return \stored_file $file The Moodle file object.
      */
-    private function get_pathnamehash(\moodle_url $href) : string {
+    private function get_file_from_url(\moodle_url $href) : \stored_file {
         // Extract the elements we need from the Moodle URL.
         $argumentsstring = $href->get_path(true);
         $rawarguments = explode('/', $argumentsstring);
@@ -163,9 +174,8 @@ class conversion {
         // Use the information we have extracted to get the pathname hash.
         $fs = get_file_storage();
         $file = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
-        $pathnamehash = $file->get_pathnamehash();
 
-        return $pathnamehash;
+        return $file;
     }
 
     /**
@@ -179,14 +189,14 @@ class conversion {
         $smartmedia = array();
 
         // Split URL up into components.
-        $pathnamehash = $this->get_pathnamehash($href);
+        $file = $this->get_file_from_url($href);
 
         // Query conversion table for status.
-        $conversionstatus = $this->get_conversion_status($pathnamehash);
+        $conversionstatus = $this->get_conversion_status($file);
 
         // If no record in table and trigger conversion is true add record.
         if ($triggerconversion && $conversionstatus == self::CONVERSION_NOT_FOUND) {
-            $this->create_conversion($pathnamehash);
+            $this->create_conversion($file);
         }
 
         // If processing complete get all urls and data for source href.
