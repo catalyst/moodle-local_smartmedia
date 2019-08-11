@@ -79,4 +79,4 @@ This plugin was developed by Catalyst IT Australia:
 
 https://www.catalyst-au.net/
 
-<img alt="Catalyst IT" src="https://raw.githubusercontent.com/catalyst/moodle-local_smartmedia/master/pix/catalyst-logo.svg" width="400">
+<img alt="Catalyst IT" src="https://raw.githubusercontent.com/catalyst/moodle-local_smartmedia/master/pix/catalyst-logo.svg?sanitize=true" width="400">
