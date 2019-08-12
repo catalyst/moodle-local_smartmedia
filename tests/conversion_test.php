@@ -194,4 +194,43 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
     }
 
+    /**
+     * Test getting preset array from settings.
+     */
+    public function test_get_preset_ids() {
+        $this->resetAfterTest(true);
+
+        $presets = "preset1 \n preset2 \n preset3";
+        set_config('transcodepresets', $presets, 'local_smartmedia');
+
+        $conversion = new \local_smartmedia\conversion();
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_preset_ids');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion);
+
+        $this->assertCount(3, $result);
+        $this->assertEquals('preset2', $result[1]);
+    }
+
+    /**
+     * Test getting preset records.
+     */
+    public function test_get_preset_records() {
+        $this->resetAfterTest(true);
+
+        $presets = "preset1 \n preset2 \n preset3";
+        set_config('transcodepresets', $presets, 'local_smartmedia');
+
+        $conversion = new \local_smartmedia\conversion();
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_preset_records');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, 123);
+
+        $this->assertCount(3, $result);
+        $this->assertEquals('preset2', $result[1]->preset);
+    }
 }

@@ -76,6 +76,42 @@ class conversion {
         $this->config = get_config('local_smartmedia');
     }
 
+
+    /**
+     *  Get the configured transcoding presets as an array.
+     *
+     * @return array $idarray Trimmed array of transcoding presets.
+     */
+    private function get_preset_ids() : array {
+        $rawids = $this->config->transcodepresets; // Get the raw ids.
+        $untrimmedids = preg_split('/$\R?^/m', $rawids, -1, PREG_SPLIT_NO_EMPTY); // Split ids into an array of strings by newline.
+        $idarray = array_map('trim',$untrimmedids); // Remove whitespace from each id in array.
+
+        return $idarray;
+    }
+
+    /**
+     * Given a conversion id create records for each configured transcoding preset id,
+     * ready to be stored in the Moodle database.
+     *
+     * @param int $convid The conversion id to create the preset records for.
+     * @return array $presetrecords The preset records to insert into the Moodle database.
+     */
+    private function get_preset_records(int $convid) : array {
+        $presetrecords = array();
+        $presetids = $this->get_preset_ids();
+
+        foreach ($presetids as $presetid) {
+            $record = new \stdClass();
+            $record->convid = $convid;
+            $record->preset = $presetid;
+
+            $presetrecords[] = $record;
+        }
+
+        return $presetrecords;
+    }
+
     /**
      * Create the smart media conversion record.
      * These records will be processed by a scheduled task.
@@ -85,33 +121,40 @@ class conversion {
     private function create_conversion(\stored_file $file) : void {
         global $DB;
         $now = time();
+        $convid = 0;
 
-        $record = new \stdClass();
-        $record->pathnamehash = $file->get_pathnamehash();
-        $record->contenthash = $file->get_contenthash();
-        $record->status = $this::CONVERSION_ACCEPTED;
+        $convrecord = new \stdClass();
+        $convrecord->pathnamehash = $file->get_pathnamehash();
+        $convrecord->contenthash = $file->get_contenthash();
+        $convrecord->status = $this::CONVERSION_ACCEPTED;
         // TODO: Base this on plugin settings
-        $record->transcribe = false;
-        $record->rekog_label = false;
-        $record->rekog_moderation = false;
-        $record->rekog_face = false;
-        $record->rekog_person = false;
+        $convrecord->transcribe = false;
+        $convrecord->rekog_label = false;
+        $convrecord->rekog_moderation = false;
+        $convrecord->rekog_face = false;
+        $convrecord->rekog_person = false;
 
-        $record->timecreated = $now;
-        $record->timemodified = $now;
-
-        // TODO: Add transcoding record also (as a transaction).
+        $convrecord->timecreated = $now;
+        $convrecord->timemodified = $now;
 
         // Race conditions mean that we could try to create a conversion record multiple times.
         // This is OK and expected, we will handle the error.
         try {
-            $DB->insert_record('local_smartmedia_conv', $record);
+            $convid = $DB->insert_record('local_smartmedia_conv', $convrecord);
+
         } catch (\dml_write_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,
             // so re-throw the error.
             if (!strpos($e->getMessage(), 'locasmarconv_pat_uix') && !strpos($e->getMessage(), 'locasmarconv_con_uix')) {
                 throw $e;
             }
+        }
+
+        // If we have a valid conversion record from the insert, then create the presets record.
+        // With the above logic we shouldn't get race conditions here.
+        if ($convid > 0) {
+            $presetrecords = $this->get_preset_records($convid);
+            $DB->insert_records('local_smartmedia_presets', $presetrecords);
         }
     }
 
