@@ -62,6 +62,7 @@ class report_table extends table_sql implements renderable {
      *
      * @param string $uniqueid Unique id of table.
      * @param string $baseurl the base url to render this report on.
+     * @param aws_ets_pricing_client $pricingclient
      * @param int $page the page number for pagination.
      * @param int $perpage amount of records per page for pagination.
      * @param string|null $download dataformat type. One of csv, xhtml, ods, etc
@@ -71,7 +72,7 @@ class report_table extends table_sql implements renderable {
      * @throws \dml_exception if aws credentials aren't set correctly in this plugin's settings.
      * @throws \moodle_exception if there is an issue defining the baseline url.
      */
-    public function __construct($uniqueid, string $baseurl, aws_ets_pricing_client $pricingclient, int $page = 0,
+    public function __construct(string $uniqueid, string $baseurl, aws_ets_pricing_client $pricingclient, int $page = 0,
                                 int $perpage = 50, string $download = null, string $pricinglocation = null) {
         parent::__construct($uniqueid);
 
