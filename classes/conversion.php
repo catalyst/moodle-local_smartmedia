@@ -127,13 +127,14 @@ class conversion {
         $convrecord->pathnamehash = $file->get_pathnamehash();
         $convrecord->contenthash = $file->get_contenthash();
         $convrecord->status = $this::CONVERSION_ACCEPTED;
-        // TODO: Base this on plugin settings
-        $convrecord->transcribe = false;
-        $convrecord->rekog_label = false;
-        $convrecord->rekog_moderation = false;
-        $convrecord->rekog_face = false;
-        $convrecord->rekog_person = false;
-
+        $convrecord->transcribe = $this->config->transcribe;
+        $convrecord->rekog_label = $this->config->detectlabels;
+        $convrecord->rekog_moderation = $this->config->detectmoderation;
+        $convrecord->rekog_face = $this->config->detectfaces;
+        $convrecord->rekog_person = $this->config->detectpeople;
+        $convrecord->detect_sentiment = $this->config->detectsentiment;
+        $convrecord->detect_phrases = $this->config->detectphrases;
+        $convrecord->detect_entities = $this->config->detectentities;
         $convrecord->timecreated = $now;
         $convrecord->timemodified = $now;
 

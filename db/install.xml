@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/smartmedia/db" VERSION="20190811" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+<XMLDB PATH="local/smartmedia/db" VERSION="20190813" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -33,6 +33,9 @@
         <FIELD NAME="rekog_moderation" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include moderation detection"/>
         <FIELD NAME="rekog_face" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include face detection"/>
         <FIELD NAME="rekog_person" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include person tracking"/>
+        <FIELD NAME="detect_sentiment" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include sentiment detection"/>
+        <FIELD NAME="detect_phrases" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include phrase detection"/>
+        <FIELD NAME="detect_entities" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include entity detection"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when the record was created"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when record was last modified"/>
         <FIELD NAME="timecompleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Unix timestamp of when record processing was completed"/>
@@ -54,7 +57,7 @@
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
-        <KEY NAME="convid" TYPE="foreign-unique" FIELDS="convid" REFTABLE="local_smartmedia_conv" REFFIELDS="id"/>
+        <KEY NAME="convid" TYPE="foreign" FIELDS="convid" REFTABLE="local_smartmedia_conv" REFFIELDS="id"/>
       </KEYS>
       <INDEXES>
         <INDEX NAME="preset" UNIQUE="false" FIELDS="preset"/>

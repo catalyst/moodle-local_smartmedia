@@ -164,6 +164,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
+        $presets = "preset1 \n preset2 \n preset3";
+        set_config('transcodepresets', $presets, 'local_smartmedia');
+
         $conversion = new \local_smartmedia\conversion();
 
         // Setup for testing.
@@ -189,8 +192,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $result = $method->invoke($conversion, $file2);  // Invoke again to check error handling.
 
         $result = $DB->record_exists('local_smartmedia_conv', array('pathnamehash' => $file1->get_pathnamehash()));
-
         $this->assertTrue($result);
+
+        $result = $DB->count_records('local_smartmedia_presets');
+        $this->assertEquals(3, $result);
 
     }
 
