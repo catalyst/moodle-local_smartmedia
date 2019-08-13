@@ -97,3 +97,4 @@ $string['settings:processing:transcribe_desc'] = 'Attempt an automated transcrip
 $string['settings:ffprobe:pathtoffprobe'] = 'FFProbe binary path';
 $string['settings:ffprobe:pathtoffprobe_desc'] = 'The path to the FFProbe binary on the server running Moodle.';
 $string['task:extractmetadata'] = 'Smartmedia: extract multimedia file metadata.';
+$string['task:processconversions'] = 'Smartmedia: process pending conversions.';
