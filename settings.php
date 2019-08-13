@@ -29,6 +29,21 @@ if ($hassiteconfig) {
     $settings = new admin_settingpage('local_smartmedia', get_string('pluginname', 'local_smartmedia'));
     $ADMIN->add('localplugins', $settings);
 
+    // AWS Settings settings.
+    $settings->add(new admin_setting_heading('awsheader',
+        get_string('settings:aws:header', 'local_smartmedia'),
+        get_string('settings:aws:header_desc', 'local_smartmedia')));
+
+    $settings->add(new admin_setting_configtext('local_smartmedia/api_key',
+        get_string('settings:aws:key', 'local_smartmedia'),
+        get_string('settings:aws:key_help', 'local_smartmedia'),
+        ''));
+
+    $settings->add(new admin_setting_configpasswordunmask('local_smartmedia/api_secret',
+        get_string('settings:aws:secret', 'local_smartmedia'),
+        get_string('settings:aws:secret_help', 'local_smartmedia'),
+        ''));
+
     // FFprobe settings.
     $settings->add(new admin_setting_heading('ffprobeheader',
         get_string('settings:ffprobe:header', 'local_smartmedia'),
@@ -36,7 +51,6 @@ if ($hassiteconfig) {
     $settings->add(new admin_setting_configexecutable('local_smartmedia/pathtoffprobe',
         get_string('settings:ffprobe:pathtoffprobe', 'local_smartmedia'),
         get_string('settings:ffprobe:pathtoffprobe_desc', 'local_smartmedia'), '/usr/bin/ffprobe'));
-
 
     $ADMIN->add('reports', new admin_externalpage('local_smartmedia_report',
         get_string('pluginname', 'local_smartmedia'), "$CFG->wwwroot/local/smartmedia/report.php"));
