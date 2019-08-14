@@ -238,4 +238,86 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertCount(3, $result);
         $this->assertEquals('preset2', $result[1]->preset);
     }
+
+    /**
+     * Test that initial conversion records are successfully created.
+     */
+    public function test_get_conversion_records_process() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $presets = "preset1 \n preset2 \n preset3";
+        set_config('transcodepresets', $presets, 'local_smartmedia');
+
+        $conversion = new \local_smartmedia\conversion();
+
+        // Setup for testing.
+        $fs = new file_storage();
+        $filerecord = array(
+            'contextid' => 31,
+            'component' => 'mod_forum',
+            'filearea' => 'attachment',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'myfile1.txt');
+
+        $file = $fs->create_file_from_string($filerecord, 'the first test file');
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'create_conversion');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $method->invoke($conversion, $file);
+
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_records_process');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion);
+
+        $this->assertCount(1, $result);
+
+        $record = reset($result);
+        $this->assertEquals($file->get_contenthash(), $record->contenthash);
+    }
+
+
+    /**
+     * Test that initial conversion records are successfully created.
+     */
+    public function test_get_convserion_settings() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $conversionrecord->status = 202;
+        $conversionrecord->transcribe = 1;
+        $conversionrecord->rekog_label = 0;
+        $conversionrecord->rekog_moderation = 1;
+        $conversionrecord->rekog_face = 0;
+        $conversionrecord->rekog_person = 1;
+        $conversionrecord->detect_sentiment = 0;
+        $conversionrecord->detect_phrases = 1;
+        $conversionrecord->detect_entities = 0;
+
+        $preset1 = new \stdClass();
+        $preset1->convid = 508000;
+        $preset1->preset = 'preset1';
+
+        $preset2 = new \stdClass();
+        $preset2->convid = 508000;
+        $preset2->preset = 'preset2';
+
+        $DB->insert_record('local_smartmedia_presets', $preset1);
+        $DB->insert_record('local_smartmedia_presets', $preset2);
+
+        $conversion = new \local_smartmedia\conversion();
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_convserion_settings');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $conversionrecord);
+
+        $this->assertEquals('10101010', $result['processes']);
+        $this->assertEquals('preset2,preset1', $result['presets']);
+
+    }
 }

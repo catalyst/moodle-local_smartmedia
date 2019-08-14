@@ -39,35 +39,42 @@ class conversion {
      *
      * @var integer
      */
-    const CONVERSION_FINISHED = 200;
+    private const CONVERSION_FINISHED = 200;
 
     /**
      * Smart media conversion is in progres.
      *
      * @var integer
      */
-    const CONVERSION_IN_PROGRESS = 201;
+    private const CONVERSION_IN_PROGRESS = 201;
 
     /**
      * Smart media conversion job has been created but processing has not yet started.
      *
      * @var integer
      */
-    const CONVERSION_ACCEPTED = 202;
+    private const CONVERSION_ACCEPTED = 202;
 
     /**
      * No smart media conversion record found.
      *
      * @var integer
      */
-    const CONVERSION_NOT_FOUND = 404;
+    private const CONVERSION_NOT_FOUND = 404;
 
     /**
      * Smart media conversion finished with error.
      *
      * @var integer
      */
-    const CONVERSION_ERROR = 500;
+    private const CONVERSION_ERROR = 500;
+
+    /**
+     * Max files to get from Moodle files table per processing run.
+     *
+     * @var integer
+     */
+    private const MAX_FILES = 1000;
 
     /**
      * Class constructor
@@ -253,9 +260,59 @@ class conversion {
     }
 
     /**
+     * Get conversion records to process smartmedia conversions.
+     *
+     * @return array $filerecords Records to process.
+     */
+    private function get_conversion_records_process() : array {
+        global $DB;
+
+        $conditions = array('status' => self::CONVERSION_ACCEPTED);
+        $limit = self::MAX_FILES;
+        $fields = 'id, pathnamehash, contenthash, status, transcribe,
+                  rekog_label, rekog_moderation, rekog_face, rekog_person,
+                  detect_sentiment, detect_phrases, detect_entities';
+
+        $filerecords = $DB->get_records('local_smartmedia_conv', $conditions, '', $fields, 0, $limit);
+
+        return $filerecords;
+    }
+
+    /**
+     *
+     * @param \stdClass $conversionrecord
+     * @return array
+     */
+    private function get_convserion_settings(\stdClass $conversionrecord) : array {
+        global $DB;
+        $settings = array();
+
+        // Metadata space per S3 object is limited so do some dirty encoding
+        // of the processes we want to carry out on the file. These are
+        // interpereted on the AWS side.
+        $processes = (string)$conversionrecord->transcribe
+        . (string)$conversionrecord->rekog_label
+        . (string)$conversionrecord->rekog_moderation
+        . (string)$conversionrecord->rekog_face
+        . (string)$conversionrecord->rekog_person
+        . (string)$conversionrecord->detect_sentiment
+        . (string)$conversionrecord->detect_phrases
+        . (string)$conversionrecord->detect_entities;
+
+        $presets = $DB->get_fieldset_select('local_smartmedia_presets', 'preset', 'convid = ?', array($conversionrecord->id));
+        $prsetstring = implode(',', $presets);
+
+        $settings['processes'] = $processes;
+        $settings['presets'] = $prsetstring;
+
+        return $settings;
+    }
+
+    /**
      * Send file for processing.
      */
-    private function send_file_for_processing() : void {
+    private function send_file_for_processing(\stored_file $file, array $settings) : int {
+
 
     }
 
@@ -263,13 +320,23 @@ class conversion {
      * Process pending conversions.
      */
     public function process_conversions() : void {
-        // Get not yet started conversion records.
-        // Itterate through not yet started records.
-        // Sending them all for processing.
+        global $DB;
 
-        // Get pending conversion records.
-        // Itterate through pending records.
-        // Check AWS for the completion status.
+        $results = array();
+        $fs = get_file_storage();
+        $conversionrecords = $this->get_conversion_records_process(); // Get not yet started conversion records.
+
+        foreach ($conversionrecords as $conversionrecord) { // Itterate through not yet started records.
+            $settings = $this->get_convserion_settings($conversionrecord); // Get convession settings.
+            $file = $fs->get_file_by_hash($conversionrecord->pathnamehash); // Get the file to process.
+            $results[$conversionrecord->contenthash] = $this->send_file_for_processing($file, $settings); // Send for processing.
+
+
+            // Update conversion record.
+        }
+
+
+
     }
 
 }

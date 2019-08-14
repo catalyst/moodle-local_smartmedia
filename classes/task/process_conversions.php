@@ -53,9 +53,14 @@ class process_conversions extends scheduled_task {
 
         // Process new conversions.
         mtrace('local_smartmedia: Process new conversions');
+        $processed = $conversion->process_conversions();
 
         // Update pending conversions.
         mtrace('local_smartmedia: Update pending conversions');
+
+        // Get pending conversion records.
+        // Itterate through pending records.
+        // Check AWS for the completion status.
 
 
     }
