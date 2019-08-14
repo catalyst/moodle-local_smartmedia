@@ -69,9 +69,28 @@ class aws_ets_pricing_client {
     const MEDIATYPE_STANDARD_DEFINITION = 'Standard Definition';
 
     /**
+     * The string representing a successful transcoding result from a service.
+     */
+    const TRANSCODINGRESULT_SUCCESS = 'Success';
+
+    /**
      * The ServiceCode for Amazon Elastic Transcode Services.
      */
     const SERVICE_CODE = 'AmazonETS';
+
+    /**
+     * Map of AWS region codes to location names used by \Aws\Pricing\PricingClient.
+     */
+    const REGION_LOCATIONS = [
+        'us-east-1'      => 'US East (N. Virginia)',
+        'us-west-1'      => 'US West (N. California)',
+        'us-west-2'      => 'US West (Oregon)',
+        'ap-northeast-1' => 'Asia Pacific (Tokyo)',
+        'ap-south-1'     => 'Asia Pacific (Mumbai)',
+        'ap-southeast-1' => 'Asia Pacific (Singapore)',
+        'ap-southeast-2' => 'Asia Pacific (Sydney)',
+        'eu-west-1'      => 'EU (Ireland)',
+    ];
 
     /**
      * @var \Aws\Pricing\PricingClient
@@ -91,7 +110,8 @@ class aws_ets_pricing_client {
     /**
      * Default filters to get all Elastic Transcode Service products.
      *
-     * @return array the default filter values for getting AWS Pricing List information.
+     * @return array of filter structures with the default filter values for getting AWS Pricing List information.
+     * See https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-pricing-2017-10-15.html#shape-filter for filter structure.
      */
     private function get_default_product_filters() {
         return [
@@ -106,13 +126,16 @@ class aws_ets_pricing_client {
     /**
      * Get all available Amazon Elastic Transcode Service products.
      *
+     * @param array $filters of filter structures to be included for filtering products retrieved.
+     * See https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-pricing-2017-10-15.html#shape-filter for filter structure.
+     *
      * @return array $products of \local_smartmedia\aws_ets_product.
      */
-    public function get_products() {
+    public function get_products($filters = []) {
         $params = [];
         // Ensure we are only looking for Amazon ETS services.
         $params['ServiceCode'] = self::SERVICE_CODE;
-        $params['Filters'] = $this->get_default_product_filters();
+        $params['Filters'] = array_merge($this->get_default_product_filters(), $filters);
 
         $result = $this->pricingclient->getProducts($params);
         $products = [];
@@ -168,29 +191,31 @@ class aws_ets_pricing_client {
     /**
      * Get the pricing for a specific transcode location.
      *
-     * @param string $location the name of an AmazonETS location to get pricing for.
+     * @param string $region the region code of an AmazonETS location to get pricing for.
      *
      * @return \local_smartmedia\location_transcode_pricing $locationpricing object containing pricing.
      */
-    public function get_location_pricing($location) {
+    public function get_location_pricing($region) {
         $locationpricing = new location_transcode_pricing();
 
-        $products = $this->get_products();
+        // Filter products by location.
+        $locationfilter = ['Field' => 'location', 'Type' => self::DEFAULT_TYPE, 'Value' => self::REGION_LOCATIONS[$region]];
+        // Filter only working transcode services.
+        $transcodingresultfilter = ['Field' => 'transcodingResult', 'Type' => self::DEFAULT_TYPE, 'Value' => self::TRANSCODINGRESULT_SUCCESS];
+        $products = $this->get_products([$locationfilter, $transcodingresultfilter]);
+
         foreach ($products as $product) {
-            // We don't want pricing for failing transcode services.
-            if ($product->get_transcodingresult() != 'Error' && $product->get_location() == $location) {
-                $productfamily = $product->get_productfamily();
-                switch ($productfamily) {
-                    case self::MEDIATYPE_STANDARD_DEFINITION :
-                        $locationpricing->set_sd_pricing($product->get_transcodecost());
-                        break;
-                    case self::MEDIATYPE_HIGH_DEFINITION :
-                        $locationpricing->set_hd_pricing($product->get_transcodecost());
-                        break;
-                    default :
-                        $locationpricing->set_audio_pricing($product->get_transcodecost());
-                        break;
-                }
+            $productfamily = $product->get_productfamily();
+            switch ($productfamily) {
+                case self::MEDIATYPE_STANDARD_DEFINITION :
+                    $locationpricing->set_sd_pricing($product->get_transcodecost());
+                    break;
+                case self::MEDIATYPE_HIGH_DEFINITION :
+                    $locationpricing->set_hd_pricing($product->get_transcodecost());
+                    break;
+                default :
+                    $locationpricing->set_audio_pricing($product->get_transcodecost());
+                    break;
             }
         }
         return $locationpricing;

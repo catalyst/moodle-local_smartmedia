@@ -42,11 +42,6 @@ use local_smartmedia\aws_api;
  */
 class local_smartmedia_aws_api_testcase extends advanced_testcase {
 
-    /**
-     * @var string the AWS region to use for tests.
-     */
-    public $region = 'us-east-1';
-
     public function setUp() {
         $this->resetAfterTest();
     }
@@ -85,7 +80,7 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
      */
     public function test_set_credentials($apikey, $apisecret) {
 
-        $api = new aws_api($this->region);
+        $api = new aws_api();
         $api->set_credentials($apikey, $apisecret);
 
         // We're testing the setting of a private instance variable, so we need to setup reflector magic.
@@ -112,7 +107,7 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
         set_config('api_key', $apikey, 'local_smartmedia');
         set_config('api_secret', $apisecret, 'local_smartmedia');
 
-        $api = new aws_api($this->region);
+        $api = new aws_api();
         $pricingclient = $api->get_pricing_client();
         $this->assertInstanceOf(\Aws\Pricing\PricingClient::class, $pricingclient);
 

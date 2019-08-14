@@ -195,37 +195,36 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
     }
 
     /**
-     * Possible location names for test_get_location_pricing.
+     * Possible region codes names for test_get_location_pricing.
      */
     public function get_location_provider() {
         return [
-            ['Any'],
-            ['Asia Pacific (Mumbai)'],
-            ['Asia Pacific (Singapore)'],
-            ['Asia Pacific (Sydney)'],
-            ['Asia Pacific (Tokyo)'],
-            ['EU (Ireland)'],
-            ['US East (N. Virginia)'],
-            ['US West (N. California)'],
-            ['US West (Oregon)']
+            ['us-east-1'],
+            ['us-west-1'],
+            ['us-west-2'],
+            ['ap-northeast-1'],
+            ['ap-south-1'],
+            ['ap-southeast-1'],
+            ['ap-southeast-2'],
+            ['eu-west-1']
         ];
     }
 
     /**
      * Test that we can get pricing for a specific location.
      *
-     * @param string $location the location to test getting pricing for.
+     * @param string $region the AWS region code to test getting pricing for.
      *
      * @dataProvider get_location_provider
      */
-    public function test_get_location_pricing($location) {
+    public function test_get_location_pricing($region) {
 
         // Mock the pricing client so it returns fixture data.
         list($mock, $mockresult) = $this->create_mock_pricing_client($this->fixture['getProducts']);
 
         // Instantiate the class, injecting our stub.
         $pricingservice = new aws_ets_pricing_client($mock);
-        $actual = $pricingservice->get_location_pricing($location);
+        $actual = $pricingservice->get_location_pricing($region);
 
         $this->assertInstanceOf(location_transcode_pricing::class, $actual);
 
