@@ -18,12 +18,14 @@
  * Class for smart media conversion operations.
  *
  * @package     local_smartmedia
- * @copyright   2018 Matt Porritt <mattp@catalyst-au.net>
+ * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 namespace local_smartmedia;
 
 defined('MOODLE_INTERNAL') || die();
+
+use Aws\S3\Exception\S3Exception;
 
 /**
  * Class for smart media conversion operations.
@@ -39,35 +41,35 @@ class conversion {
      *
      * @var integer
      */
-    private const CONVERSION_FINISHED = 200;
+    public const CONVERSION_FINISHED = 200;
 
     /**
      * Smart media conversion is in progres.
      *
      * @var integer
      */
-    private const CONVERSION_IN_PROGRESS = 201;
+    public const CONVERSION_IN_PROGRESS = 201;
 
     /**
      * Smart media conversion job has been created but processing has not yet started.
      *
      * @var integer
      */
-    private const CONVERSION_ACCEPTED = 202;
+    public const CONVERSION_ACCEPTED = 202;
 
     /**
      * No smart media conversion record found.
      *
      * @var integer
      */
-    private const CONVERSION_NOT_FOUND = 404;
+    public const CONVERSION_NOT_FOUND = 404;
 
     /**
      * Smart media conversion finished with error.
      *
      * @var integer
      */
-    private const CONVERSION_ERROR = 500;
+    public const CONVERSION_ERROR = 500;
 
     /**
      * Max files to get from Moodle files table per processing run.
@@ -309,17 +311,69 @@ class conversion {
     }
 
     /**
-     * Send file for processing.
+     * Send file for conversion processing in AWS.
+     *
+     * @param \stored_file $file The file to upload for conversion.
+     * @param array $settings Settings to be used for file convsersion.
+     * @param \GuzzleHttp\Handler|null $handler Optional handler.
+     * @return int $status The status code of the upload.
      */
-    private function send_file_for_processing(\stored_file $file, array $settings) : int {
+    private function send_file_for_processing(\stored_file $file, array $settings, $handler=null) : int {
+        $awss3 = new \local_smartmedia\aws_s3();
+        $s3client = $awss3->create_client($handler);
 
+        $uploadparams = array(
+            'Bucket' => $this->config->s3_input_bucket, // Required.
+            'Key' => $file->get_contenthash(), // Required.
+            'Body' => $file->get_content_file_handle(), // Required.
+            'Metadata' => $settings
+        );
+
+        try {
+            $result = $s3client->putObject($uploadparams);
+            $status = self::CONVERSION_IN_PROGRESS;
+        } catch (S3Exception $e) {
+            $status = self::CONVERSION_ERROR;
+        }
+
+        // TODO: add event for file sending include status etc.
+
+        return $status;
 
     }
 
     /**
-     * Process pending conversions.
+     * Update conversion records in the Moodle database.
+     *
+     * @param array $results The result details to update the records.
      */
-    public function process_conversions() : void {
+    private function update_conversion_records(array $results) : void {
+        global $DB;
+
+        // Check if we are going to be performing multiple inserts.
+        if (count($results) > 1) {
+            $expectbulk = true;
+        } else {
+            $expectbulk = false;
+        }
+
+        // Update the records in the database.
+        foreach ($results as $key => $result) {
+            $updaterecord = new \stdClass();
+            $updaterecord->id = $key;
+            $updaterecord->status = $result;
+            $updaterecord->timemodified = time();
+
+            $DB->update_record('local_smartmedia_conv', $updaterecord, $expectbulk);
+        }
+    }
+
+    /**
+     * Process pending conversions.
+     *
+     * @return array $results The results of the processing.
+     */
+    public function process_conversions() : array {
         global $DB;
 
         $results = array();
@@ -329,13 +383,11 @@ class conversion {
         foreach ($conversionrecords as $conversionrecord) { // Itterate through not yet started records.
             $settings = $this->get_convserion_settings($conversionrecord); // Get convession settings.
             $file = $fs->get_file_by_hash($conversionrecord->pathnamehash); // Get the file to process.
-            $results[$conversionrecord->contenthash] = $this->send_file_for_processing($file, $settings); // Send for processing.
-
-
-            // Update conversion record.
+            $results[$conversionrecord->id] = $this->send_file_for_processing($file, $settings); // Send for processing.
+            $this->update_conversion_records($results); // Update conversion records.
         }
 
-
+        return $results;
 
     }
 

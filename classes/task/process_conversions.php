@@ -55,8 +55,16 @@ class process_conversions extends scheduled_task {
         mtrace('local_smartmedia: Process new conversions');
         $processed = $conversion->process_conversions();
 
+        mtrace('local_smartmedia: Total number of processed files: ' . count($processed));
+        foreach ($processed as $key => $value) {
+            if($value != \local_smartmedia\conversion::CONVERSION_IN_PROGRESS) {
+                mtrace('local_smartmedia: Failed to start processing for file with conversion id: ' . $key);
+            }
+
+        }
+
         // Update pending conversions.
-        mtrace('local_smartmedia: Update pending conversions');
+        mtrace('local_smartmedia: Updating pending conversions');
 
         // Get pending conversion records.
         // Itterate through pending records.

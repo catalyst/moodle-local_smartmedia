@@ -24,6 +24,15 @@
 
 defined('MOODLE_INTERNAL') || die();
 
+global $CFG;
+require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
+
+use Aws\Result;
+use Aws\MockHandler;
+use Aws\CommandInterface;
+use Psr\Http\Message\RequestInterface;
+use Aws\S3\Exception\S3Exception;
+
 /**
  * Unit test for local_smartmedia conversion class.
  *
@@ -318,6 +327,89 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $this->assertEquals('10101010', $result['processes']);
         $this->assertEquals('preset2,preset1', $result['presets']);
+
+    }
+
+    /**
+     * Test sending file to aws for conversion.
+     */
+    public function test_send_file_for_processing() {
+        $this->resetAfterTest(true);
+        global $CFG;
+
+        $conversion = new \local_smartmedia\conversion();
+
+        // Setup for testing.
+        $fs = new file_storage();
+        $filerecord = array(
+            'contextid' => 31,
+            'component' => 'mod_forum',
+            'filearea' => 'attachment',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'SampleVideo1mb.mp4');
+        $fileurl = $CFG->dirroot . '/local/smartmedia/tests/fixtures/SampleVideo1mb.mp4';
+        $file = $fs->create_file_from_pathname($filerecord, $fileurl);
+
+        $settings = array(
+            'processes' => '10101010',
+            'presets' => 'preset1,preset2'
+        );
+
+        // Set up the AWS mock.
+        $mockhandler = new MockHandler();
+        $mockhandler->append(new Result(array('ObjectURL' => 's3://herpderp')));
+        $mockhandler->append(function (CommandInterface $cmd, RequestInterface $req) {
+            return new S3Exception('Mock exception', $cmd, array('code' => 'FAIL'));
+        });
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'send_file_for_processing');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $resultgood = $method->invoke($conversion, $file, $settings, $mockhandler);
+        $resultbad = $method->invoke($conversion, $file, $settings, $mockhandler);
+
+        $this->assertEquals($conversion::CONVERSION_IN_PROGRESS, $resultgood);
+        $this->assertEquals($conversion::CONVERSION_ERROR, $resultbad);
+    }
+
+    /**
+     * Test that initial conversion records are successfully created.
+     */
+    public function test_update_conversion_records() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $conversionrecord->status = 202;
+        $conversionrecord->transcribe = 1;
+        $conversionrecord->rekog_label = 0;
+        $conversionrecord->rekog_moderation = 1;
+        $conversionrecord->rekog_face = 0;
+        $conversionrecord->rekog_person = 1;
+        $conversionrecord->detect_sentiment = 0;
+        $conversionrecord->detect_phrases = 1;
+        $conversionrecord->detect_entities = 0;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+
+        $conversion = new \local_smartmedia\conversion();
+
+        $updates = array();
+        $updates[$conversionrecord->id] = $conversion::CONVERSION_IN_PROGRESS;
+
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'update_conversion_records');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $method->invoke($conversion, $updates);
+
+        $result = $DB->get_field('local_smartmedia_conv', 'status', array('id' => $conversionrecord->id));
+
+        $this->assertEquals($conversion::CONVERSION_IN_PROGRESS, $result);
 
     }
 }

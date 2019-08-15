@@ -18,7 +18,7 @@
  * Class for converting files between different file formats using AWS.
  *
  * @package     local_smartmedia
- * @copyright   2018 Matt Porritt <mattp@catalyst-au.net>
+ * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 namespace local_smartmedia;
@@ -119,17 +119,16 @@ class aws_s3 {
     /**
      * Check if the plugin has the required configuration set.
      *
-     * @param \local_smartmedia\converter $converter
      * @return boolean $isset Is all configuration options set.
      */
-    private function is_config_set(\local_smartmedia\converter $converter) {
+    private function is_config_set() : bool {
         $isset = true;
 
-        if (empty($converter->config->api_key) ||
-            empty($converter->config->api_secret) ||
-            empty($converter->config->s3_input_bucket) ||
-            empty($converter->config->s3_output_bucket) ||
-            empty($converter->config->api_region)) {
+        if (empty($this->config->api_key) ||
+            empty($this->config->api_secret) ||
+            empty($this->config->s3_input_bucket) ||
+            empty($this->config->s3_output_bucket) ||
+            empty($this->config->api_region)) {
                 $isset = false;
             }
             return $isset;
@@ -140,23 +139,22 @@ class aws_s3 {
      * There is no check connection in the AWS API.
      * We use list buckets instead and check the bucket is in the list.
      *
-     * @param \local_smartmedia\converter $converter
      * @param string $bucket Name of buket to check.
      * @return boolean true on success, false on failure.
      */
-    private function is_bucket_accessible(\local_smartmedia\converter $converter, $bucket) {
+    private function is_bucket_accessible($bucket) {
         $connection = new \stdClass();
         $connection->success = true;
         $connection->message = '';
 
         try {
-            $result = $converter->client->headBucket(array(
+            $result = $this->client->headBucket(array(
                 'Bucket' => $bucket));
 
             $connection->message = get_string('settings:connectionsuccess', 'local_smartmedia');
         } catch (S3Exception $e) {
             $connection->success = false;
-            $details = $converter->get_exception_details($e);
+            $details = $this->get_exception_details($e);
             $connection->message = get_string('settings:connectionfailure', 'local_smartmedia') . $details;
         }
         return $connection;
@@ -167,42 +165,41 @@ class aws_s3 {
      * There is no check connection in the AWS API.
      * We use list buckets instead and check the bucket is in the list.
      *
-     * @param \local_smartmedia\converter $converter
      * @param string $bucket The bucket to check.
      * @return boolean true on success, false on failure.
      */
-    private function have_bucket_permissions(\local_smartmedia\converter $converter, $bucket) {
+    private function have_bucket_permissions($bucket) {
         $permissions = new \stdClass();
         $permissions->success = true;
         $permissions->messages = array();
 
         try {
-            $result = $converter->client->putObject(array(
+            $result = $this->client->putObject(array(
                 'Bucket' => $bucket,
                 'Key' => 'permissions_check_file',
                 'Body' => 'test content'));
         } catch (S3Exception $e) {
-            $details = $converter->get_exception_details($e);
+            $details = $this->get_exception_details($e);
             $permissions->messages[] = get_string('settings:writefailure', 'local_smartmedia') . $details;
             $permissions->success = false;
         }
 
         try {
-            $result = $converter->client->getObject(array(
+            $result = $this->client->getObject(array(
                 'Bucket' => $bucket,
                 'Key' => 'permissions_check_file'));
         } catch (S3Exception $e) {
             $errorcode = $e->getAwsErrorCode();
             // Write could have failed.
             if ($errorcode !== 'NoSuchKey') {
-                $details = $converter->get_exception_details($e);
+                $details = $this->get_exception_details($e);
                 $permissions->messages[] = get_string('settings:readfailure', 'local_smartmedia') . $details;
                 $permissions->success = false;
             }
         }
 
         try {
-            $result = $converter->client->deleteObject(array(
+            $result = $this->client->deleteObject(array(
                 'Bucket' => $bucket,
                 'Key' => 'permissions_check_file'));
             $permissions->messages[] = get_string('settings:deletesuccess', 'local_smartmedia');
@@ -210,7 +207,7 @@ class aws_s3 {
             $errorcode = $e->getAwsErrorCode();
             // Something else went wrong.
             if ($errorcode !== 'AccessDenied') {
-                $details = $converter->get_exception_details($e);
+                $details = $this->get_exception_details($e);
                 $permissions->messages[] = get_string('settings:deleteerror', 'local_smartmedia') . $details;
             }
         }
@@ -222,22 +219,6 @@ class aws_s3 {
     }
 
     /**
-     * Delete the converted file from the output bucket in S3.
-     *
-     * @param string $objectkey The key of the object to delete.
-     */
-    private function delete_converted_file($objectkey) {
-        $deleteparams = array(
-            'Bucket' => $this->config->s3_output_bucket, // Required.
-            'Key' => $objectkey, // Required.
-        );
-
-        $s3client = $this->create_client();
-        $s3client->deleteObject($deleteparams);
-
-    }
-
-    /**
      * Whether the plugin is configured and requirements are met.
      *
      * @return  bool
@@ -246,32 +227,32 @@ class aws_s3 {
 
 
         // Check that we can access the input S3 Bucket.
-        $connection = self::is_bucket_accessible($converter, $converter->config->s3_input_bucket);
+        $connection = $this->is_bucket_accessible($this->config->s3_input_bucket);
         if (!$connection->success) {
-            debugging('local_smartmedia cannot connect to input bucket');
+            debugging('local_smartmedia: cannot connect to input bucket');
             return false;
         }
 
         // Check that we can access the output S3 Bucket.
-        $connection = self::is_bucket_accessible($converter, $converter->config->s3_output_bucket);
+        $connection = $this->is_bucket_accessible($this->config->s3_output_bucket);
         if (!$connection->success) {
-            debugging('local_smartmedia cannot connect to output bucket');
+            debugging('local_smartmedia: cannot connect to output bucket');
             return false;
         }
 
         // Check input bucket permissions.
-        $bucket = $converter->config->s3_input_bucket;
-        $permissions = self::have_bucket_permissions($converter, $bucket);
+        $bucket = $this->config->s3_input_bucket;
+        $permissions = $this->have_bucket_permissions($bucket);
         if (!$permissions->success) {
-            debugging('local_smartmedia permissions failure on input bucket');
+            debugging('local_smartmedia: permissions failure on input bucket');
             return false;
         }
 
         // Check output bucket permissions.
-        $bucket = $converter->config->s3_output_bucket;
-        $permissions = self::have_bucket_permissions($converter, $bucket);
+        $bucket = $this->config->s3_output_bucket;
+        $permissions = $this->have_bucket_permissions($bucket);
         if (!$permissions->success) {
-            debugging('local_smartmedia permissions failure on output bucket');
+            debugging('local_smartmedia: permissions failure on output bucket');
             return false;
         }
 
