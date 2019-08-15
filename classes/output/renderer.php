@@ -78,7 +78,7 @@ class renderer extends plugin_renderer_base {
      * @throws \moodle_exception
      */
     private function render_pricing_location_filter(string $baseurl, aws_ets_pricing_client $pricingclient,
-                                                    int $page = 0, int $perpage = 50, string $download = null,
+                                                    int $page = 0, int $perpage = 50, string $download = '',
                                                     string $pricinglocation = null) {
         // Build parameters for redirect.
         $attributes = [
@@ -116,7 +116,7 @@ class renderer extends plugin_renderer_base {
      * @throws \moodle_exception
      */
     public function render_report(string $baseurl, aws_ets_pricing_client $pricingclient, int $page = 0, int $perpage = 50,
-                                  string $download = null, string $pricinglocation = null) : string {
+                                  string $download = '', string $pricinglocation = null) : string {
         // Get the table output first to prevent output being buffered before download.
         $tablehtml = $this->render_report_table($baseurl, $pricingclient, $page, $perpage, $download, $pricinglocation);
         // Get the filter html before header to prevent output buffering before redirect.

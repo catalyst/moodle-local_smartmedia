@@ -65,7 +65,7 @@ class report_table extends table_sql implements renderable {
      * @param aws_ets_pricing_client $pricingclient
      * @param int $page the page number for pagination.
      * @param int $perpage amount of records per page for pagination.
-     * @param string|null $download dataformat type. One of csv, xhtml, ods, etc
+     * @param string $download dataformat type. One of csv, xhtml, ods, etc
      * @param string|null $pricinglocation url encoded pricing location.
      *
      * @throws \coding_exception
@@ -73,7 +73,7 @@ class report_table extends table_sql implements renderable {
      * @throws \moodle_exception if there is an issue defining the baseline url.
      */
     public function __construct(string $uniqueid, string $baseurl, aws_ets_pricing_client $pricingclient, int $page = 0,
-                                int $perpage = 50, string $download = null, string $pricinglocation = null) {
+                                int $perpage = 50, string $download = '', string $pricinglocation = null) {
         parent::__construct($uniqueid);
 
         $this->set_attribute('id', 'local_smartmedia_report_table');
