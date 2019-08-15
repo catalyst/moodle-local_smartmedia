@@ -38,7 +38,12 @@ defined('MOODLE_INTERNAL') || die;
 class location_transcode_pricing {
 
     /**
-     * Minimum height above which transcoding is considered high definition.
+     * @var string the AWS region code this pricing is for.
+     */
+    private $region;
+
+    /**
+     * Minimum height above which (inclusive) transcoding is considered high definition.
      */
     const MIN_HD_HEIGHT = 720;
 
@@ -58,23 +63,85 @@ class location_transcode_pricing {
     private $audiopricing;
 
     /**
+     * location_transcode_pricing constructor.
+     *
+     * @param string $region the AWS region code this pricing is for.
+     */
+    public function __construct(string $region) {
+        $this->region = $region;
+    }
+
+    /**
+     * Get the region to which this location_transcode_pricing applies.
+     *
+     * @return string AWS region code.
+     */
+    public function get_region() {
+        return $this->region;
+    }
+
+    /**
      * Calculate the cost per minute for transcoding of media.
      *
      * @param int $height number of lines of resolution.
      * @param float $duration in seconds of media.
      *
-     * @return float|int the cost per minute for transcoding.
+     * @return float|int|null the cost per minute for transcoding, null if no pricing for product type.
      */
-    public function calculate_transcode_cost($height, $duration) {
-        $durationinminutes = $duration / 60;
+    public function calculate_transcode_cost(int $height, float $duration) {
         if ($height >= self::MIN_HD_HEIGHT) {
-            $cost = $durationinminutes * $this->hdpricing;
+            $cost = $this->calculate_high_definition_cost($duration);
         } else if ($height > 0) {
-            $cost = $durationinminutes * $this->sdpricing;
+            $cost = $this->calculate_standard_definition_cost($duration);
         } else {
-            $cost = $durationinminutes * $this->audiopricing;
+            $cost = $this->calculate_audio_cost($duration);
         }
         return $cost;
+    }
+
+    /**
+     * Calculate the cost for transcoding high definition media.
+     *
+     * @param float $duration in seconds of the media.
+     *
+     * @return float|null $result the total cost in US dollars, null if cost couldn't be calculated
+     */
+    public function calculate_high_definition_cost(float $duration) {
+        $result = null;
+        if (is_numeric($this->hdpricing)) {
+            $result = $duration / 60 * $this->hdpricing;
+        }
+        return $result;
+    }
+
+    /**
+     * Calculate the cost for transcoding standard definition media.
+     *
+     * @param float $duration in seconds of the media.
+     *
+     * @return float|null $result the total cost in US dollars, null if cost couldn't be calculated
+     */
+    public function calculate_standard_definition_cost(float $duration) {
+        $result = null;
+        if (is_numeric($this->sdpricing)) {
+            $result = $duration / 60 * $this->sdpricing;
+        }
+        return $result;
+    }
+
+    /**
+     * Calculate the cost for transcoding standard definition media.
+     *
+     * @param float $duration in seconds of the media.
+     *
+     * @return float|null $result the total cost in US dollars, null if cost couldn't be calculated
+     */
+    public function calculate_audio_cost(float $duration) {
+        $result = null;
+        if (is_numeric($this->audiopricing)) {
+            $result = $duration / 60 * $this->audiopricing;
+        }
+        return $result;
     }
 
     /**
