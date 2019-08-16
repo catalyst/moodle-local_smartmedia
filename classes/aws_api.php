@@ -45,6 +45,12 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 class aws_api {
 
     /**
+     * Region specifically for use with AWS Pricing List API.
+     * (The AWS Pricing List API is only available to this region.)
+     */
+    const PRICING_CLIENT_REGION = 'us-east-1';
+
+    /**
      * @var string AWS region to use for API calls.
      */
     private $region;
@@ -57,12 +63,10 @@ class aws_api {
     /**
      * aws_api constructor.
      *
-     * @param string $region the AWS region to use.
-     *
      * @throws \dml_exception
      */
-    public function __construct(string $region) {
-        $this->region = $region;
+    public function __construct() {
+        $this->region = get_config('local_smartmedia', 'api_region');
         $this->set_credentials(
             get_config('local_smartmedia', 'api_key'),
             get_config('local_smartmedia', 'api_secret'));
@@ -96,7 +100,7 @@ class aws_api {
         // Set up the minimum arguments required for client.
         $args = [
             'credentials' => $this->credentials,
-            'region' => $this->region,
+            'region' => self::PRICING_CLIENT_REGION,
             'version' => $version,
         ];
 

@@ -44,6 +44,23 @@ if ($hassiteconfig) {
         get_string('settings:aws:secret_help', 'local_smartmedia'),
         ''));
 
+    // These are the only regions that AWS Elastic Transcoder is available in.
+    $regionoptions = array(
+        'us-east-1'      => 'US East (N. Virginia)',
+        'us-west-1'      => 'US West (N. California)',
+        'us-west-2'      => 'US West (Oregon)',
+        'ap-northeast-1' => 'Asia Pacific (Tokyo)',
+        'ap-south-1'     => 'Asia Pacific (Mumbai)',
+        'ap-southeast-1' => 'Asia Pacific (Singapore)',
+        'ap-southeast-2' => 'Asia Pacific (Sydney)',
+        'eu-west-1'      => 'EU (Ireland)',
+    );
+    $settings->add(new admin_setting_configselect('local_smartmedia/api_region',
+        get_string('settings:aws:region', 'local_smartmedia'),
+        get_string('settings:aws:region_help', 'local_smartmedia'),
+        'ap-southeast-2',
+        $regionoptions));
+
     // FFprobe settings.
     $settings->add(new admin_setting_heading('ffprobeheader',
         get_string('settings:ffprobe:header', 'local_smartmedia'),

@@ -66,26 +66,19 @@ class report_table extends table_sql implements renderable {
      * @param int $page the page number for pagination.
      * @param int $perpage amount of records per page for pagination.
      * @param string $download dataformat type. One of csv, xhtml, ods, etc
-     * @param string|null $pricinglocation url encoded pricing location.
      *
      * @throws \coding_exception
-     * @throws \dml_exception if aws credentials aren't set correctly in this plugin's settings.
      * @throws \moodle_exception if there is an issue defining the baseline url.
      */
     public function __construct(string $uniqueid, string $baseurl, aws_ets_pricing_client $pricingclient, int $page = 0,
-                                int $perpage = 50, string $download = '', string $pricinglocation = null) {
+                                int $perpage = 50, string $download = '') {
         parent::__construct($uniqueid);
 
         $this->set_attribute('id', 'local_smartmedia_report_table');
         $this->set_attribute('class', 'generaltable generalbox');
         $this->show_download_buttons_at(array(TABLE_P_BOTTOM));
         $this->is_downloading($download, 'smartmedia-report');
-        // Include the location parameter in base url for calculation of dynamic pricing.
-        if (!empty($pricinglocation)) {
-            $this->define_baseurl($baseurl, ['pricinglocation' => $pricinglocation]);
-        } else {
-            $this->define_baseurl($baseurl);
-        }
+        $this->define_baseurl($baseurl);
         $this->define_columns(array('videostreams', 'format', 'height', 'duration', 'size', 'cost'));
         $this->define_headers(array(
             get_string('report:type', 'local_smartmedia'),
@@ -98,7 +91,7 @@ class report_table extends table_sql implements renderable {
         // Setup pagination.
         $this->currpage = $page;
         $this->pagesize = $perpage;
-        $this->set_location_pricing($pricinglocation, $pricingclient);
+        $this->set_location_pricing($pricingclient);
         $this->sortable(true);
         $this->no_sorting('format');
         $this->no_sorting('cost');
@@ -107,32 +100,15 @@ class report_table extends table_sql implements renderable {
     }
 
     /**
-     * Override parent method for defining base url.
-     * (Base method does not include parameters, required for dynamic pricing calculation.)
-     *
-     * @param moodle_url|string $url - the moodle url or string of url for baseline.
-     * @param array|null $params an array of query parameters for url, null if none.
-     *
-     * @throws \moodle_exception
-     */
-    public function define_baseurl($url, $params = null) {
-        $this->baseurl = new \moodle_url($url, $params);
-    }
-
-    /**
      * Set the pricing to use for this report table.
-     *
-     * @param string|null $urlencodedlocation a url encoded string of the location to get pricing for, null if no
-     * location specified.
+
      * @param aws_ets_pricing_client $pricingclient aws_ets_pricing_client the pricing client to use for querying AWS Pricing API.
+     *
+     * @throws \dml_exception if the region is not set.
      */
-    private function set_location_pricing($urlencodedlocation, aws_ets_pricing_client $pricingclient) {
-        if (empty($urlencodedlocation)) {
-            $locationpricing = null;
-        } else {
-            $location = urldecode($urlencodedlocation);
-            $locationpricing = $pricingclient->get_location_pricing($location);
-        }
+    private function set_location_pricing(aws_ets_pricing_client $pricingclient) {
+        $region = get_config('local_smartmedia', 'api_region');
+        $locationpricing = $pricingclient->get_location_pricing($region);
         $this->locationpricing = $locationpricing;
     }
 
@@ -176,7 +152,7 @@ class report_table extends table_sql implements renderable {
 
     /**
      * Get content for width column.
-     * We use width for sorting purposes, requires `width` and `height` fields.
+     * We use `width` for sorting purposes, requires `width` and `height` fields.
      *
      * @param \stdClass $row
      *
