@@ -63,13 +63,11 @@ class process_conversions extends scheduled_task {
 
         }
 
+        // Get SQS messages from AWS.
+
         // Update pending conversions.
         mtrace('local_smartmedia: Updating pending conversions');
-
-        // Get pending conversion records.
-        // Itterate through pending records.
-        // Check AWS for the completion status.
-
+        $updated = $conversion->update_pending_conversions();
 
     }
 

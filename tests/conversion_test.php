@@ -251,7 +251,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     /**
      * Test that initial conversion records are successfully created.
      */
-    public function test_get_conversion_records_process() {
+    public function test_get_conversion_records() {
         $this->resetAfterTest(true);
         global $DB;
 
@@ -277,9 +277,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $method->invoke($conversion, $file);
 
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_records_process');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_records');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion);
+        $result = $method->invoke($conversion, $conversion::CONVERSION_ACCEPTED);
 
         $this->assertCount(1, $result);
 

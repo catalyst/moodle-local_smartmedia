@@ -18,7 +18,7 @@
  * This command line script will provision the Smart media environment in AWS.
  *
  * @package     local_smartmedia
- * @copyright   2018 Matt Porritt <mattp@catalyst-au.net>
+ * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -56,7 +56,6 @@ Options:
 --secret=STRING           AWS API Secret Access Key.
 --region=STRING           The AWS region to create the environment in.
                           e.g. ap-southeast-2
-                          If this isn't provided the a random prefix will be generated.
 --set-config              Will update the plugin configuration with the resources
                           created by this script.
 

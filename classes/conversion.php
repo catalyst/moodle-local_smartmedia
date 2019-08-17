@@ -264,12 +264,13 @@ class conversion {
     /**
      * Get conversion records to process smartmedia conversions.
      *
+     * @param int $status Status of records to get.
      * @return array $filerecords Records to process.
      */
-    private function get_conversion_records_process() : array {
+    private function get_conversion_records(int $status) : array {
         global $DB;
 
-        $conditions = array('status' => self::CONVERSION_ACCEPTED);
+        $conditions = array('status' => $status);
         $limit = self::MAX_FILES;
         $fields = 'id, pathnamehash, contenthash, status, transcribe,
                   rekog_label, rekog_moderation, rekog_face, rekog_person,
@@ -286,7 +287,7 @@ class conversion {
      * @return array
      */
     private function get_convserion_settings(\stdClass $conversionrecord) : array {
-        global $DB;
+        global $DB, $CFG;
         $settings = array();
 
         // Metadata space per S3 object is limited so do some dirty encoding
@@ -306,6 +307,7 @@ class conversion {
 
         $settings['processes'] = $processes;
         $settings['presets'] = $prsetstring;
+        $settings['siteid'] = $CFG->siteidentifier;
 
         return $settings;
     }
@@ -369,7 +371,7 @@ class conversion {
     }
 
     /**
-     * Process pending conversions.
+     * Process not yet started conversions.
      *
      * @return array $results The results of the processing.
      */
@@ -378,7 +380,7 @@ class conversion {
 
         $results = array();
         $fs = get_file_storage();
-        $conversionrecords = $this->get_conversion_records_process(); // Get not yet started conversion records.
+        $conversionrecords = $this->get_conversion_records(self::CONVERSION_ACCEPTED); // Get not yet started conversion records.
 
         foreach ($conversionrecords as $conversionrecord) { // Itterate through not yet started records.
             $settings = $this->get_convserion_settings($conversionrecord); // Get convession settings.
@@ -389,6 +391,46 @@ class conversion {
 
         return $results;
 
+    }
+
+    /**
+     * Update pending conversions.
+     *
+     * @return array $results The results of the processing.
+     */
+    public function update_pending_conversions() : array {
+        global $DB;
+
+        $results = array();
+
+        $conversionrecords = $this->get_conversion_records(self::CONVERSION_IN_PROGRESS); // Get pending conversion records.
+
+        foreach ($conversionrecords as $conversionrecord) { // Itterate through pending records.
+            // We know from the conversion record what processing is being done on each file,
+            // and thus what outputs to expect.
+            // We also know what files we have downloaded and what metadata we have.
+            // So only get the remaining files and data.
+
+            // We need to be able to determine that a process has failed and no file will ever be created,
+            // versus the situation where we are still waiting for the conversion.
+            // We should check the error queue
+
+
+            // NOTE: WE DO NEED TO CHECK IF REKOG SERVICES PUBLISH ERRORS TO SNS.
+
+
+
+
+            // For each record check what files and metadata have been retrieved based on the settings.
+            $settings = $this->get_convserion_settings($conversionrecord); // Get convession settings.
+
+            // Check AWS for the completion status.
+
+        }
+
+
+
+        return $results;
     }
 
 }
