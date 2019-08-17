@@ -22,11 +22,56 @@ import botocore
 import os
 import logging
 import io
+import json
 from botocore.exceptions import ClientError
+from datetime import datetime
 
 s3_client = boto3.client('s3')
+sqs_client = boto3.client('sqs')
 et_client = boto3.client('elastictranscoder')
 logger = logging.getLogger()
+
+
+def sqs_send_message(key, bucket, record):
+    # Get environvent variables
+    sqs_url = os.environ.get('SmartmediaSqsQueue')  # SQS queue URL.
+
+    # Get input object metadata as we will need for SQS message sending.
+    input_object_headdata_object = s3_client.head_object(
+        Bucket=bucket,
+        Key=key
+        )
+
+    # Create JSON message to send to SQS queue.
+
+    now = datetime.now()  # Current date and time.
+
+    message_object = {
+        'siteid' : input_object_headdata_object['Metadata']['siteid'],
+        'objectkey' : key,
+        'process': 'S3',
+        'status': record['eventName'],
+        'message': record,
+        'timestamp': int(datetime.timestamp(now))
+        }
+    message_json = json.dumps(message_object)
+
+    # Send message to SQS queue, we do this from Lambda not directly from sns,
+    # as we want to add some extra information to the message.
+    sqs_client.send_message(
+        QueueUrl=sqs_url,
+        MessageBody=message_json,
+        MessageAttributes={
+            'siteid': {
+                'StringValue': input_object_headdata_object['Metadata']['siteid'],
+                'DataType': 'String'
+            },
+            'inputkey': {
+                'StringValue': key,
+                'DataType': 'String'
+            },
+        }
+    )
 
 
 def submit_transcode_jobs(s3key, pipeline_id):
@@ -94,6 +139,9 @@ def lambda_handler(event, context):
             continue
 
         logger.info('File uploaded: {}'.format(key))
+
+        # Send message to SQS queue.
+        sqs_send_message(key, bucket, record)
 
         submit_transcode_jobs(key, pipeline_id)
 

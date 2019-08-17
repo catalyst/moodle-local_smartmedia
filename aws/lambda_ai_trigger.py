@@ -186,7 +186,7 @@ def lambda_handler(event, context):
         job_id = sns_message_object['jobId']
         message_state = sns_message_object['state']  # Get message state
 
-        sqs_send_message(input_key, message_state, sns_message_object)  # Send message to SQS queue
+        sqs_send_message(input_key, message_state, sns_message_object)  # Send message to SQS queue.
 
         # Only process Rekognition tasks if job status is complete
         if message_state == 'COMPLETED':

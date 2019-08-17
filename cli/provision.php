@@ -174,7 +174,9 @@ if ($createstackresponse->code != 0 ) {
 $envvararray = array(
     array(
         'function' => $createstackresponse->outputs['TranscodeLambdaArn'],
-        'values' => array('PipelineId' => $createstackresponse->outputs['TranscodePipelineId'])
+        'values' => array(
+            'PipelineId' => $createstackresponse->outputs['TranscodePipelineId'],
+            'SmartmediaSqsQueue' => $createstackresponse->outputs['SmartmediaSqsQueue'])
     ),
     array(
         'function' => $createstackresponse->outputs['RekognitionCompleteLambdaArn'],

@@ -91,6 +91,10 @@ Resources:
           - elastictranscoder:ReadJob
           - elastictranscoder:ReadPipeline
           Resource: '*'
+        - Effect: Allow
+          Action: 
+          - sqs:SendMessage
+          Resource: '*'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
         - !Ref LambdaTranscodeTriggerRole
@@ -291,6 +295,9 @@ Resources:
       Code:
         S3Bucket: !Ref ResourceBucket
         S3Key: !Ref LambdaTranscodeTriggerArchiveKey
+      Environment:
+        Variables:
+          SmartmediaSqsQueue: !Ref SqsQueue
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_trigger'] ]
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
@@ -485,3 +492,6 @@ Outputs:
   SnsTopicRekognitionCompleteArn:
     Description: Rekognition complete SNS topic ARN
     Value: !Ref SnsTopicRekognitionComplete
+  SmartmediaSqsQueue:
+    Description: SQS queue url
+    Value: !Ref SqsQueue
