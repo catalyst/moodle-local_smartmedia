@@ -24,6 +24,7 @@ import logging
 import io
 import json
 from botocore.exceptions import ClientError
+from datetime import datetime
 
 s3_client = boto3.client('s3')
 sqs_client = boto3.client('sqs')
@@ -121,7 +122,7 @@ def start_rekognition(input_key, job_id):
     logger.error(transcription_response)
 
 
-def sqs_send_message(input_key):
+def sqs_send_message(input_key, message_state, sns_message_object):
     # Get environvent variables
     input_bucket = os.environ.get('InputBucket')  # Ouput S3 bucket
     sqs_url = os.environ.get('SmartmediaSqsQueue')  # SQS queue URL.
@@ -133,13 +134,24 @@ def sqs_send_message(input_key):
         )
 
     # Create JSON message to send to SQS queue.
-    # Need a universal format that suits all conversion processes
+
+    now = datetime.now()  # Current date and time.
+
+    message_object = {
+        'siteid' : input_object_headdata_object['Metadata']['siteid'],
+        'objectkey' : input_key,
+        'process': 'elastic_transcoder',
+        'status': message_state,
+        'message': sns_message_object,
+        'timestamp': int(datetime.timestamp(now))
+        }
+    message_json = json.dumps(message_object)
 
     # Send message to SQS queue, we do this from Lambda not directly from sns,
     # as we want to add some extra information to the message.
     sqs_client.send_message(
         QueueUrl=sqs_url,
-        MessageBody='Test message that will eventually be json',
+        MessageBody=message_json,
         MessageAttributes={
             'siteid': {
                 'StringValue': input_object_headdata_object['Metadata']['siteid'],
@@ -174,7 +186,7 @@ def lambda_handler(event, context):
         job_id = sns_message_object['jobId']
         message_state = sns_message_object['state']  # Get message state
 
-        sqs_send_message(input_key)  # Send message to SQS queue
+        sqs_send_message(input_key, message_state, sns_message_object)  # Send message to SQS queue
 
         # Only process Rekognition tasks if job status is complete
         if message_state == 'COMPLETED':

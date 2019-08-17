@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This command line script will provision the Smart media environment in AWS.
+ * This command line script will provision the Smartmedia environment in AWS.
  *
  * @package     local_smartmedia
  * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
@@ -48,7 +48,7 @@ if ($unrecognized) {
 }
 
 if ($options['help'] || !$options['keyid'] || !$options['secret'] || !$options['region']) {
-    $help = "Command line Librelmbda provision.
+    $help = "Command line Smartmedia provision.
 This command line script will provision the Smart Media environment in AWS.
 
 Options:

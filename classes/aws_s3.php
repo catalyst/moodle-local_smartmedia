@@ -54,9 +54,17 @@ class aws_s3 {
 
     /**
      * Class constructor
+     *
+     * @param \stdClass|null $config Optional configuarion object to use.
      */
-    public function __construct() {
-        $this->config = get_config('local_smartmedia');
+    public function __construct($config=null) {
+
+        if ($config) {
+            $this->config = $config;
+        } else {
+            $this->config = get_config('local_smartmedia');
+        }
+
     }
 
     /**
@@ -142,7 +150,7 @@ class aws_s3 {
      * @param string $bucket Name of buket to check.
      * @return boolean true on success, false on failure.
      */
-    private function is_bucket_accessible($bucket) {
+    public function is_bucket_accessible($bucket) {
         $connection = new \stdClass();
         $connection->success = true;
         $connection->message = '';

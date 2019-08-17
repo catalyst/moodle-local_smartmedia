@@ -120,6 +120,29 @@ Output bucket: smt1565939869-output
 
 ```
 
+## Testing Smartmedia Conversion
+The following sections outline testing of the Smartmedia plugin.
+
+### Conversion test script
+Once the AWS architecture has been setup using the provisioning script, it can be tested from the command line.
+
+The following test command runs a basic conversion in AWS and returns the result status. To run the script:
+
+1. Change to your Moodle instance application directory. e.g. `cd /var/www/moodle`
+2. Run the following command, replacing `<keyid>` and `<secretkey>` With the AWS API Key ID and AWS API Secret Key that you obtained in the AWS Stack Setup. <br/> Replace `<region>` with the AWS region from the  AWS stack set, e.g. `ap-southeast-2`. <br/> Replace `<inputbucket>` and `<outputbucket>` with the buckets from the setup. <br/> Finally enter the path to the file wish to process.:
+
+```console
+sudo -u www-data php local/smartmedia/cli/test.php \
+--keyid=<keyid> \
+--secret=<secretkey> \
+--region=<region> \
+--input-bucket=<inputbucket> \
+--output-bucket=<outputbucket> \
+--file='/var/www/moodle/local/smartmedia/tests/fixtures/SampleVideo1mb.mp4'
+```
+
+**Note:** the user may be different to www-data on your system.
+
 ## Additional Information
 The following sections provide an overview of some additional topics for this plugin and it's associated AWS architecture.
 
