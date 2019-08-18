@@ -52,11 +52,13 @@ class process_conversions extends scheduled_task {
 
         // Get SQS messages from AWS.
         mtrace('local_smartmedia: Getting SQS queue messages');
-
-        $conversion = new \local_smartmedia\conversion();
+        $queueprocess = new \local_smartmedia\queue_process();
+        $processedqueue = $queueprocess->process_queue();
+        mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueue);
 
         // Process new conversions.
         mtrace('local_smartmedia: Process new conversions');
+        $conversion = new \local_smartmedia\conversion();
         $processed = $conversion->process_conversions();
 
         mtrace('local_smartmedia: Total number of processed files: ' . count($processed));

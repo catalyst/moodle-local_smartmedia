@@ -81,6 +81,12 @@ if ($hassiteconfig) {
             'ap-southeast-2',
             $regionoptions));
 
+    $settings->add(new admin_setting_configtext('local_smartmedia/sqs_queue_url',
+        get_string('settings:aws:sqs_queue_url', 'local_smartmedia'),
+        get_string('settings:aws:sqs_queue_url_help', 'local_smartmedia'),
+        '',
+        PARAM_URL));
+
     // Processing settings.
     $settings->add(new admin_setting_heading('processingheader',
         get_string('settings:processing:header', 'local_smartmedia'),

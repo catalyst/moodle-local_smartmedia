@@ -204,5 +204,6 @@ echo get_string(
     $createstackresponse->outputs['SmartMediaS3UserSecretKey']) . PHP_EOL;
 echo get_string('provision:inputbucket', 'local_smartmedia', $createstackresponse->outputs['InputBucket']) . PHP_EOL;
 echo get_string('provision:outputbucket', 'local_smartmedia', $createstackresponse->outputs['OutputBucket']) . PHP_EOL;
+echo get_string('provision:sqsqueue', 'local_smartmedia', $createstackresponse->outputs['SmartmediaSqsQueue']) . PHP_EOL;
 
 exit(0); // 0 means success.
