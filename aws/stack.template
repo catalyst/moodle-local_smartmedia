@@ -331,6 +331,10 @@ Resources:
       Code:
         S3Bucket: !Ref ResourceBucket
         S3Key: !Ref LambdaRekognitionCompleteArchiveKey
+      Environment:
+        Variables:
+          InputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'input'] ]
+          SmartmediaSqsQueue: !Ref SqsQueue
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'rekognition_complete'] ]
       Handler: lambda_rekognition_complete.lambda_handler
       MemorySize: 128

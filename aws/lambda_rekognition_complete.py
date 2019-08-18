@@ -25,10 +25,13 @@ import io
 import json
 import time
 from botocore.exceptions import ClientError
+from datetime import datetime
 
 logger = logging.getLogger()
 
 # Get clients and resources.
+s3_client = boto3.client('s3')
+sqs_client = boto3.client('sqs')
 s3_resource = boto3.resource('s3')
 rekognition_client = boto3.client('rekognition')
 
@@ -94,6 +97,49 @@ def get_detection_results(job_id, method, sort, result_key):
     return result_data
 
 
+def sqs_send_message(input_key, message_status, sns_message_object, rekognition_type):
+    # Get environvent variables
+    input_bucket = os.environ.get('InputBucket')  # Ouput S3 bucket
+    sqs_url = os.environ.get('SmartmediaSqsQueue')  # SQS queue URL.
+
+    # Get input object metadata as we will need for SQS message sending.
+    input_object_headdata_object = s3_client.head_object(
+        Bucket=input_bucket,
+        Key=input_key
+        )
+
+    # Create JSON message to send to SQS queue.
+
+    now = datetime.now()  # Current date and time.
+
+    message_object = {
+        'siteid' : input_object_headdata_object['Metadata']['siteid'],
+        'objectkey' : input_key,
+        'process': rekognition_type,
+        'status': message_status,
+        'message': sns_message_object,
+        'timestamp': int(datetime.timestamp(now))
+        }
+    message_json = json.dumps(message_object)
+
+    # Send message to SQS queue, we do this from Lambda not directly from sns,
+    # as we want to add some extra information to the message.
+    sqs_client.send_message(
+        QueueUrl=sqs_url,
+        MessageBody=message_json,
+        MessageAttributes={
+            'siteid': {
+                'StringValue': input_object_headdata_object['Metadata']['siteid'],
+                'DataType': 'String'
+            },
+            'inputkey': {
+                'StringValue': input_key,
+                'DataType': 'String'
+            },
+        }
+    )
+
+
 def lambda_handler(event, context):
     """
     lambda_handler is the entry point that is invoked when the lambda function is called,
@@ -107,13 +153,12 @@ def lambda_handler(event, context):
     logging_level = os.environ.get('LoggingLevel', logging.ERROR)
     logger.setLevel(int(logging_level))
 
-    logging.error(json.dumps(event))
-
     for record in event['Records']:
         sns_message_json = record['Sns']['Message']
         sns_message_object = json.loads(sns_message_json)
         job_id = sns_message_object['JobId']
         rekognition_type = sns_message_object['API']
+        message_status = sns_message_object['Status']  # Get message status
 
         labels = list()  # List to hold returned labels.
         output_bucket = sns_message_object['Video']['S3Bucket']
@@ -121,37 +166,42 @@ def lambda_handler(event, context):
         object_key = object_name.split('/', 1)[0]
         result_key = ''
 
-        if rekognition_type == 'StartLabelDetection':
-            logger.info('Getting label detection results')
-            method = 'get_label_detection'
-            sort = 'TIMESTAMP'
-            result_key = 'Labels'
-            label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected label data.
+        # Only process Rekognition tasks if job status is successful.
+        if message_status == 'SUCCEEDED':
 
-        elif rekognition_type == 'StartContentModeration':
-            logger.info('Getting label moderation results')
-            method = 'get_content_moderation'
-            sort = 'TIMESTAMP'
-            result_key = 'ModerationLabels'
-            label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected moderation data.
+            if rekognition_type == 'StartLabelDetection':
+                logger.info('Getting label detection results')
+                method = 'get_label_detection'
+                sort = 'TIMESTAMP'
+                result_key = 'Labels'
+                label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected label data.
 
-        elif rekognition_type == 'StartFaceDetection':
-            logger.info('Getting face detection results')
-            method = 'get_face_detection'
-            sort = ''
-            result_key = 'Faces'
-            label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected face data.
+            elif rekognition_type == 'StartContentModeration':
+                logger.info('Getting label moderation results')
+                method = 'get_content_moderation'
+                sort = 'TIMESTAMP'
+                result_key = 'ModerationLabels'
+                label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected moderation data.
 
-        elif rekognition_type == 'StartPersonTracking':
-            logger.info('Getting person tracking results')
-            method = 'get_person_tracking'
-            sort = 'INDEX'
-            result_key = 'Persons'
-            label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected person data.
+            elif rekognition_type == 'StartFaceDetection':
+                logger.info('Getting face detection results')
+                method = 'get_face_detection'
+                sort = ''
+                result_key = 'Faces'
+                label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected face data.
 
-        if result_key != '':
-            # Put detected labels in output S3 bucket as json file.
-            s3_object = s3_resource.Object(output_bucket, '{}/metadata/{}.json'.format(object_key, result_key))
-            s3_object.put(
-                Body=(bytes(json.dumps(label_results).encode('UTF-8')))
-            )
+            elif rekognition_type == 'StartPersonTracking':
+                logger.info('Getting person tracking results')
+                method = 'get_person_tracking'
+                sort = 'INDEX'
+                result_key = 'Persons'
+                label_results = get_detection_results(job_id, method, sort, result_key)  # Get detected person data.
+
+            if result_key != '':
+                # Put detected labels in output S3 bucket as json file.
+                s3_object = s3_resource.Object(output_bucket, '{}/metadata/{}.json'.format(object_key, result_key))
+                s3_object.put(
+                    Body=(bytes(json.dumps(label_results).encode('UTF-8')))
+                )
+
+        sqs_send_message(object_key, message_status, sns_message_object, rekognition_type)  # Send message to SQS queue.

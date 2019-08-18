@@ -177,13 +177,6 @@ $envvararray = array(
         'values' => array(
             'PipelineId' => $createstackresponse->outputs['TranscodePipelineId'],
             'SmartmediaSqsQueue' => $createstackresponse->outputs['SmartmediaSqsQueue'])
-    ),
-    array(
-        'function' => $createstackresponse->outputs['RekognitionCompleteLambdaArn'],
-        'values' => array(
-            'SnsTopicRekognitionComplete' => $createstackresponse->outputs['SnsTopicRekognitionCompleteArn'],
-            'OutputBucket' => $createstackresponse->outputs['OutputBucket']
-        )
     )
 );
 
