@@ -89,7 +89,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
      *
      * @param array $mockdata the mock data to use for result.
      *
-     * @return array the api stub and expected result from calling get_pricing_client method on stub.
+     * @return array the pricing client mock and expected result from calling create_pricing_client method on stub.
      */
     public function create_mock_pricing_client($mockdata) {
         // Inject our results fixture into the API dependency as a mock using a handler.
@@ -97,12 +97,8 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
         $mockresult = new Result($mockdata);
         $mockhandler->append($mockresult);
 
-        // Create the mock response Pricing Client.
-        $mock = new PricingClient([
-            'region' => $this->region,
-            'version' => $this->version,
-            'credentials' => ['key' => $this->apikey, 'secret' => $this->apisecret],
-            'handler' => $mockhandler]);
+        $provisioner = new \local_smartmedia\provision($this->apikey, $this->apisecret, $this->region);
+        $mock = $provisioner->create_pricing_client($mockhandler);
 
         return [$mock, $mockresult];
     }

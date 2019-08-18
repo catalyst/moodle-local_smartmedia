@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 
 require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 
+use Aws\Pricing\PricingClient;
 use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
 use Aws\CloudFormation\CloudFormationClient;
@@ -82,6 +83,11 @@ class provision {
      */
     private $lambdaclient;
 
+    /**
+     * @var \Aws\Pricing\PricingClient Pricing client.
+     */
+    private $pricingclient;
+
 
     /**
      * The constructor for the class
@@ -91,8 +97,6 @@ class provision {
      * @param string $region The AWS region to create the environment in.
      */
     public function __construct($keyid, $secret, $region) {
-        global $CFG;
-
         $this->keyid = $keyid;
         $this->secret = $secret;
         $this->region = $region;
@@ -122,7 +126,6 @@ class provision {
         return $bucketexists;
     }
 
-
     /**
      * Create AWS S3 API client.
      *
@@ -150,7 +153,6 @@ class provision {
 
         return $this->s3client;
     }
-
 
     /**
      * Create an S3 Bucket in AWS.
@@ -212,7 +214,6 @@ class provision {
         return $result;
 
     }
-
 
     /**
      * Put file into S3 bucket.
@@ -416,9 +417,8 @@ class provision {
         return $result;
     }
 
-
     /**
-     * Create and AWS Lambda API client.
+     * Create an AWS Lambda API client.
      *
      * @param \GuzzleHttp\Handler $handler Optional handler.
      * @return \Aws\Lambda\LambdaClient The created Lambda client.
@@ -475,5 +475,35 @@ class provision {
         }
 
         return $result;
+    }
+
+    /**
+     * Create the AWS Pricing Client for querying AWS Price List Service API.
+     *
+     * @param \Aws\MockHandler|null $handler Optional handler.
+     * @param string $version the AWS Pricing Client version to use for API calls.
+     *
+     * @return \Aws\Pricing\PricingClient
+     */
+    public function create_pricing_client($handler = null, $version = '2017-10-15') : PricingClient {
+        $connectionoptions = array(
+            'version' => $version,
+            'region' => 'us-east-1', // Pricing client only available in this region.
+            'credentials' => [
+                'key' => $this->keyid,
+                'secret' => $this->secret
+            ]);
+
+        // Allow handler overriding for testing.
+        if ($handler != null) {
+            $connectionoptions['handler'] = $handler;
+        }
+
+        // Only create client if it hasn't already been done.
+        if ($this->pricingclient == null) {
+            $this->pricingclient = new PricingClient($connectionoptions);
+        }
+
+        return $this->pricingclient;
     }
 }
