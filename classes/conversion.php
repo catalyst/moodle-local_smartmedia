@@ -416,8 +416,6 @@ class conversion {
             // We should check the error queue
 
 
-            // NOTE: WE DO NEED TO CHECK IF REKOG SERVICES PUBLISH ERRORS TO SNS.
-
 
 
 

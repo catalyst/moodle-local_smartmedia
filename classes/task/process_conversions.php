@@ -49,6 +49,10 @@ class process_conversions extends scheduled_task {
      * Throw exceptions on errors (the job will be retried).
      */
     public function execute() {
+
+        // Get SQS messages from AWS.
+        mtrace('local_smartmedia: Getting SQS queue messages');
+
         $conversion = new \local_smartmedia\conversion();
 
         // Process new conversions.
@@ -62,9 +66,6 @@ class process_conversions extends scheduled_task {
             }
 
         }
-
-        // Get SQS messages from AWS.
-
         // Update pending conversions.
         mtrace('local_smartmedia: Updating pending conversions');
         $updated = $conversion->update_pending_conversions();
