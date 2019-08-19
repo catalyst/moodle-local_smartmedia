@@ -196,7 +196,7 @@ class aws_ets_pricing_client {
      * @return \local_smartmedia\location_transcode_pricing $locationpricing object containing pricing.
      */
     public function get_location_pricing($region) {
-        $locationpricing = new location_transcode_pricing();
+        $locationpricing = new location_transcode_pricing($region);
 
         // Filter products by location.
         $locationfilter = ['Field' => 'location', 'Type' => self::DEFAULT_TYPE, 'Value' => self::REGION_LOCATIONS[$region]];

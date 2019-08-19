@@ -28,6 +28,7 @@ namespace local_smartmedia\output;
 defined('MOODLE_INTERNAL') || die;
 
 use local_smartmedia\aws_ets_pricing_client;
+use local_smartmedia\location_transcode_pricing;
 use moodle_url;
 use table_sql;
 use renderable;
@@ -62,7 +63,7 @@ class report_table extends table_sql implements renderable {
      *
      * @param string $uniqueid Unique id of table.
      * @param string $baseurl the base url to render this report on.
-     * @param aws_ets_pricing_client $pricingclient
+     * @param location_transcode_pricing $locationpricing
      * @param int $page the page number for pagination.
      * @param int $perpage amount of records per page for pagination.
      * @param string $download dataformat type. One of csv, xhtml, ods, etc
@@ -70,7 +71,7 @@ class report_table extends table_sql implements renderable {
      * @throws \coding_exception
      * @throws \moodle_exception if there is an issue defining the baseline url.
      */
-    public function __construct(string $uniqueid, string $baseurl, aws_ets_pricing_client $pricingclient, int $page = 0,
+    public function __construct(string $uniqueid, string $baseurl, location_transcode_pricing $locationpricing, int $page = 0,
                                 int $perpage = 50, string $download = '') {
         parent::__construct($uniqueid);
 
@@ -91,25 +92,12 @@ class report_table extends table_sql implements renderable {
         // Setup pagination.
         $this->currpage = $page;
         $this->pagesize = $perpage;
-        $this->set_location_pricing($pricingclient);
+        $this->locationpricing = $locationpricing;
         $this->sortable(true);
         $this->no_sorting('format');
         $this->no_sorting('cost');
         $this->set_sql(self::FIELDS, '{local_smartmedia_data}', self::DEFAULT_WHERE);
 
-    }
-
-    /**
-     * Set the pricing to use for this report table.
-
-     * @param aws_ets_pricing_client $pricingclient aws_ets_pricing_client the pricing client to use for querying AWS Pricing API.
-     *
-     * @throws \dml_exception if the region is not set.
-     */
-    private function set_location_pricing(aws_ets_pricing_client $pricingclient) {
-        $region = get_config('local_smartmedia', 'api_region');
-        $locationpricing = $pricingclient->get_location_pricing($region);
-        $this->locationpricing = $locationpricing;
     }
 
     /**
@@ -205,16 +193,16 @@ class report_table extends table_sql implements renderable {
         $cost = null;
         if (!empty($this->locationpricing)) {
             $cost = $this->locationpricing->calculate_transcode_cost($row->height, $row->duration);
-            // Round the result for better display if we aren't downloading the data.
-            if (!$this->is_downloading()) {
-                $cost = round($cost, 4);
-            }
         }
-        // If there is no cost or the cost is zero, there is no cost data for this location.
-        if (empty($cost)) {
+        // If cost is null, there is no cost data for this location.
+        if (is_null($cost)) {
             $cost = get_string('report:nocostdata', 'local_smartmedia');
             $displaycost = $this->format_text($cost);
         } else {
+            // Round the cost for better display if we aren't downloading the data.
+            if (!$this->is_downloading() && !is_null($cost)) {
+                $cost = round($cost, 4);
+            }
             $displaycost = $this->format_text('$' . $cost);
         }
         return $displaycost;
