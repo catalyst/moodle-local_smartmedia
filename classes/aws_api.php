@@ -96,6 +96,7 @@ class aws_api {
     /**
      * Get the AWS Pricing Client for querying AWS Price List Service API.
      *
+     * @param \Aws\MockHandler|null $handler Optional handler.
      * @param string $version the AWS Pricing Client version to use for API calls.
      *
      * @return \Aws\Pricing\PricingClient
