@@ -61,6 +61,11 @@ class aws_api {
     private $credentials;
 
     /**
+     * @var \Aws\Pricing\PricingClient for accessing the AWS Pricing List API.
+     */
+    private $pricingclient;
+
+    /**
      * aws_api constructor.
      *
      * @throws \dml_exception
@@ -95,7 +100,7 @@ class aws_api {
      *
      * @return \Aws\Pricing\PricingClient
      */
-    public function get_pricing_client($version = '2017-10-15') : PricingClient {
+    public function create_pricing_client($handler = null, $version = '2017-10-15') : PricingClient {
 
         // Set up the minimum arguments required for client.
         $args = [
@@ -104,8 +109,16 @@ class aws_api {
             'version' => $version,
         ];
 
-        $client = new PricingClient($args);
+        // Allow handler overriding for testing.
+        if ($handler != null) {
+            $args['handler'] = $handler;
+        }
 
-        return $client;
+        // Only create client if it hasn't already been done.
+        if ($this->pricingclient == null) {
+            $this->pricingclient = new PricingClient($args);
+        }
+
+        return $this->pricingclient;
     }
 }

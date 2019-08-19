@@ -47,7 +47,7 @@ $output = $PAGE->get_renderer('local_smartmedia');
 
 // Build the report dependencies.
 $api = new \local_smartmedia\aws_api();
-$pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->get_pricing_client());
+$pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->create_pricing_client());
 $locationpricing = $pricingclient->get_location_pricing(get_config('local_smartmedia', 'api_region'));
 
 echo $output->render_report($baseurl, $locationpricing, $page, $perpage, $download);

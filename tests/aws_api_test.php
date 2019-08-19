@@ -102,13 +102,13 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
      * @dataProvider credentials_provider
      * @throws \dml_exception
      */
-    public function test_get_pricing_client($apikey, $apisecret) {
+    public function test_create_pricing_client($apikey, $apisecret) {
 
         set_config('api_key', $apikey, 'local_smartmedia');
         set_config('api_secret', $apisecret, 'local_smartmedia');
 
         $api = new aws_api();
-        $pricingclient = $api->get_pricing_client();
+        $pricingclient = $api->create_pricing_client();
         $this->assertInstanceOf(\Aws\Pricing\PricingClient::class, $pricingclient);
 
         // Incorrect credentials should result in an AwsException when trying to use the client,
