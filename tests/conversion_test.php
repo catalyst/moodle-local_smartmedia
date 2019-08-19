@@ -300,14 +300,14 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
         $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
         $conversionrecord->status = 202;
-        $conversionrecord->transcribe = 1;
-        $conversionrecord->rekog_label = 0;
-        $conversionrecord->rekog_moderation = 1;
-        $conversionrecord->rekog_face = 0;
-        $conversionrecord->rekog_person = 1;
-        $conversionrecord->detect_sentiment = 0;
-        $conversionrecord->detect_phrases = 1;
-        $conversionrecord->detect_entities = 0;
+        $conversionrecord->transcribe_status = 202;
+        $conversionrecord->rekog_label_status = 404;
+        $conversionrecord->rekog_moderation_status = 202;
+        $conversionrecord->rekog_face_status= 404;
+        $conversionrecord->rekog_person_status = 202;
+        $conversionrecord->detect_sentiment_status = 404;
+        $conversionrecord->detect_phrases_status = 202;
+        $conversionrecord->detect_entities_status = 404;
 
         $preset1 = new \stdClass();
         $preset1->convid = 508000;
@@ -384,14 +384,14 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
         $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
         $conversionrecord->status = 202;
-        $conversionrecord->transcribe = 1;
-        $conversionrecord->rekog_label = 0;
-        $conversionrecord->rekog_moderation = 1;
-        $conversionrecord->rekog_face = 0;
-        $conversionrecord->rekog_person = 1;
-        $conversionrecord->detect_sentiment = 0;
-        $conversionrecord->detect_phrases = 1;
-        $conversionrecord->detect_entities = 0;
+        $conversionrecord->transcribe_status = 202;
+        $conversionrecord->rekog_label_status = 404;
+        $conversionrecord->rekog_moderation_status = 202;
+        $conversionrecord->rekog_face_status= 404;
+        $conversionrecord->rekog_person_status = 202;
+        $conversionrecord->detect_sentiment_status = 404;
+        $conversionrecord->detect_phrases_status = 202;
+        $conversionrecord->detect_entities_status = 404;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -418,19 +418,18 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
+        $conversion = new \local_smartmedia\conversion();
+
         $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
         $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
         $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
-        $conversionrecord->status = 202;
-        $conversionrecord->transcribe = 1;
-        $conversionrecord->rekog_label = 0;
-        $conversionrecord->rekog_moderation = 1;
-        $conversionrecord->rekog_face = 0;
-        $conversionrecord->rekog_person = 1;
-        $conversionrecord->detect_sentiment = 0;
-        $conversionrecord->detect_phrases = 1;
-        $conversionrecord->detect_entities = 0;
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -458,16 +457,18 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $messagerecord3->senttime = '1566091817';
         $messagerecord3->timecreated = '1566197550';
 
-        $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord1);
-        $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord2);
-        $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord3);
+        $msg1 = $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord1);
+        $msg2 = $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord2);
+        $msg3 = $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord3);
 
-        $conversion = new \local_smartmedia\conversion();
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_queue_messages');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $conversionrecord);
 
-        error_log(print_r($result, true));
+        $this->assertCount(2, $result);
+        $this->assertArrayHasKey($msg1, $result);
+        $this->assertArrayHasKey($msg2, $result);
+        $this->assertArrayNotHasKey($msg3, $result);
     }
 
 }

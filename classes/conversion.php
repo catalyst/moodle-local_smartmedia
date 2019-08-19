@@ -285,9 +285,9 @@ class conversion {
 
         $conditions = array('status' => $status);
         $limit = self::MAX_FILES;
-        $fields = 'id, pathnamehash, contenthash, status, transcribe,
-                  rekog_label, rekog_moderation, rekog_face, rekog_person,
-                  detect_sentiment, detect_phrases, detect_entities';
+        $fields = 'id, pathnamehash, contenthash, status, transcoder_status, transcribe_status,
+                  rekog_label_status, rekog_moderation_status, rekog_face_status, rekog_person_status,
+                  detect_sentiment_status, detect_phrases_status, detect_entities_status';
 
         $filerecords = $DB->get_records('local_smartmedia_conv', $conditions, '', $fields, 0, $limit);
 
@@ -306,14 +306,16 @@ class conversion {
         // Metadata space per S3 object is limited so do some dirty encoding
         // of the processes we want to carry out on the file. These are
         // interpereted on the AWS side.
-        $processes = (string)$conversionrecord->transcribe
-        . (string)$conversionrecord->rekog_label
-        . (string)$conversionrecord->rekog_moderation
-        . (string)$conversionrecord->rekog_face
-        . (string)$conversionrecord->rekog_person
-        . (string)$conversionrecord->detect_sentiment
-        . (string)$conversionrecord->detect_phrases
-        . (string)$conversionrecord->detect_entities;
+
+        $processes = '';
+        $processes .= $conversionrecord->transcribe_status == self::CONVERSION_ACCEPTED ? '1' : '0';
+        $processes .= $conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED ? '1' : '0';
+        $processes .= $conversionrecord->rekog_moderation_status == self::CONVERSION_ACCEPTED ? '1' : '0';
+        $processes .= $conversionrecord->rekog_face_status == self::CONVERSION_ACCEPTED ? '1' : '0';
+        $processes .= $conversionrecord->rekog_person_status == self::CONVERSION_ACCEPTED ? '1' : '0';
+        $processes .= $conversionrecord->detect_sentiment_status == self::CONVERSION_ACCEPTED ? '1' : '0';
+        $processes .= $conversionrecord->detect_phrases_status == self::CONVERSION_ACCEPTED ? '1' : '0';
+        $processes .= $conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED ? '1' : '0';
 
         $presets = $DB->get_fieldset_select('local_smartmedia_presets', 'preset', 'convid = ?', array($conversionrecord->id));
         $prsetstring = implode(',', $presets);
@@ -403,14 +405,14 @@ class conversion {
         }
 
         return $results;
-
     }
 
     /**
      * Given a conversion record get all the messages from the sqs queue message table
      * that are for this contenthash (object id).
      * We only get "success" and "failure" messages we don't care about pending or warning messages.
-     * Only check for messages relating to configured conversions for this record.
+     * Only check for messages relating to configured conversions for this record that haven't
+     * already succeed or failed.
      *
      * @param \stdClass $conversionrecord The conversion record to get messages for.
      * @return array $queuemessages The matching queue messages.
@@ -419,19 +421,24 @@ class conversion {
         global $DB;
 
         // Using the conversion record determine which services we are looking for messages from.
+        // Only get messages for conversions that have not yet finished.
         $services = array();
         $services[] = 'elastic_transcoder'; // Files are always going to be processed by Elastic transcoder.
 
-        if($conversionrecord->rekog_label) {
+        if($conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartLabelDetection';
         }
-        if($conversionrecord->rekog_moderation) {
+        if($conversionrecord->rekog_moderation_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_moderation_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartContentModeration';
         }
-        if($conversionrecord->rekog_face) {
+        if($conversionrecord->rekog_face_status -= self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_face_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartFaceDetection';
         }
-        if($conversionrecord->rekog_person) {
+        if($conversionrecord->rekog_person_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_person_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartPersonTracking';
         }
 
@@ -451,8 +458,23 @@ class conversion {
         return $queuemessages;
     }
 
-    private function determine_remaining_processing(\stdClass $conversionrecord) : array {
+    private function process_conversion(\stdClass $conversionrecord, array $queuemessages) : array {
 
+        foreach ($queuemessages as $message) {
+            if ($message->status == 'ERROR' && $message->process == 'elastic_transcoder') {
+                // If Elastic Transcoder conversion has failed then all other conversions have also failed.
+
+            } else if ($message->status == 'COMPLETED' || $message->status == 'SUCCEEDED') {
+                // For each successful status get the file/s for the conversion.
+
+            } else if ($message->status == 'ERROR') {
+                // For each failed status mark it as failed in the record.
+            }
+        }
+
+        // Update the database with the modiefied conversion record.
+
+        return array();
     }
 
     /**
@@ -474,9 +496,10 @@ class conversion {
             // We also know any possible failed statuses from the retrieved SQS messages.
 
 
-            // For each record check what the status of each conversion process is.
+            // Get recevied messages for this conversion record that are not related to already completed processes.
+            $queuemessages = $this->get_queue_messages($conversionrecord);
 
-            // Get the data for each completed process
+            //
 
             // If all conversions have reached a final state (complete or failed) update overall conversion status.
 

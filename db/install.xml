@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/smartmedia/db" VERSION="20190818" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+<XMLDB PATH="local/smartmedia/db" VERSION="20190819" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -28,14 +28,15 @@
         <FIELD NAME="pathnamehash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="complete file path sha1 hash - unique for each file"/>
         <FIELD NAME="contenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="Moodle contenthash of the file"/>
         <FIELD NAME="status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="100" SEQUENCE="false" COMMENT="The processing status of the record."/>
-        <FIELD NAME="transcribe" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include automated transcription"/>
-        <FIELD NAME="rekog_label" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include label recognition"/>
-        <FIELD NAME="rekog_moderation" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include moderation detection"/>
-        <FIELD NAME="rekog_face" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include face detection"/>
-        <FIELD NAME="rekog_person" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include person tracking"/>
-        <FIELD NAME="detect_sentiment" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include sentiment detection"/>
-        <FIELD NAME="detect_phrases" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include phrase detection"/>
-        <FIELD NAME="detect_entities" TYPE="binary" NOTNULL="true" SEQUENCE="false" COMMENT="Does the conversion process include entity detection"/>
+        <FIELD NAME="transcoder_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="201" SEQUENCE="false" COMMENT="status of the elastic transcoder process"/>
+        <FIELD NAME="transcribe_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="Status of the transcription job"/>
+        <FIELD NAME="rekog_label_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="The status of the label detection job"/>
+        <FIELD NAME="rekog_moderation_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="The status of the moderation detection process"/>
+        <FIELD NAME="rekog_face_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="Status of face detection process"/>
+        <FIELD NAME="rekog_person_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="Progress of the person detection process"/>
+        <FIELD NAME="detect_sentiment_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="Status of the sentiment detection process"/>
+        <FIELD NAME="detect_phrases_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="Status of the phrase detection process"/>
+        <FIELD NAME="detect_entities_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="Status of the phrase detection process"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when the record was created"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Unix timestamp of when record was last modified"/>
         <FIELD NAME="timecompleted" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Unix timestamp of when record processing was completed"/>
