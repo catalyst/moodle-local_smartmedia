@@ -381,6 +381,44 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         global $DB;
 
         $conversionrecord = new \stdClass();
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $conversionrecord->status = 202;
+        $conversionrecord->transcribe = 1;
+        $conversionrecord->rekog_label = 0;
+        $conversionrecord->rekog_moderation = 1;
+        $conversionrecord->rekog_face = 0;
+        $conversionrecord->rekog_person = 1;
+        $conversionrecord->detect_sentiment = 0;
+        $conversionrecord->detect_phrases = 1;
+        $conversionrecord->detect_entities = 0;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $recordid = $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+        $conversion = new \local_smartmedia\conversion();
+
+        $updates = array();
+        $updates[$recordid] = $conversion::CONVERSION_IN_PROGRESS;
+
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'update_conversion_records');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $method->invoke($conversion, $updates);
+
+        $result = $DB->get_field('local_smartmedia_conv', 'status', array('id' => $recordid));
+
+        $this->assertEquals($conversion::CONVERSION_IN_PROGRESS, $result);
+
+    }
+
+    /**
+     * Test getting queue messages.
+     */
+    public function test_get_queue_messages() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
         $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
         $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
@@ -396,20 +434,40 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
-        $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+        $messagerecord1 = new \stdClass();
+        $messagerecord1->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $messagerecord1->process = 'StartContentModeration';
+        $messagerecord1->status = 'SUCCEEDED';
+        $messagerecord1->message = '{}';
+        $messagerecord1->senttime = '1566091817';
+        $messagerecord1->timecreated = '1566197550';
+
+        $messagerecord2 = new \stdClass();
+        $messagerecord2->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $messagerecord2->process = 'elastic_transcoder';
+        $messagerecord2->status = 'COMPLETED';
+        $messagerecord2->message = '{}';
+        $messagerecord2->senttime = '1566091817';
+        $messagerecord2->timecreated = '1566197550';
+
+        $messagerecord3 = new \stdClass();
+        $messagerecord3->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $messagerecord3->process = 'elastic_transcoder';
+        $messagerecord3->status = 'PROGRESSING';
+        $messagerecord3->message = '{}';
+        $messagerecord3->senttime = '1566091817';
+        $messagerecord3->timecreated = '1566197550';
+
+        $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord1);
+        $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord2);
+        $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord3);
 
         $conversion = new \local_smartmedia\conversion();
-
-        $updates = array();
-        $updates[$conversionrecord->id] = $conversion::CONVERSION_IN_PROGRESS;
-
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'update_conversion_records');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_queue_messages');
         $method->setAccessible(true); // Allow accessing of private method.
-        $method->invoke($conversion, $updates);
+        $result = $method->invoke($conversion, $conversionrecord);
 
-        $result = $DB->get_field('local_smartmedia_conv', 'status', array('id' => $conversionrecord->id));
-
-        $this->assertEquals($conversion::CONVERSION_IN_PROGRESS, $result);
-
+        error_log(print_r($result, true));
     }
+
 }

@@ -79,6 +79,19 @@ class conversion {
     private const MAX_FILES = 1000;
 
     /**
+     * The message states we want to check for in messages received from the SQS queue.
+     * We only care about successes and failures.
+     * In normal operation we ignore progress and other messages.
+     *
+     * @var array
+     */
+    private const sqs_message_states = array(
+        'SUCCEEDED', // Rekognition success status.
+        'COMPLETED', // Elastic Transcoder success status.
+        'ERROR', // Elastic Transcoder error status.
+    );
+
+    /**
      * Class constructor
      */
     public function __construct() {
@@ -394,6 +407,55 @@ class conversion {
     }
 
     /**
+     * Given a conversion record get all the messages from the sqs queue message table
+     * that are for this contenthash (object id).
+     * We only get "success" and "failure" messages we don't care about pending or warning messages.
+     * Only check for messages relating to configured conversions for this record.
+     *
+     * @param \stdClass $conversionrecord The conversion record to get messages for.
+     * @return array $queuemessages The matching queue messages.
+     */
+    private function get_queue_messages(\stdClass $conversionrecord) : array {
+        global $DB;
+
+        // Using the conversion record determine which services we are looking for messages from.
+        $services = array();
+        $services[] = 'elastic_transcoder'; // Files are always going to be processed by Elastic transcoder.
+
+        if($conversionrecord->rekog_label) {
+            $services[] = 'StartLabelDetection';
+        }
+        if($conversionrecord->rekog_moderation) {
+            $services[] = 'StartContentModeration';
+        }
+        if($conversionrecord->rekog_face) {
+            $services[] = 'StartFaceDetection';
+        }
+        if($conversionrecord->rekog_person) {
+            $services[] = 'StartPersonTracking';
+        }
+
+        // Get all queue messages for this object.
+        list($processinsql, $processinparams) = $DB->get_in_or_equal($services);
+        list($statusinsql, $statusinparams) = $DB->get_in_or_equal(self::sqs_message_states);
+        $params = array_merge($processinparams, $statusinparams);
+        $params[] = $conversionrecord->contenthash;
+
+        $sql = "SELECT *
+                  FROM {local_smartmedia_queue_msgs}
+                 WHERE process $processinsql
+                       AND status $statusinsql
+                       AND objectkey = ?";
+        $queuemessages = $DB->get_records_sql($sql, $params);
+
+        return $queuemessages;
+    }
+
+    private function determine_remaining_processing(\stdClass $conversionrecord) : array {
+
+    }
+
+    /**
      * Update pending conversions.
      *
      * @return array $results The results of the processing.
@@ -402,7 +464,6 @@ class conversion {
         global $DB;
 
         $results = array();
-
         $conversionrecords = $this->get_conversion_records(self::CONVERSION_IN_PROGRESS); // Get pending conversion records.
 
         foreach ($conversionrecords as $conversionrecord) { // Itterate through pending records.
@@ -410,17 +471,14 @@ class conversion {
             // and thus what outputs to expect.
             // We also know what files we have downloaded and what metadata we have.
             // So only get the remaining files and data.
-
-            // We need to be able to determine that a process has failed and no file will ever be created,
-            // versus the situation where we are still waiting for the conversion.
-            // We should check the error queue
+            // We also know any possible failed statuses from the retrieved SQS messages.
 
 
+            // For each record check what the status of each conversion process is.
 
+            // Get the data for each completed process
 
-
-            // For each record check what files and metadata have been retrieved based on the settings.
-            $settings = $this->get_convserion_settings($conversionrecord); // Get convession settings.
+            // If all conversions have reached a final state (complete or failed) update overall conversion status.
 
             // Check AWS for the completion status.
 
