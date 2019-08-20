@@ -201,7 +201,11 @@ class aws_ets_pricing_client {
         // Filter products by location.
         $locationfilter = ['Field' => 'location', 'Type' => self::DEFAULT_TYPE, 'Value' => self::REGION_LOCATIONS[$region]];
         // Filter only working transcode services.
-        $transcodingresultfilter = ['Field' => 'transcodingResult', 'Type' => self::DEFAULT_TYPE, 'Value' => self::TRANSCODINGRESULT_SUCCESS];
+        $transcodingresultfilter = [
+            'Field' => 'transcodingResult',
+            'Type' => self::DEFAULT_TYPE,
+            'Value' => self::TRANSCODINGRESULT_SUCCESS
+        ];
         $products = $this->get_products([$locationfilter, $transcodingresultfilter]);
 
         foreach ($products as $product) {

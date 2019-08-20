@@ -27,7 +27,7 @@ namespace local_smartmedia\output;
 
 defined('MOODLE_INTERNAL') || die;
 
-use local_smartmedia\location_transcode_pricing;
+use local_smartmedia\pricing_calculator;
 use renderable;
 use renderer_base;
 use stdClass;
@@ -44,9 +44,9 @@ use templatable;
 class report_summary implements renderable, templatable {
 
     /**
-     * @var \local_smartmedia\location_transcode_pricing the pricing
+     * @var \local_smartmedia\pricing_calculator the pricing calculator for calculation pricing info.
      */
-    private $locationpricing;
+    private $pricingcalculator;
 
     /**
      * @var string the AWS region code.
@@ -61,11 +61,40 @@ class report_summary implements renderable, templatable {
     /**
      * report_summary constructor.
      *
-     * @param \local_smartmedia\location_transcode_pricing $locationpricing
+     * @param \local_smartmedia\pricing_calculator $pricingcalculator the pricing calculator for transcode cost calculation.
+     * @param string $region the AWS region which this report summary applies to.
      */
-    public function __construct(location_transcode_pricing $locationpricing) {
-        $this->locationpricing = $locationpricing;
-        $this->region = $locationpricing->get_region();
+    public function __construct(pricing_calculator $pricingcalculator, $region) {
+        $this->pricingcalculator = $pricingcalculator;
+        $this->region = $region;
+    }
+
+
+    /**
+     * Validate that all location pricing is valid in pricing calculator, add warnings if not.
+     *
+     * @throws \coding_exception
+     */
+    private function validate_pricing() {
+
+        if (!$this->pricingcalculator->is_high_definition_pricing_valid()) {
+            $warning = new stdClass();
+            $warning->message = get_string('report:summary:warning:nohdcost', 'local_smartmedia', $this->region);
+            $this->warnings[] = $warning;
+        }
+
+        if (!$this->pricingcalculator->is_standard_definition_pricing_valid()) {
+            $warning = new stdClass();
+            $warning->message = get_string('report:summary:warning:nosdcost', 'local_smartmedia', $this->region);
+            $this->warnings[] = $warning;
+        }
+
+        if (!$this->pricingcalculator->is_audio_pricing_valid()) {
+            $warning = new stdClass();
+            $warning->message = get_string('report:summary:warning:noaudiocost', 'local_smartmedia', $this->region);
+            $this->warnings[] = $warning;
+        }
+
     }
 
     /**
@@ -74,47 +103,25 @@ class report_summary implements renderable, templatable {
      * @return float|int $total
      *
      * @throws \dml_exception
-     * @throws \coding_exception
      */
     private function calculate_total_cost() {
         global $DB;
 
         // Get the duration of media type content (in seconds) for cost calculation.
-        $highdefinition = $DB->get_record_select('local_smartmedia_data', 'height >= 720',
-            null, 'SUM(duration)');
-        $standarddefinition = $DB->get_record_select('local_smartmedia_data', '(height < 720) AND (height > 0)',
-            null, 'SUM(duration)');
+        $highdefinition = $DB->get_record_select('local_smartmedia_data', 'height >= ?',
+            [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'SUM(duration)');
+        $standarddefinition = $DB->get_record_select('local_smartmedia_data', '(height < ?) AND (height > 0)',
+            [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'SUM(duration)');
         $audio = $DB->get_record_select('local_smartmedia_data', '(height = 0) OR (height IS NULL)',
             null, 'SUM(duration)');
 
-        $total = 0;
-
-        $totalhdcost = $this->locationpricing->calculate_high_definition_cost($highdefinition->sum);
-        if (!is_null($totalhdcost)) {
-            $total += $totalhdcost;
-        } else {
-            $warning = new stdClass();
-            $warning->message = get_string('report:summary:warning:nohdcost', 'local_smartmedia', $this->region);
-            $this->warnings[] = $warning;
-        }
-
-        $totalsdcost = $this->locationpricing->calculate_standard_definition_cost($standarddefinition->sum);
-        if (!is_null($totalsdcost)) {
-            $total += $totalsdcost;
-        } else {
-            $warning = new stdClass();
-            $warning->message = get_string('report:summary:warning:nosdcost', 'local_smartmedia', $this->region);
-            $this->warnings[] = $warning;
-        }
-
-        $totalaudiocost = $this->locationpricing->calculate_audio_cost($audio->sum);
-        if (!is_null($totalaudiocost)) {
-            $total += $totalaudiocost;
-        } else {
-            $warning = new stdClass();
-            $warning->message = get_string('report:summary:warning:noaudiocost', 'local_smartmedia', $this->region);
-            $this->warnings[] = $warning;
-        }
+        $totalhdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,
+            $highdefinition->sum);
+        $totalsdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_SD_HEIGHT,
+            $standarddefinition->sum);
+        $totalaudiocost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_AUDIO_HEIGHT,
+            $audio->sum);
+        $total = $totalhdcost + $totalsdcost + $totalaudiocost;
 
         return $total;
     }
@@ -130,6 +137,8 @@ class report_summary implements renderable, templatable {
      * @throws \coding_exception
      */
     public function export_for_template(renderer_base $output) {
+        $this->validate_pricing();
+
         $context = new stdClass();
         $context->total = '$' . number_format($this->calculate_total_cost(), 4);
         $context->warnings = $this->warnings;

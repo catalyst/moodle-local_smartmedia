@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Unit test for \local_smartmedia\output\report_filter class.
+ * Unit test for \local_smartmedia\aws_ets_pricing_client class.
  *
  * @package    local_smartmedia
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
@@ -35,11 +35,12 @@ use local_smartmedia\aws_ets_product;
 use local_smartmedia\location_transcode_pricing;
 
 /**
- * Unit test for \local_smartmedia\output\report_filter class.
+ * Unit test for \local_smartmedia\aws_ets_pricing_client class.
  *
  * @package    local_smartmedia
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      local_smartmedia
  */
 class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase {
 
@@ -88,7 +89,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
     }
 
     /**
-     * Create a mock of \local_smartmedia\aws_ets_pricing_client for injecting into \local_smartmedia\aws_ets_pricing_client.
+     * Create a mock of \Aws\Pricing\PricingClient for injecting into \local_smartmedia\aws_ets_pricing_client.
      *
      * @param array $mockdata the mock data to use for result.
      *

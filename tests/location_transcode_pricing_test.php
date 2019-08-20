@@ -20,6 +20,7 @@
  * @package    local_smartmedia
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      local_smartmedia
  */
 
 defined('MOODLE_INTERNAL') || die();
@@ -37,62 +38,6 @@ class local_smartmedia_location_transcode_pricing_testcase extends advanced_test
 
     public function setUp() {
         $this->resetAfterTest();
-    }
-
-    /**
-     * Data provider for test_calculate_transcode_cost.
-     *
-     * @return array
-     */
-    public function calculate_transcode_cost_provider() {
-        return [
-            'High Definition - pricing set: correct calculation' => ['1080', '3600', '0.0035', '0.0017', '0.0008', 0.21],
-            'Standard Definition - pricing set: correct calculation' => ['540', '3600', '0.0035', '0.0017', '0.0008', 0.102],
-            'Audio - pricing set: correct calculation' => ['0', '3600', '0.0035', '0.0017', '0.0008', 0.048],
-            'High Definition - pricing not set: null' => ['1080', '3600', null, '0.0017', '0.0008', null],
-            'Standard Definition - pricing not set: null' => ['540', '3600', '0.0035', null, '0.0008', null],
-            'Audio calculation - pricing not set: null' => ['0', '3600', '0.0035', '0.0017', null, null],
-            'High Definition - no duration: zero cost' => ['1080', '0', '0.0035', '0.0017', '0.0008', 0],
-            'Standard Definition - no duration: zero cost' => ['540', '0', '0.0035', '0.0017', '0.0008', 0],
-            'Audio calculation - no duration: zero cost' => ['0', '0', '0.0035', '0.0017', '0.0008', 0],
-            'High Definition - pricing is zero: zero cost' => ['1080', '3600', '0', '0', '0', 0],
-            'Standard Definition - pricing is zero: zero cost' => ['540', '3600', '0', '0', '0', 0],
-            'Audio calculation - pricing is zero: zero cost' => ['0', '3600', '0', '0', '0', 0],
-        ];
-    }
-
-    /**
-     * Test transcode cost calculation.
-     *
-     * @param int $height the height of the resolution to test.
-     * @param int|float $duration duration in seconds.
-     * @param float|null $hdpricing cost per minute for hd transcoding, null if pricing wasn't set.
-     * @param float|null $sdpricing cost per minute for sd transcoding, null if pricing wasn't set.
-     * @param float|null $audiopricing cost per minute for audio transcoding, null if pricing wasn't set.
-     * @param float|null $expected the expected return value.
-     *
-     * @dataProvider calculate_transcode_cost_provider
-     */
-    public function test_calculate_transcode_cost($height, $duration, $hdpricing, $sdpricing, $audiopricing, $expected) {
-
-        $locationpricing = new location_transcode_pricing('ap-southeast-2');
-        if (!is_null($hdpricing)) {
-            $locationpricing->set_hd_pricing($hdpricing);
-        }
-        if (!is_null($sdpricing)) {
-            $locationpricing->set_sd_pricing($sdpricing);
-        }
-        if (!is_null($audiopricing)) {
-            $locationpricing->set_audio_pricing($audiopricing);
-        }
-
-        $actual = $locationpricing->calculate_transcode_cost($height, $duration);
-
-        if (is_null($expected)) {
-            $this->assertNull($actual);
-        } else {
-            $this->assertEquals($expected, $actual);
-        }
     }
 
     /**

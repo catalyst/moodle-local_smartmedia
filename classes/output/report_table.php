@@ -27,8 +27,7 @@ namespace local_smartmedia\output;
 
 defined('MOODLE_INTERNAL') || die;
 
-use local_smartmedia\aws_ets_pricing_client;
-use local_smartmedia\location_transcode_pricing;
+use local_smartmedia\pricing_calculator;
 use moodle_url;
 use table_sql;
 use renderable;
@@ -54,24 +53,23 @@ class report_table extends table_sql implements renderable {
     const DEFAULT_WHERE = '(videostreams > 0) OR (audiostreams > 0)';
 
     /**
-     * @var \local_smartmedia\location_transcode_pricing instance containing pricing for various transcode types.
+     * @var \local_smartmedia\pricing_calculator instance for calculating transcode costs.
      */
-    private $locationpricing;
+    private $pricingcalculator;
 
     /**
      * report_table constructor.
      *
      * @param string $uniqueid Unique id of table.
      * @param string $baseurl the base url to render this report on.
-     * @param location_transcode_pricing $locationpricing
+     * @param \local_smartmedia\pricing_calculator $pricingcalculator the pricing calculator for determining transcode costs.
      * @param int $page the page number for pagination.
      * @param int $perpage amount of records per page for pagination.
      * @param string $download dataformat type. One of csv, xhtml, ods, etc
      *
      * @throws \coding_exception
-     * @throws \moodle_exception if there is an issue defining the baseline url.
      */
-    public function __construct(string $uniqueid, string $baseurl, location_transcode_pricing $locationpricing, int $page = 0,
+    public function __construct(string $uniqueid, string $baseurl, pricing_calculator $pricingcalculator, int $page = 0,
                                 int $perpage = 50, string $download = '') {
         parent::__construct($uniqueid);
 
@@ -92,7 +90,7 @@ class report_table extends table_sql implements renderable {
         // Setup pagination.
         $this->currpage = $page;
         $this->pagesize = $perpage;
-        $this->locationpricing = $locationpricing;
+        $this->pricingcalculator = $pricingcalculator;
         $this->sortable(true);
         $this->no_sorting('format');
         $this->no_sorting('cost');
@@ -190,12 +188,8 @@ class report_table extends table_sql implements renderable {
      * @throws \coding_exception
      */
     public function col_cost($row) {
-        $cost = null;
-        if (!empty($this->locationpricing)) {
-            $cost = $this->locationpricing->calculate_transcode_cost($row->height, $row->duration);
-        }
-        // If cost is null, there is no cost data for this location.
-        if (is_null($cost)) {
+        $cost = $this->pricingcalculator->calculate_transcode_cost($row->height, $row->duration);
+        if ($cost == 0) {
             $cost = get_string('report:nocostdata', 'local_smartmedia');
             $displaycost = $this->format_text($cost);
         } else {
