@@ -500,7 +500,7 @@ class conversion {
                 'filearea' => 'media',
                 'itemid' => 0,
                 'filepath' => '/conversions/',
-                'filename' =>  $availableobject['Key']
+                'filename' =>  basename($availableobject['Key'])
 
             );
 
@@ -509,7 +509,7 @@ class conversion {
                     'Key' => $availableobject['Key'], // Required.
             );
 
-            $getobject = $client->getObject($downloadparams);
+            $getobject = $s3client->getObject($downloadparams);
 
             $tmpfile = tmpfile();
             fwrite($tmpfile, $getobject['Body']);
@@ -531,7 +531,7 @@ class conversion {
 
         $downloadparams = array(
                 'Bucket' => $this->config->s3_output_bucket, // Required.
-                'Key' => $availableobject['Key'], // Required.
+       //         'Key' => $availableobject['Key'], // Required.
         );
 
 
@@ -559,13 +559,13 @@ class conversion {
                 // For each successful status get the file/s for the conversion.
                 if($message->process == 'elastic_transcoder') {
                     // Get Elastic Transcoder files.
-                    $this->get_transcode_files($conversionrecord);
+                    $this->get_transcode_files($conversionrecord, $handler);
 
                     $conversionrecord->transcoder_status = self::CONVERSION_FINISHED;
 
                 } else {
                     // Get other process data files.
-                    $this->get_data_files($conversionrecord, $message->process);
+                    $this->get_data_files($conversionrecord, $message->process, $handler);
 
                     $statusfield = self::service_mapping[$message->process];
                     $conversionrecord->{$statusfield} = self::CONVERSION_FINISHED;

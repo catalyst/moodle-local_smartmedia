@@ -44,6 +44,21 @@ use Aws\S3\Exception\S3Exception;
 class local_smartmedia_conversion_testcase extends advanced_testcase {
 
     /**
+     * @var array Fixtures used in this test.
+     */
+    public $fixture;
+
+    /*
+     * Set up method for this test suite.
+     */
+    public function setUp() {
+        global $CFG;
+
+        // Get fixture for tests.
+        $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/conversion_test_fixture.php');
+    }
+
+    /**
      * Test getting smart media.
      */
     public function test_get_smart_media() {
@@ -563,12 +578,19 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
+        // Set up the AWS mock.
+        $mock = new MockHandler();
+        $mock->append(new Result($this->fixture['listobjects']));
+        $mock->append(new Result(array()));
+        $mock->append(new Result(array()));
+        $mock->append(new Result(array()));
+
         $conversion = new \local_smartmedia\conversion();
 
         $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
         $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
-        $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $conversionrecord->contenthash = 'SampleVideo1mb';
         $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
@@ -579,7 +601,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timemodified = time();
 
         $messagerecord1 = new \stdClass();
-        $messagerecord1->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $messagerecord1->objectkey = 'SampleVideo1mb';
         $messagerecord1->process = 'elastic_transcoder';
         $messagerecord1->status = 'COMPLETED';
         $messagerecord1->message = '{}';
@@ -590,7 +612,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, $conversionrecord, $messages);
+        $result = $method->invoke($conversion, $conversionrecord, $messages, $mock);
 
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->transcoder_status);
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
@@ -603,12 +625,16 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
+        // Set up the AWS mock.
+        $mock = new MockHandler();
+        $mock->append(new Result(array()));
+
         $conversion = new \local_smartmedia\conversion();
 
         $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
         $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
-        $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $conversionrecord->contenthash = 'SampleVideo1mb';
         $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
@@ -619,7 +645,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timemodified = time();
 
         $messagerecord1 = new \stdClass();
-        $messagerecord1->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $messagerecord1->objectkey = 'SampleVideo1mb';
         $messagerecord1->process = 'StartContentModeration';
         $messagerecord1->status = 'SUCCEEDED';
         $messagerecord1->message = '{}';
@@ -630,7 +656,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, $conversionrecord, $messages);
+        $result = $method->invoke($conversion, $conversionrecord, $messages, $mock);
 
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->rekog_moderation_status);
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
