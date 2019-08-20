@@ -471,4 +471,169 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertArrayNotHasKey($msg3, $result);
     }
 
+    /**
+     * Test processing conversions for a record with a failed transcode.
+     */
+    public function test_process_conversion_transcode_failed() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversion = new \local_smartmedia\conversion();
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $messagerecord1 = new \stdClass();
+        $messagerecord1->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $messagerecord1->process = 'elastic_transcoder';
+        $messagerecord1->status = 'ERROR';
+        $messagerecord1->message = '{}';
+        $messagerecord1->senttime = '1566091817';
+        $messagerecord1->timecreated = '1566197550';
+
+        $messages = array($messagerecord1);
+
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $conversionrecord, $messages);
+
+        $this->assertEquals($conversion::CONVERSION_ERROR, $result->status);
+        $this->assertEquals($conversion::CONVERSION_ERROR, $result->transcoder_status);
+        $this->assertEquals($conversion::CONVERSION_ERROR, $result->rekog_label_status);
+        $this->assertEquals($conversion::CONVERSION_ERROR, $result->rekog_moderation_status);
+        $this->assertEquals($conversion::CONVERSION_ERROR, $result->rekog_face_status);
+        $this->assertEquals($conversion::CONVERSION_ERROR, $result->rekog_person_status);
+
+    }
+
+    /**
+     * Test processing conversions for a record with a failed individual process.
+     */
+    public function test_process_conversion_process_fail() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversion = new \local_smartmedia\conversion();
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $messagerecord1 = new \stdClass();
+        $messagerecord1->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $messagerecord1->process = 'StartContentModeration';
+        $messagerecord1->status = 'ERROR';
+        $messagerecord1->message = '{}';
+        $messagerecord1->senttime = '1566091817';
+        $messagerecord1->timecreated = '1566197550';
+
+        $messages = array($messagerecord1);
+
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $conversionrecord, $messages);
+
+        $this->assertEquals($conversion::CONVERSION_ERROR, $result->rekog_moderation_status);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
+    }
+
+    /**
+     * Test processing conversions for a record with a sucessful elastic transcode process.
+     */
+    public function test_process_conversion_transcode() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversion = new \local_smartmedia\conversion();
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $messagerecord1 = new \stdClass();
+        $messagerecord1->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $messagerecord1->process = 'elastic_transcoder';
+        $messagerecord1->status = 'COMPLETED';
+        $messagerecord1->message = '{}';
+        $messagerecord1->senttime = '1566091817';
+        $messagerecord1->timecreated = '1566197550';
+
+        $messages = array($messagerecord1);
+
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $conversionrecord, $messages);
+
+        $this->assertEquals($conversion::CONVERSION_FINISHED, $result->transcoder_status);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
+    }
+
+    /**
+     * Test processing conversions for a record with a sucessful elastic transcode process.
+     */
+    public function test_process_conversion_process() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversion = new \local_smartmedia\conversion();
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $messagerecord1 = new \stdClass();
+        $messagerecord1->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
+        $messagerecord1->process = 'StartContentModeration';
+        $messagerecord1->status = 'SUCCEEDED';
+        $messagerecord1->message = '{}';
+        $messagerecord1->senttime = '1566091817';
+        $messagerecord1->timecreated = '1566197550';
+
+        $messages = array($messagerecord1);
+
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $conversionrecord, $messages);
+
+        $this->assertEquals($conversion::CONVERSION_FINISHED, $result->rekog_moderation_status);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
+    }
+
 }

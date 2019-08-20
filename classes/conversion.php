@@ -92,6 +92,20 @@ class conversion {
     );
 
     /**
+     * The mapping betweeen what AWS calls the service events and their corresponding DB field names.
+     *
+     * @var array
+     */
+    private const service_mapping = array(
+        'elastic_transcoder' => 'transcoder_status',
+        'StartLabelDetection' => 'rekog_label_status',
+        'StartContentModeration' => 'rekog_moderation_status',
+        'StartFaceDetection' => 'rekog_face_status',
+        'StartPersonTracking' => 'rekog_person_status',
+
+    );
+
+    /**
      * Class constructor
      */
     public function __construct() {
@@ -458,23 +472,116 @@ class conversion {
         return $queuemessages;
     }
 
-    private function process_conversion(\stdClass $conversionrecord, array $queuemessages) : array {
+    /**
+     * Get the transcoded media files from AWS S3,
+     *
+     * @param \stdClass $conversionrecord
+     * @param \GuzzleHttp\Handler|null $handler Optional handler.
+     */
+    private function get_transcode_files(\stdClass $conversionrecord, $handler=null) : void {
+        $awss3 = new \local_smartmedia\aws_s3();
+        $s3client = $awss3->create_client($handler);
+
+        // Transcoding could have made many files, but the job only calls success when all files are generated.
+        // So first we get a list of the files.
+        $listparams = array(
+                'Bucket' => $this->config->s3_output_bucket,
+                'MaxKeys' => 1000,  // The maximum allowed before we need to page, we should NEVER have this many.
+                'Prefix' => $conversionrecord->contenthash . '/conversions/',  // Location in the S3 bucket where the files live.
+        );
+        $availableobjects = $s3client->listObjects($listparams);
+
+        // Then we itterate over that list and get all the files available.
+        $fs = get_file_storage();
+        foreach ($availableobjects['Contents'] as $availableobject) {
+            $filerecord = array(
+                'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
+                'component' => 'local_smartmedia',
+                'filearea' => 'media',
+                'itemid' => 0,
+                'filepath' => '/conversions/',
+                'filename' =>  $availableobject['Key']
+
+            );
+
+            $downloadparams = array(
+                    'Bucket' => $this->config->s3_output_bucket, // Required.
+                    'Key' => $availableobject['Key'], // Required.
+            );
+
+            $getobject = $client->getObject($downloadparams);
+
+            $tmpfile = tmpfile();
+            fwrite($tmpfile, $getobject['Body']);
+            $tmppath = stream_get_meta_data($tmpfile)['uri'];
+
+            $fs->create_file_from_pathname($filerecord, $tmppath);
+
+            fclose($tmpfile);
+
+        }
+
+    }
+
+    private function get_data_files(\stdClass $conversionrecord, string $process, $handler=null) {
+        $awss3 = new \local_smartmedia\aws_s3();
+        $s3client = $awss3->create_client($handler);
+
+        $fs = get_file_storage();
+
+        $downloadparams = array(
+                'Bucket' => $this->config->s3_output_bucket, // Required.
+                'Key' => $availableobject['Key'], // Required.
+        );
+
+
+    }
+
+    private function process_conversion(\stdClass $conversionrecord, array $queuemessages, $handler=null) : \stdClass {
+        global $DB;
 
         foreach ($queuemessages as $message) {
             if ($message->status == 'ERROR' && $message->process == 'elastic_transcoder') {
                 // If Elastic Transcoder conversion has failed then all other conversions have also failed.
+                // It is also highly likely this will be the only message recevied.
+                $conversionrecord->status = self::CONVERSION_ERROR;
+                $conversionrecord->transcoder_status = self::CONVERSION_ERROR;
+                $conversionrecord->rekog_label_status = self::CONVERSION_ERROR;
+                $conversionrecord->rekog_moderation_status = self::CONVERSION_ERROR;
+                $conversionrecord->rekog_face_status = self::CONVERSION_ERROR;
+                $conversionrecord->rekog_person_status = self::CONVERSION_ERROR;
+                $conversionrecord->timecreated = time();
+                $conversionrecord->timecompleted = time();
+
+                break;
 
             } else if ($message->status == 'COMPLETED' || $message->status == 'SUCCEEDED') {
                 // For each successful status get the file/s for the conversion.
+                if($message->process == 'elastic_transcoder') {
+                    // Get Elastic Transcoder files.
+                    $this->get_transcode_files($conversionrecord);
+
+                    $conversionrecord->transcoder_status = self::CONVERSION_FINISHED;
+
+                } else {
+                    // Get other process data files.
+                    $this->get_data_files($conversionrecord, $message->process);
+
+                    $statusfield = self::service_mapping[$message->process];
+                    $conversionrecord->{$statusfield} = self::CONVERSION_FINISHED;
+                }
 
             } else if ($message->status == 'ERROR') {
                 // For each failed status mark it as failed in the record.
+                $statusfield = self::service_mapping[$message->process];
+                $conversionrecord->{$statusfield} = self::CONVERSION_ERROR;
             }
         }
 
-        // Update the database with the modiefied conversion record.
+        // Update the database with the modified conversion record.
+        $DB->update_record('local_smartmedia_conv', $conversionrecord);
 
-        return array();
+        return $conversionrecord;
     }
 
     /**
