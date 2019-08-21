@@ -56,6 +56,9 @@ class process_conversions extends scheduled_task {
         $processedqueue = $queueprocess->process_queue();
         mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueue);
 
+        // Create conversion records if proactive conversions are enabled.
+
+
         // Process new conversions.
         mtrace('local_smartmedia: Process new conversions');
         $conversion = new \local_smartmedia\conversion();
