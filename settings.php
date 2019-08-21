@@ -95,6 +95,7 @@ if ($hassiteconfig) {
     $settings->add(new admin_setting_configtextarea('local_smartmedia/transcodepresets',
         get_string('settings:processing:transcodepresets', 'local_smartmedia'),
         get_string('settings:processing:transcodepresets_desc', 'local_smartmedia'), ''));
+
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectlabels',
         get_string('settings:processing:detectlabels', 'local_smartmedia'),
         get_string('settings:processing:detectlabels_desc', 'local_smartmedia'), 1));
