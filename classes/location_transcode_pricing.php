@@ -27,6 +27,8 @@ namespace local_smartmedia;
 
 defined('MOODLE_INTERNAL') || die;
 
+require_once($CFG->dirroot . '/local/smartmedia/lib.php');
+
 /**
  * Class describing the pricing for an AWS region.
  *
@@ -41,11 +43,6 @@ class location_transcode_pricing {
      * @var string the AWS region code this pricing is for.
      */
     private $region;
-
-    /**
-     * Minimum height above which (inclusive) transcoding is considered high definition.
-     */
-    const MIN_HD_HEIGHT = 720;
 
     /**
      * @var float the cost per minute for standard definition transcoding.
@@ -81,22 +78,33 @@ class location_transcode_pricing {
     }
 
     /**
-     * Calculate the cost per minute for transcoding of media.
+     * Check if this has standard definition pricing.
      *
-     * @param int $height number of lines of resolution.
-     * @param float $duration in seconds of media.
-     *
-     * @return float|int|null the cost per minute for transcoding, null if no pricing for product type.
+     * @return bool
      */
-    public function calculate_transcode_cost(int $height, float $duration) {
-        if ($height >= self::MIN_HD_HEIGHT) {
-            $cost = $this->calculate_high_definition_cost($duration);
-        } else if ($height > 0) {
-            $cost = $this->calculate_standard_definition_cost($duration);
-        } else {
-            $cost = $this->calculate_audio_cost($duration);
-        }
-        return $cost;
+    public function has_valid_standard_definition_pricing() {
+        $result = is_numeric($this->sdpricing);
+        return $result;
+    }
+
+    /**
+     * Check if this has high definition pricing.
+     *
+     * @return bool
+     */
+    public function has_valid_high_definition_pricing() {
+        $result = is_numeric($this->hdpricing);
+        return $result;
+    }
+
+    /**
+     * Check if this has audio pricing.
+     *
+     * @return bool
+     */
+    public function has_valid_audio_pricing() {
+        $result = is_numeric($this->audiopricing);
+        return $result;
     }
 
     /**
@@ -108,7 +116,7 @@ class location_transcode_pricing {
      */
     public function calculate_high_definition_cost(float $duration) {
         $result = null;
-        if (is_numeric($this->hdpricing)) {
+        if ($this->has_valid_high_definition_pricing()) {
             $result = $duration / 60 * $this->hdpricing;
         }
         return $result;
@@ -123,7 +131,7 @@ class location_transcode_pricing {
      */
     public function calculate_standard_definition_cost(float $duration) {
         $result = null;
-        if (is_numeric($this->sdpricing)) {
+        if ($this->has_valid_standard_definition_pricing()) {
             $result = $duration / 60 * $this->sdpricing;
         }
         return $result;
@@ -138,7 +146,7 @@ class location_transcode_pricing {
      */
     public function calculate_audio_cost(float $duration) {
         $result = null;
-        if (is_numeric($this->audiopricing)) {
+        if ($this->has_valid_audio_pricing()) {
             $result = $duration / 60 * $this->audiopricing;
         }
         return $result;

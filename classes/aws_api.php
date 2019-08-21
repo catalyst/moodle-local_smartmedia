@@ -26,6 +26,7 @@
 namespace local_smartmedia;
 
 use Aws\Credentials\Credentials;
+use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Pricing\PricingClient;
 
 defined('MOODLE_INTERNAL') || die;
@@ -64,6 +65,11 @@ class aws_api {
      * @var \Aws\Pricing\PricingClient for accessing the AWS Pricing List API.
      */
     private $pricingclient;
+
+    /**
+     * @var \Aws\ElasticTranscoder\ElasticTranscoderClient for accessing Elastic Transcoder services.
+     */
+    private $transcoderclient;
 
     /**
      * aws_api constructor.
@@ -121,5 +127,36 @@ class aws_api {
         }
 
         return $this->pricingclient;
+    }
+
+
+    /**
+     * Get the AWS Pricing Client for querying AWS Price List Service API.
+     *
+     * @param \Aws\MockHandler|null $handler Optional handler.
+     * @param string $version the AWS Pricing Client version to use for API calls.
+     *
+     * @return \Aws\ElasticTranscoder\ElasticTranscoderClient
+     */
+    public function create_elastic_transcoder_client($handler = null, $version = '2012-09-25') : ElasticTranscoderClient {
+
+        // Set up the minimum arguments required for client.
+        $args = [
+            'credentials' => $this->credentials,
+            'region' => $this->region,
+            'version' => $version,
+        ];
+
+        // Allow handler overriding for testing.
+        if ($handler != null) {
+            $args['handler'] = $handler;
+        }
+
+        // Only create client if it hasn't already been done.
+        if ($this->transcoderclient == null) {
+            $this->transcoderclient = new ElasticTranscoderClient($args);
+        }
+
+        return $this->transcoderclient;
     }
 }

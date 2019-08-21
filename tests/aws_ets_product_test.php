@@ -32,6 +32,7 @@ use local_smartmedia\aws_ets_product;
  * @package    local_smartmedia
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      local_smartmedia
  */
 class local_smartmedia_aws_ets_product_testcase extends advanced_testcase {
 
