@@ -85,7 +85,7 @@ class conversion {
      *
      * @var array
      */
-    private const sqs_message_states = array(
+    private const SQS_MESSAGE_STATES = array(
         'SUCCEEDED', // Rekognition success status.
         'COMPLETED', // Elastic Transcoder success status.
         'ERROR', // Elastic Transcoder error status.
@@ -96,7 +96,7 @@ class conversion {
      *
      * @var array
      */
-    private const service_mapping = array(
+    private const SERVICE_MAPPING = array(
         'elastic_transcoder' => array('transcoder_status'),
         'StartLabelDetection' => array('rekog_label_status', 'Labels'),
         'StartContentModeration' => array('rekog_moderation_status', 'ModerationLabels'),
@@ -121,7 +121,7 @@ class conversion {
     private function get_preset_ids() : array {
         $rawids = $this->config->transcodepresets; // Get the raw ids.
         $untrimmedids = preg_split('/$\R?^/m', $rawids, -1, PREG_SPLIT_NO_EMPTY); // Split ids into an array of strings by newline.
-        $idarray = array_map('trim',$untrimmedids); // Remove whitespace from each id in array.
+        $idarray = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
 
         return $idarray;
     }
@@ -439,26 +439,26 @@ class conversion {
         $services = array();
         $services[] = 'elastic_transcoder'; // Files are always going to be processed by Elastic transcoder.
 
-        if($conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
+        if ($conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartLabelDetection';
         }
-        if($conversionrecord->rekog_moderation_status == self::CONVERSION_ACCEPTED
+        if ($conversionrecord->rekog_moderation_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_moderation_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartContentModeration';
         }
-        if($conversionrecord->rekog_face_status -= self::CONVERSION_ACCEPTED
+        if ($conversionrecord->rekog_face_status -= self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_face_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartFaceDetection';
         }
-        if($conversionrecord->rekog_person_status == self::CONVERSION_ACCEPTED
+        if ($conversionrecord->rekog_person_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_person_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartPersonTracking';
         }
 
         // Get all queue messages for this object.
         list($processinsql, $processinparams) = $DB->get_in_or_equal($services);
-        list($statusinsql, $statusinparams) = $DB->get_in_or_equal(self::sqs_message_states);
+        list($statusinsql, $statusinparams) = $DB->get_in_or_equal(self::SQS_MESSAGE_STATES);
         $params = array_merge($processinparams, $statusinparams);
         $params[] = $conversionrecord->contenthash;
 
@@ -500,7 +500,7 @@ class conversion {
                 'filearea' => 'media',
                 'itemid' => 0,
                 'filepath' => '/conversions/',
-                'filename' =>  basename($availableobject['Key'])
+                'filename' => basename($availableobject['Key'])
 
             );
 
@@ -532,7 +532,7 @@ class conversion {
         $awss3 = new \local_smartmedia\aws_s3();
         $s3client = $awss3->create_client($handler);
 
-        $objectkey = self::service_mapping[$process][1];
+        $objectkey = self::SERVICE_MAPPING[$process][1];
         $fs = get_file_storage();
 
         $filerecord = array(
@@ -541,7 +541,7 @@ class conversion {
                 'filearea' => 'metadata',
                 'itemid' => 0,
                 'filepath' => '/metadata/',
-                'filename' =>  $objectkey . 'json'
+                'filename' => $objectkey . 'json'
 
         );
 
@@ -592,13 +592,13 @@ class conversion {
                     // Get other process data files.
                     $this->get_data_file($conversionrecord, $message->process, $handler);
 
-                    $statusfield = self::service_mapping[$message->process][0];
+                    $statusfield = self::SERVICE_MAPPING[$message->process][0];
                     $conversionrecord->{$statusfield} = self::CONVERSION_FINISHED;
                 }
 
             } else if ($message->status == 'ERROR') {
                 // For each failed status mark it as failed in the record.
-                $statusfield = self::service_mapping[$message->process][0];
+                $statusfield = self::SERVICE_MAPPING[$message->process][0];
                 $conversionrecord->{$statusfield} = self::CONVERSION_ERROR;
             }
         }
@@ -659,7 +659,7 @@ class conversion {
             // Get recevied messages for this conversion record that are not related to already completed processes.
             $queuemessages = $this->get_queue_messages($conversionrecord);
 
-            // Process the messages and get files from AWS as required
+            // Process the messages and get files from AWS as required.
             $updatedrecord = $this->process_conversion($conversionrecord, $queuemessages);
 
             // If all conversions have reached a final state (complete or failed) update overall conversion status.

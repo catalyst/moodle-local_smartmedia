@@ -318,7 +318,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->transcribe_status = 202;
         $conversionrecord->rekog_label_status = 404;
         $conversionrecord->rekog_moderation_status = 202;
-        $conversionrecord->rekog_face_status= 404;
+        $conversionrecord->rekog_face_status = 404;
         $conversionrecord->rekog_person_status = 202;
         $conversionrecord->detect_sentiment_status = 404;
         $conversionrecord->detect_phrases_status = 202;
@@ -402,7 +402,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->transcribe_status = 202;
         $conversionrecord->rekog_label_status = 404;
         $conversionrecord->rekog_moderation_status = 202;
-        $conversionrecord->rekog_face_status= 404;
+        $conversionrecord->rekog_face_status = 404;
         $conversionrecord->rekog_person_status = 202;
         $conversionrecord->detect_sentiment_status = 404;
         $conversionrecord->detect_phrases_status = 202;

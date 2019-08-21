@@ -63,7 +63,7 @@ class process_conversions extends scheduled_task {
 
         mtrace('local_smartmedia: Total number of processed files: ' . count($processed));
         foreach ($processed as $key => $value) {
-            if($value != \local_smartmedia\conversion::CONVERSION_IN_PROGRESS) {
+            if ($value != \local_smartmedia\conversion::CONVERSION_IN_PROGRESS) {
                 mtrace('local_smartmedia: Failed to start processing for file with conversion id: ' . $key);
             }
 

@@ -138,7 +138,7 @@ class aws_s3 {
             empty($this->config->s3_output_bucket) ||
             empty($this->config->api_region)) {
                 $isset = false;
-            }
+        }
             return $isset;
     }
 
@@ -232,7 +232,6 @@ class aws_s3 {
      * @return  bool
      */
     public function are_requirements_met() {
-
 
         // Check that we can access the input S3 Bucket.
         $connection = $this->is_bucket_accessible($this->config->s3_input_bucket);

@@ -103,7 +103,7 @@ class queue_process {
     private function get_queue_messages() : array {
         global $CFG;
 
-        // Get current messages from queue
+        // Get current messages from queue.
         $messages = array();
         $messageparams = array(
             'AttributeNames' => array('All'),
@@ -118,7 +118,7 @@ class queue_process {
             $result = $this->client->receiveMessage($messageparams);
             $newmessages = $result->get('Messages'); // Number of received messages varies unpredictably.
 
-            if($newmessages == null || count($newmessages) == 0) {
+            if ($newmessages == null || count($newmessages) == 0) {
                 // No messages received so end early.
                 break;
             }
@@ -131,7 +131,7 @@ class queue_process {
 
                 // We could be using the same AWS queue for multiple Moodles,
                 // so we only store messages for our Moodle.
-                if($messagesiteid == $CFG->siteidentifier){
+                if ($messagesiteid == $CFG->siteidentifier){
                     $messages[$messageid] = $newmessage;
                 }
             }
