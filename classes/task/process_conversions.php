@@ -68,9 +68,11 @@ class process_conversions extends scheduled_task {
             }
 
         }
+
         // Update pending conversions.
         mtrace('local_smartmedia: Updating pending conversions');
         $updated = $conversion->update_pending_conversions();
+        mtrace('local_smartmedia: Total number of updated conversions: ' . count($updated));
 
     }
 
