@@ -662,4 +662,50 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
     }
 
+    /**
+     * Test processing conversions for a record with a sucessful elastic transcode process.
+     */
+    public function test_update_completion_status() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversion = new \local_smartmedia\conversion();
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'update_completion_status');
+        $method->setAccessible(true); // Allow accessing of private method.
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = 'SampleVideo1mb';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $result = $method->invoke($conversion, $conversionrecord);
+        $this->assertEquals($conversion::CONVERSION_FINISHED, $result->status);
+
+        // Try again with some conversions configured to not run.
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = 'SampleVideo1mb';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $result = $method->invoke($conversion, $conversionrecord);
+        $this->assertEquals($conversion::CONVERSION_FINISHED, $result->status);
+
+    }
+
 }

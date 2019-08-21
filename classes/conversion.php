@@ -97,11 +97,11 @@ class conversion {
      * @var array
      */
     private const service_mapping = array(
-        'elastic_transcoder' => 'transcoder_status',
-        'StartLabelDetection' => 'rekog_label_status',
-        'StartContentModeration' => 'rekog_moderation_status',
-        'StartFaceDetection' => 'rekog_face_status',
-        'StartPersonTracking' => 'rekog_person_status',
+        'elastic_transcoder' => array('transcoder_status'),
+        'StartLabelDetection' => array('rekog_label_status', 'Labels'),
+        'StartContentModeration' => array('rekog_moderation_status', 'ModerationLabels'),
+        'StartFaceDetection' => array('rekog_face_status', 'Faces'),
+        'StartPersonTracking' => array('rekog_person_status', 'Persons'),
 
     );
 
@@ -475,7 +475,7 @@ class conversion {
     /**
      * Get the transcoded media files from AWS S3,
      *
-     * @param \stdClass $conversionrecord
+     * @param \stdClass $conversionrecord The conversion record from the database.
      * @param \GuzzleHttp\Handler|null $handler Optional handler.
      */
     private function get_transcode_files(\stdClass $conversionrecord, $handler=null) : void {
@@ -516,25 +516,50 @@ class conversion {
             $tmppath = stream_get_meta_data($tmpfile)['uri'];
 
             $fs->create_file_from_pathname($filerecord, $tmppath);
-
             fclose($tmpfile);
-
         }
 
+        // TODO: Also remove files from AWS.
     }
 
-    private function get_data_files(\stdClass $conversionrecord, string $process, $handler=null) {
+    /**
+     *
+     * @param \stdClass $conversionrecord The conversion record from the database.
+     * @param string $process The process to get the file for.
+     * @param \GuzzleHttp\Handler|null $handler Optional handler.
+     */
+    private function get_data_file(\stdClass $conversionrecord, string $process, $handler=null) {
         $awss3 = new \local_smartmedia\aws_s3();
         $s3client = $awss3->create_client($handler);
 
+        $objectkey = self::service_mapping[$process][1];
         $fs = get_file_storage();
+
+        $filerecord = array(
+                'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
+                'component' => 'local_smartmedia',
+                'filearea' => 'metadata',
+                'itemid' => 0,
+                'filepath' => '/metadata/',
+                'filename' =>  $objectkey . 'json'
+
+        );
 
         $downloadparams = array(
                 'Bucket' => $this->config->s3_output_bucket, // Required.
-       //         'Key' => $availableobject['Key'], // Required.
+                'Key' => $conversionrecord->contenthash . '/metadata/' . $objectkey . 'json', // Required.
         );
 
+        $getobject = $s3client->getObject($downloadparams);
 
+        $tmpfile = tmpfile();
+        fwrite($tmpfile, $getobject['Body']);
+        $tmppath = stream_get_meta_data($tmpfile)['uri'];
+
+        $fs->create_file_from_pathname($filerecord, $tmppath);
+        fclose($tmpfile);
+
+        // TODO: Also remove files from AWS.
     }
 
     private function process_conversion(\stdClass $conversionrecord, array $queuemessages, $handler=null) : \stdClass {
@@ -565,15 +590,15 @@ class conversion {
 
                 } else {
                     // Get other process data files.
-                    $this->get_data_files($conversionrecord, $message->process, $handler);
+                    $this->get_data_file($conversionrecord, $message->process, $handler);
 
-                    $statusfield = self::service_mapping[$message->process];
+                    $statusfield = self::service_mapping[$message->process][0];
                     $conversionrecord->{$statusfield} = self::CONVERSION_FINISHED;
                 }
 
             } else if ($message->status == 'ERROR') {
                 // For each failed status mark it as failed in the record.
-                $statusfield = self::service_mapping[$message->process];
+                $statusfield = self::service_mapping[$message->process][0];
                 $conversionrecord->{$statusfield} = self::CONVERSION_ERROR;
             }
         }
@@ -582,6 +607,40 @@ class conversion {
         $DB->update_record('local_smartmedia_conv', $conversionrecord);
 
         return $conversionrecord;
+    }
+
+    /**
+     * Update the overall completion status for a completion record.
+     * Overall conversion record is finished when all the individual conversions are finished.
+     *
+     *
+     * @param \stdClass $updatedrecord The record to check the completion status for.
+     * @return \stdClass $updatedrecord The updated completion record.
+     */
+    private function update_completion_status(\stdClass $updatedrecord) : \stdClass {
+        global $DB;
+
+        // Only set the final completion status if all other processes are finished.
+        if (($updatedrecord->transcoder_status = self::CONVERSION_FINISHED
+                || $updatedrecord->transcoder_status = self::CONVERSION_NOT_FOUND )
+            && ($updatedrecord->rekog_label_status = self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_label_status = self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->rekog_moderation_status = self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_moderation_status = self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->rekog_face_status = self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_face_status = self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->rekog_person_status = self::CONVERSION_FINISHED)
+                || $updatedrecord->rekog_person_status = self::CONVERSION_NOT_FOUND) {
+
+                $updatedrecord->status = self::CONVERSION_FINISHED;
+                $updatedrecord->timemodified = time();
+                $updatedrecord->timecompleted = time();
+                // Update the database with the modified conversion record.
+                $DB->update_record('local_smartmedia_conv', $updatedrecord);
+
+        }
+
+        return $updatedrecord;
     }
 
     /**
@@ -596,25 +655,17 @@ class conversion {
         $conversionrecords = $this->get_conversion_records(self::CONVERSION_IN_PROGRESS); // Get pending conversion records.
 
         foreach ($conversionrecords as $conversionrecord) { // Itterate through pending records.
-            // We know from the conversion record what processing is being done on each file,
-            // and thus what outputs to expect.
-            // We also know what files we have downloaded and what metadata we have.
-            // So only get the remaining files and data.
-            // We also know any possible failed statuses from the retrieved SQS messages.
-
 
             // Get recevied messages for this conversion record that are not related to already completed processes.
             $queuemessages = $this->get_queue_messages($conversionrecord);
 
-            //
+            // Process the messages and get files from AWS as required
+            $updatedrecord = $this->process_conversion($conversionrecord, $queuemessages);
 
             // If all conversions have reached a final state (complete or failed) update overall conversion status.
-
-            // Check AWS for the completion status.
+            $results[] = $this->update_completion_status($updatedrecord);
 
         }
-
-
 
         return $results;
     }
