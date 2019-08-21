@@ -29,7 +29,6 @@ global $CFG;
 require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 
 use Aws\MockHandler;
-use Aws\Pricing\PricingClient;
 use Aws\Result;
 use local_smartmedia\aws_ets_pricing_client;
 use local_smartmedia\aws_ets_product;
@@ -75,10 +74,14 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
 
         $this->resetAfterTest();
 
-        $this->region = 'us-east-1';
-        $this->version = '2017-10-15';
-        $this->apikey = 'ABCDEFGHIJKLMNO';
-        $this->apisecret = '012345678910aBcDeFgHiJkLmNOpQrSTuVwXyZ';
+        $region = 'us-east-1';
+        $apikey = 'ABCDEFGHIJKLMNO';
+        $apisecret = '012345678910aBcDeFgHiJkLmNOpQrSTuVwXyZ';
+
+        // Setup plugin admin settings for tests.
+        set_config('api_key', $apikey, 'local_smartmedia');
+        set_config('api_secret', $apisecret, 'local_smartmedia');
+        set_config('api_region', $region, 'local_smartmedia');
 
         // Get our fixture representing a response from the AWS Price List API.
         $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/aws_pricing_client_fixture.php');
@@ -89,7 +92,8 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
      *
      * @param array $mockdata the mock data to use for result.
      *
-     * @return array the api stub and expected result from calling get_pricing_client method on stub.
+     * @return array the api stub and expected result from calling create_pricing_client method on stub.
+     * @throws \dml_exception
      */
     public function create_mock_pricing_client($mockdata) {
         // Inject our results fixture into the API dependency as a mock using a handler.
@@ -97,12 +101,8 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
         $mockresult = new Result($mockdata);
         $mockhandler->append($mockresult);
 
-        // Create the mock response Pricing Client.
-        $mock = new PricingClient([
-            'region' => $this->region,
-            'version' => $this->version,
-            'credentials' => ['key' => $this->apikey, 'secret' => $this->apisecret],
-            'handler' => $mockhandler]);
+        $api = new local_smartmedia\aws_api();
+        $mock = $api->create_pricing_client($mockhandler);
 
         return [$mock, $mockresult];
     }
@@ -131,6 +131,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
 
     /**
      * Test that we can get a description of the AmazonETS service.
+     * @throws \dml_exception
      */
     public function test_describe_service() {
 
@@ -171,6 +172,8 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
      * @dataProvider get_attributes_provider
      *
      * @param string $attribute the attribute to test getting values for.
+     *
+     * @throws \dml_exception
      */
     public function test_get_attribute_values($attribute) {
 
@@ -216,6 +219,8 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
      * @param string $region the AWS region code to test getting pricing for.
      *
      * @dataProvider get_location_provider
+     *
+     * @throws \dml_exception
      */
     public function test_get_location_pricing($region) {
 
