@@ -131,7 +131,7 @@ class queue_process {
 
                 // We could be using the same AWS queue for multiple Moodles,
                 // so we only store messages for our Moodle.
-                if ($messagesiteid == $CFG->siteidentifier){
+                if ($messagesiteid == $CFG->siteidentifier) {
                     $messages[$messageid] = $newmessage;
                 }
             }

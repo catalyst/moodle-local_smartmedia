@@ -86,8 +86,9 @@ class tester {
     /**
      * Put file into S3 bucket
      *
-     * @param string $filepath
-     * @return \stdClass
+     * @param string $filepath The filepath to the local file.
+     * @param string $bucketname The name of the S3 bucket to put the object.
+     * @return \stdClass $result The result from the operation.
      */
     private function bucket_put_object($filepath, $bucketname) {
         global $CFG;

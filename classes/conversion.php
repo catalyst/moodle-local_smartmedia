@@ -309,9 +309,11 @@ class conversion {
     }
 
     /**
+     * Get the configured covnersion for this conversion record in a format that will
+     * be sent to AWS for processing.
      *
-     * @param \stdClass $conversionrecord
-     * @return array
+     * @param \stdClass $conversionrecord The cponversion record to get the settings for.
+     * @return array $settings The conversion record settings.
      */
     private function get_convserion_settings(\stdClass $conversionrecord) : array {
         global $DB, $CFG;
@@ -523,6 +525,7 @@ class conversion {
     }
 
     /**
+     * Get the file from AWS for a given conversion process.
      *
      * @param \stdClass $conversionrecord The conversion record from the database.
      * @param string $process The process to get the file for.
@@ -562,6 +565,14 @@ class conversion {
         // TODO: Also remove files from AWS.
     }
 
+    /**
+     * Process the conversion records and get the files from AWS.
+     *
+     * @param \stdClass $conversionrecord The conversion record from the database.
+     * @param array $queuemessages Quemessages from the database relating to this conversion record.
+     * @param \GuzzleHttp\Handler|null $handler Optional handler.
+     * @return \stdClass $conversionrecord The updated conversion record.
+     */
     private function process_conversion(\stdClass $conversionrecord, array $queuemessages, $handler=null) : \stdClass {
         global $DB;
 
@@ -582,7 +593,7 @@ class conversion {
 
             } else if ($message->status == 'COMPLETED' || $message->status == 'SUCCEEDED') {
                 // For each successful status get the file/s for the conversion.
-                if($message->process == 'elastic_transcoder') {
+                if ($message->process == 'elastic_transcoder') {
                     // Get Elastic Transcoder files.
                     $this->get_transcode_files($conversionrecord, $handler);
 
