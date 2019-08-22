@@ -91,36 +91,41 @@ if ($hassiteconfig) {
     $settings->add(new admin_setting_heading('processingheader',
         get_string('settings:processing:header', 'local_smartmedia'),
         get_string('settings:processing:header_desc', 'local_smartmedia')));
-
     $settings->add(new admin_setting_configtextarea('local_smartmedia/transcodepresets',
         get_string('settings:processing:transcodepresets', 'local_smartmedia'),
         get_string('settings:processing:transcodepresets_desc', 'local_smartmedia'), ''));
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/proactiveconversion',
+        get_string('settings:processing:proactiveconversion', 'local_smartmedia'),
+        get_string('settings:processing:proactiveconversion_desc', 'local_smartmedia'), 1));
 
+    $settings->add(new admin_setting_heading('enrichmentheader',
+        get_string('settings:enrichment:header', 'local_smartmedia'),
+        get_string('settings:enrichment:header_desc', 'local_smartmedia')));
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectlabels',
-        get_string('settings:processing:detectlabels', 'local_smartmedia'),
-        get_string('settings:processing:detectlabels_desc', 'local_smartmedia'), 1));
+        get_string('settings:enrichment:detectlabels', 'local_smartmedia'),
+        get_string('settings:enrichment:detectlabels_desc', 'local_smartmedia'), 1));
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectmoderation',
-        get_string('settings:processing:detectmoderation', 'local_smartmedia'),
-        get_string('settings:processing:detectmoderation_desc', 'local_smartmedia'), 1));
+        get_string('settings:enrichment:detectmoderation', 'local_smartmedia'),
+        get_string('settings:enrichment:detectmoderation_desc', 'local_smartmedia'), 1));
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectfaces',
-        get_string('settings:processing:detectfaces', 'local_smartmedia'),
-        get_string('settings:processing:detectfaces_desc', 'local_smartmedia'), 1));
+        get_string('settings:enrichment:detectfaces', 'local_smartmedia'),
+        get_string('settings:enrichment:detectfaces_desc', 'local_smartmedia'), 1));
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectpeople',
-        get_string('settings:processing:detectpeople', 'local_smartmedia'),
-        get_string('settings:processing:detectpeople_desc', 'local_smartmedia'), 1));
+        get_string('settings:enrichment:detectpeople', 'local_smartmedia'),
+        get_string('settings:enrichment:detectpeople_desc', 'local_smartmedia'), 1));
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/transcribe',
-        get_string('settings:processing:transcribe', 'local_smartmedia'),
-        get_string('settings:processing:transcribe_desc', 'local_smartmedia'), 1));
+        get_string('settings:enrichment:transcribe', 'local_smartmedia'),
+        get_string('settings:enrichment:transcribe_desc', 'local_smartmedia'), 1));
     // TODO: figure out how to disable these settings if transcribe is disabled.
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectsentiment',
-        get_string('settings:processing:detectsentiment', 'local_smartmedia'),
-        get_string('settings:processing:detectsentiment_desc', 'local_smartmedia'), 1));
+        get_string('settings:enrichment:detectsentiment', 'local_smartmedia'),
+        get_string('settings:enrichment:detectsentiment_desc', 'local_smartmedia'), 1));
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectphrases',
-        get_string('settings:processing:detectphrases', 'local_smartmedia'),
-        get_string('settings:processing:detectphrases_desc', 'local_smartmedia'), 1));
+        get_string('settings:enrichment:detectphrases', 'local_smartmedia'),
+        get_string('settings:enrichment:detectphrases_desc', 'local_smartmedia'), 1));
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectentities',
-        get_string('settings:processing:detectentities', 'local_smartmedia'),
-        get_string('settings:processing:detectentities_desc', 'local_smartmedia'), 1));
+        get_string('settings:enrichment:detectentities', 'local_smartmedia'),
+        get_string('settings:enrichment:detectentities_desc', 'local_smartmedia'), 1));
 
     // These are the only regions that AWS Elastic Transcoder is available in.
     $regionoptions = array(
