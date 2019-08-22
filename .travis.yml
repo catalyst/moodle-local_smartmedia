@@ -30,6 +30,7 @@ env:
   global:
     - MOODLE_BRANCH=master
     - TEST_LOCAL_SMARTMEDIA_FFPROBE=/usr/bin/ffprobe
+    - IGNORE_PATHS=tests/fixtures
   matrix:
     - DB=pgsql MOODLE_BRANCH=MOODLE_37_STABLE
     - DB=mysqli MOODLE_BRANCH=MOODLE_37_STABLE
