@@ -107,20 +107,20 @@ class report_summary implements renderable, templatable {
     private function calculate_total_cost() {
         global $DB;
 
-        // Get the duration of media type content (in seconds) for cost calculation.
+        // Get the duration of media type content (in seconds), zero if there is no media of type.
         $highdefinition = $DB->get_record_select('local_smartmedia_data', 'height >= ?',
-            [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'SUM(duration)');
+            [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
         $standarddefinition = $DB->get_record_select('local_smartmedia_data', '(height < ?) AND (height > 0)',
-            [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'SUM(duration)');
+            [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
         $audio = $DB->get_record_select('local_smartmedia_data', '(height = 0) OR (height IS NULL)',
-            null, 'SUM(duration)');
+            null, 'COALESCE(SUM(duration), 0) as duration');
 
         $totalhdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,
-            $highdefinition->sum);
+            $highdefinition->duration);
         $totalsdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_SD_HEIGHT,
-            $standarddefinition->sum);
+            $standarddefinition->duration);
         $totalaudiocost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_AUDIO_HEIGHT,
-            $audio->sum);
+            $audio->duration);
         $total = $totalhdcost + $totalsdcost + $totalaudiocost;
 
         return $total;
