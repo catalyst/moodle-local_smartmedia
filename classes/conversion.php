@@ -159,25 +159,25 @@ class conversion {
         $now = time();
         $convid = 0;
 
-        $convrecord = new \stdClass();
-        $convrecord->pathnamehash = $file->get_pathnamehash();
-        $convrecord->contenthash = $file->get_contenthash();
-        $convrecord->status = $this::CONVERSION_ACCEPTED;
-        $convrecord->transcribe = $this->config->transcribe;
-        $convrecord->rekog_label = $this->config->detectlabels;
-        $convrecord->rekog_moderation = $this->config->detectmoderation;
-        $convrecord->rekog_face = $this->config->detectfaces;
-        $convrecord->rekog_person = $this->config->detectpeople;
-        $convrecord->detect_sentiment = $this->config->detectsentiment;
-        $convrecord->detect_phrases = $this->config->detectphrases;
-        $convrecord->detect_entities = $this->config->detectentities;
-        $convrecord->timecreated = $now;
-        $convrecord->timemodified = $now;
+        $cnvrec = new \stdClass();
+        $cnvrec->pathnamehash = $file->get_pathnamehash();
+        $cnvrec->contenthash = $file->get_contenthash();
+        $cnvrec->status = $this::CONVERSION_ACCEPTED;
+        $cnvrec->transcribe = $this->config->transcribe == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->rekog_label = $this->config->detectlabels == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->rekog_moderation = $this->config->detectmoderation == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->rekog_face = $this->config->detectfaces == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->rekog_person = $this->config->detectpeople == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->detect_sentiment = $this->config->detectsentiment == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->detect_phrases = $this->config->detectphrases == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->detect_entities = $this->config->detectentities == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->timecreated = $now;
+        $cnvrec->timemodified = $now;
 
         // Race conditions mean that we could try to create a conversion record multiple times.
         // This is OK and expected, we will handle the error.
         try {
-            $convid = $DB->insert_record('local_smartmedia_conv', $convrecord);
+            $convid = $DB->insert_record('local_smartmedia_conv', $cnvrec);
 
         } catch (\dml_write_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,

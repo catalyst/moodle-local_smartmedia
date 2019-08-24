@@ -341,7 +341,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $result = $method->invoke($conversion, $conversionrecord);
 
         $this->assertEquals('10101010', $result['processes']);
-        $this->assertEquals('preset2,preset1', $result['presets']);
+        $this->assertStringContainsString('preset1', $result['presets']);
+        $this->assertStringContainsString('preset2', $result['presets']);
 
     }
 
