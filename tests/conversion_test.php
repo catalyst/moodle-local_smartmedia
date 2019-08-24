@@ -708,4 +708,115 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
     }
 
+    /**
+     * Test getting pathnamehashes for new conversion records.
+     */
+    public function test_get_pathnamehashes() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        // Create some test files.
+        $fs = get_file_storage();
+
+        $filerecord1 = array(
+            'contextid' => 1461,
+            'component' => 'mod_label',
+            'filearea' => 'intro',
+            'itemid' => 0,
+            'filepath' => '/',
+            'filename' => 'video1.mp4');
+
+        $filerecord2 = array(
+            'contextid' => 1461,
+            'component' => 'mod_label',
+            'filearea' => 'intro',
+            'itemid' => 1,
+            'filepath' => '/',
+            'filename' => 'video2.mp4');
+
+        $filerecord3 = array(
+            'contextid' => 1461,
+            'component' => 'mod_label',
+            'filearea' => 'intro',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'video3.mp4');
+
+        // For this test it doesn't actually matter these are not real multimedia files.
+        $file1 = $fs->create_file_from_string($filerecord1, 'I am the first video.');
+        $file2 = $fs->create_file_from_string($filerecord2, 'I am the second video.');
+        $file3 = $fs->create_file_from_string($filerecord3, 'I am the third video.');
+
+        // Create file metadata records.
+        $metadatarecord1 = new \stdClass();
+        $metadatarecord1->contenthash = $file1->get_contenthash();
+        $metadatarecord1->pathnamehash = $file1->get_pathnamehash();
+        $metadatarecord1->duration = 3.123;
+        $metadatarecord1->bitrate = 1000;
+        $metadatarecord1->size = 390;
+        $metadatarecord1->videostreams = 1;
+        $metadatarecord1->audiostreams = 1;
+        $metadatarecord1->width = 1920;
+        $metadatarecord1->height = 1080;
+        $metadatarecord1->metadata = '{}';
+
+        $id1 = $DB->insert_record('local_smartmedia_data', $metadatarecord1);
+
+        $metadatarecord2 = new \stdClass();
+        $metadatarecord2->contenthash = $file2->get_contenthash();
+        $metadatarecord2->pathnamehash = $file2->get_pathnamehash();
+        $metadatarecord2->duration = 3.123;
+        $metadatarecord2->bitrate = 1000;
+        $metadatarecord2->size = 390;
+        $metadatarecord2->videostreams = 1;
+        $metadatarecord2->audiostreams = 1;
+        $metadatarecord2->width = 1920;
+        $metadatarecord2->height = 1080;
+        $metadatarecord2->metadata = '{}';
+
+        $id2 = $DB->insert_record('local_smartmedia_data', $metadatarecord2);
+
+        $metadatarecord3 = new \stdClass();
+        $metadatarecord3->contenthash = $file3->get_contenthash();
+        $metadatarecord3->pathnamehash = $file3->get_pathnamehash();
+        $metadatarecord3->duration = 3.123;
+        $metadatarecord3->bitrate = 1000;
+        $metadatarecord3->size = 390;
+        $metadatarecord3->videostreams = 1;
+        $metadatarecord3->audiostreams = 1;
+        $metadatarecord3->width = 1920;
+        $metadatarecord3->height = 1080;
+        $metadatarecord3->metadata = '{}';
+
+        $id3 = $DB->insert_record('local_smartmedia_data', $metadatarecord3);
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->contenthash = $file3->get_contenthash();;
+        $conversionrecord->pathnamehash = $file3->get_pathnamehash();
+        $conversionrecord->status = 202;
+        $conversionrecord->transcribe_status = 202;
+        $conversionrecord->rekog_label_status = 404;
+        $conversionrecord->rekog_moderation_status = 202;
+        $conversionrecord->rekog_face_status = 404;
+        $conversionrecord->rekog_person_status = 202;
+        $conversionrecord->detect_sentiment_status = 404;
+        $conversionrecord->detect_phrases_status = 202;
+        $conversionrecord->detect_entities_status = 404;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $recordid = $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+
+        $conversion = new \local_smartmedia\conversion();
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_pathnamehashes');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion);
+
+        $this->assertCount(2, $result);
+        $this->assertArrayHasKey($id1, $result);
+        $this->assertArrayHasKey($id2, $result);
+        $this->assertArrayNotHasKey($id3, $result);
+
+    }
+
 }

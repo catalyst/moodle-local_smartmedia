@@ -681,9 +681,42 @@ class conversion {
         return $results;
     }
 
-    public function create_conversions() : array {
+    /**
+     * Get the pathnamehases for files that have metadata extracted,
+     * but that do not have conversion records.
+     *
+     * @return array $pathnamehashes Array of pathnamehashes.
+     */
+    private function get_pathnamehashes() : array {
+        global $DB;
 
-        return array();
+        $limit = self::MAX_FILES;
+        $sql = "SELECT lsd.id, lsd.pathnamehash
+                  FROM {local_smartmedia_data} lsd
+             LEFT JOIN {local_smartmedia_conv} lsc ON lsd.contenthash = lsc.contenthash
+                 WHERE lsc.contenthash IS NULL";
+        $pathnamehashes = $DB->get_records_sql($sql, null, 0, $limit);
+
+        return $pathnamehashes;
+
+    }
+
+    /**
+     * Create conversion records for files that have metadata,
+     * but don't have conversion records.
+     *
+     * @return array
+     */
+    public function create_conversions() : array {
+        $pathnamehashes = $this->get_pathnamehashes(); // Get pathnamehashes for conversions.
+        $fs = get_file_storage();
+
+        foreach ($pathnamehashes as $pathnamehash) {
+            $file = $fs->get_file_by_hash($pathnamehash->pathnamehash);
+            $this->create_conversion($file);
+        }
+
+        return $pathnamehashes;
     }
 
 }

@@ -203,6 +203,7 @@ class extract_metadata extends scheduled_task {
             // Setup initial metadata record.
             $metadatarecord = new \stdClass();
             $metadatarecord->contenthash = $file->get_contenthash();
+            $metadatarecord->pathnamehash = $file->get_pathnamehash();
             $metadatarecord->duration = 0;
             $metadatarecord->bitrate = 0;
             $metadatarecord->size = 0;
