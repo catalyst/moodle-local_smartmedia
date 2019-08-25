@@ -37,22 +37,18 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
     /**
      * Test getting start file id.
      */
-    public function test_get_start_id() {
+    public function test_update_report_data() {
         $this->resetAfterTest();
 
-        $task = new \local_smartmedia\task\extract_metadata();
+        $name = 'totalfiles';
+        $value = 64;
+
+        $task = new \local_smartmedia\task\report_process();
 
         // We're testing a private method, so we need to setup reflector magic.
-        $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'get_start_id');
+        $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'update_report_data');
         $method->setAccessible(true); // Allow accessing of private method.
-        $proxy = $method->invoke($task); // Get result of invoked method.
-
-        // Initial result should be zero as there are no records yet.
-        $this->assertEquals(0, $proxy);
-
-        set_config('startfileid', 1, 'local_smartmedia');
-        $proxy = $method->invoke($task); // Get result of invoked method.
-
-        $this->assertEquals(1, $proxy);
+        $proxy = $method->invoke($task, $name, $value); // Get result of invoked method.
+        $proxy = $method->invoke($task, $name, $value); // Get result of invoked method.
     }
 }

@@ -126,10 +126,29 @@ class report_process extends scheduled_task {
         return $result;
     }
 
-    private function update_report_data() : void {
+    private function update_report_data(string $name, $value) : void {
         global $DB;
 
-        $record = new \stdClass();
+        $datarecord = new \stdClass();
+        $datarecord->name = $name;
+        $datarecord->value = $value;
+
+        try {
+            $transaction = $DB->start_delegated_transaction();
+            $recordid = $DB->get_record('local_smartmedia_reports', array('name' => $name));
+
+            if($recordid) {
+                $datarecord->id = $recordid;
+                $DB->update_record('local_smartmedia_reports', $datarecord);
+            } else {
+                $DB->insert_record('local_smartmedia_reports', $datarecord);
+            }
+
+            $transaction->allow_commit();
+
+        } catch(\Exception $e) {
+            $transaction->rollback($e);
+        }
     }
 
     /**
