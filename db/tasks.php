@@ -37,4 +37,13 @@ $tasks = array(
         'dayofweek' => '*',
         'month' => '*'
     ),
+    array(
+        'classname' => 'local_smartmedia\task\report_process',
+        'blocking' => 0,
+        'minute' => '45',
+        'hour' => '*',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*'
+    ),
 );
