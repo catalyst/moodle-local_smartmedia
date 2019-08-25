@@ -90,6 +90,7 @@ Resources:
           - elastictranscoder:CreateJob
           - elastictranscoder:ReadJob
           - elastictranscoder:ReadPipeline
+          - elastictranscoder:ReadPreset
           Resource: '*'
         - Effect: Allow
           Action: 
