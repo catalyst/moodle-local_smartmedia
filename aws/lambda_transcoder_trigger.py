@@ -33,7 +33,7 @@ logger = logging.getLogger()
 
 
 def sqs_send_message(key, bucket, record):
-    # Get environvent variables
+    # Get environment variables
     sqs_url = os.environ.get('SmartmediaSqsQueue')  # SQS queue URL.
 
     # Get input object metadata as we will need for SQS message sending.
@@ -74,12 +74,23 @@ def sqs_send_message(key, bucket, record):
     )
 
 
-def submit_transcode_jobs(s3key, pipeline_id):
+def submit_transcode_jobs(s3key, pipeline_id, preset_ids):
     """
     Submits jobs to Elastic Transcoder.
     """
 
     logger.info('Triggering transcode job...')
+
+    outputs = []
+    for preset_id in preset_ids:
+        logger.info(preset_id)
+        result = et_client.read_preset(Id=preset_id)
+        preset = result.get('Preset')
+        output = {}
+        output['Key'] = '{0}.{1}'.format(s3key, preset['Container'])
+        output['PresetId'] = preset_id
+        output['ThumbnailPattern'] = ''
+        outputs.append(output)
 
     response = et_client.create_job(
         PipelineId=pipeline_id,
@@ -87,27 +98,28 @@ def submit_transcode_jobs(s3key, pipeline_id):
          Input={
             'Key': s3key,
         },
-        Outputs=[
-            {
-                'Key': '{}.mp4'.format(s3key),
-                'PresetId': '1351620000001-100070',  # System preset: Facebook, SmugMug, Vimeo, YouTube
-                'ThumbnailPattern': '',
-            },
-            {
-                'Key': '{}.webm'.format(s3key),
-                'PresetId': '1351620000001-100240',  # System preset: Webm 720p
-                'ThumbnailPattern': '',
-             },
-            {
-                'Key': '{}.mp3'.format(s3key),
-                'PresetId': '1351620000001-300020',  # System preset: Audio MP3 - 192 kilobits/second
-                'ThumbnailPattern': '',
-             },
-        ]
+        Outputs=outputs
     )
 
     logger.info(response)
 
+def get_preset_ids(key, bucket):
+    """
+    Get applicable elastic transcoder presets from S3 metadata
+    """
+
+    # Get input object metadata as for pulling out presets ids.
+    input_object_headdata_object = s3_client.head_object(
+        Bucket=bucket,
+        Key=key
+        )
+
+    raw_preset_ids = input_object_headdata_object['Metadata']['presets']
+    untrimmed_preset_ids = raw_preset_ids.split(',')
+    logger.info(untrimmed_preset_ids)
+    presets_ids = map(str.strip, untrimmed_preset_ids)
+    logger.info(presets_ids)
+    return presets_ids
 
 def lambda_handler(event, context):
     """
@@ -143,5 +155,7 @@ def lambda_handler(event, context):
         # Send message to SQS queue.
         sqs_send_message(key, bucket, record)
 
-        submit_transcode_jobs(key, pipeline_id)
+        preset_ids = get_preset_ids(key, bucket)
+
+        submit_transcode_jobs(key, pipeline_id, preset_ids)
 
