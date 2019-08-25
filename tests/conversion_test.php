@@ -441,6 +441,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
         $conversionrecord->contenthash = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
         $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->transcribe_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
@@ -484,6 +485,14 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertCount(2, $result);
         $this->assertArrayHasKey($msg1, $result);
         $this->assertArrayHasKey($msg2, $result);
+        $this->assertArrayNotHasKey($msg3, $result);
+
+        // Test again with a record that transcoder has finished.
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_FINISHED;
+        $result = $method->invoke($conversion, $conversionrecord);
+        $this->assertCount(1, $result);
+        $this->assertArrayHasKey($msg1, $result);
+        $this->assertArrayNotHasKey($msg2, $result);
         $this->assertArrayNotHasKey($msg3, $result);
     }
 
@@ -706,6 +715,23 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $result = $method->invoke($conversion, $conversionrecord);
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->status);
+
+        // Try again with some conversions configured to not run.
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = 'SampleVideo1mb';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $result = $method->invoke($conversion, $conversionrecord);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
 
     }
 

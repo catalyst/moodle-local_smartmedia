@@ -163,14 +163,23 @@ class conversion {
         $cnvrec->pathnamehash = $file->get_pathnamehash();
         $cnvrec->contenthash = $file->get_contenthash();
         $cnvrec->status = $this::CONVERSION_ACCEPTED;
-        $cnvrec->transcribe = $this->config->transcribe == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->rekog_label = $this->config->detectlabels == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->rekog_moderation = $this->config->detectmoderation == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->rekog_face = $this->config->detectfaces == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->rekog_person = $this->config->detectpeople == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->detect_sentiment = $this->config->detectsentiment == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->detect_phrases = $this->config->detectphrases == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->detect_entities = $this->config->detectentities == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->transcoder_status = $this::CONVERSION_ACCEPTED;
+        $cnvrec->transcribe_status =
+            $this->config->transcribe == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->rekog_label_status =
+            $this->config->detectlabels == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->rekog_moderation_status =
+            $this->config->detectmoderation == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->rekog_face_status =
+            $this->config->detectfaces == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->rekog_person_status =
+            $this->config->detectpeople == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->detect_sentiment_status =
+            $this->config->detectsentiment == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->detect_phrases_status =
+            $this->config->detectphrases == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        $cnvrec->detect_entities_status =
+            $this->config->detectentities == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
         $cnvrec->timecreated = $now;
         $cnvrec->timemodified = $now;
 
@@ -439,8 +448,11 @@ class conversion {
         // Using the conversion record determine which services we are looking for messages from.
         // Only get messages for conversions that have not yet finished.
         $services = array();
-        $services[] = 'elastic_transcoder'; // Files are always going to be processed by Elastic transcoder.
 
+        if ($conversionrecord->transcoder_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->transcoder_status == self::CONVERSION_IN_PROGRESS) {
+                $services[] = 'elastic_transcoder';
+            }
         if ($conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartLabelDetection';
@@ -449,7 +461,7 @@ class conversion {
             || $conversionrecord->rekog_moderation_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartContentModeration';
         }
-        if ($conversionrecord->rekog_face_status -= self::CONVERSION_ACCEPTED
+        if ($conversionrecord->rekog_face_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_face_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartFaceDetection';
         }
@@ -501,7 +513,7 @@ class conversion {
                 'component' => 'local_smartmedia',
                 'filearea' => 'media',
                 'itemid' => 0,
-                'filepath' => '/conversions/',
+                'filepath' => '/' . $conversionrecord->contenthash . '/conversions/',
                 'filename' => basename($availableobject['Key'])
 
             );
@@ -539,18 +551,17 @@ class conversion {
         $fs = get_file_storage();
 
         $filerecord = array(
-                'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
-                'component' => 'local_smartmedia',
-                'filearea' => 'metadata',
-                'itemid' => 0,
-                'filepath' => '/metadata/',
-                'filename' => $objectkey . 'json'
-
+            'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
+            'component' => 'local_smartmedia',
+            'filearea' => 'metadata',
+            'itemid' => 0,
+            'filepath' => '/' . $conversionrecord->contenthash . '/metadata/',
+            'filename' => $objectkey . '.json'
         );
 
         $downloadparams = array(
                 'Bucket' => $this->config->s3_output_bucket, // Required.
-                'Key' => $conversionrecord->contenthash . '/metadata/' . $objectkey . 'json', // Required.
+                'Key' => $conversionrecord->contenthash . '/metadata/' . $objectkey . '.json', // Required.
         );
 
         $getobject = $s3client->getObject($downloadparams);
@@ -632,23 +643,25 @@ class conversion {
         global $DB;
 
         // Only set the final completion status if all other processes are finished.
-        if (($updatedrecord->transcoder_status = self::CONVERSION_FINISHED
-                || $updatedrecord->transcoder_status = self::CONVERSION_NOT_FOUND )
-            && ($updatedrecord->rekog_label_status = self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_label_status = self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_moderation_status = self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_moderation_status = self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_face_status = self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_face_status = self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_person_status = self::CONVERSION_FINISHED)
-                || $updatedrecord->rekog_person_status = self::CONVERSION_NOT_FOUND) {
+        if (($updatedrecord->transcoder_status == self::CONVERSION_FINISHED
+                || $updatedrecord->transcoder_status == self::CONVERSION_NOT_FOUND )
+            && ($updatedrecord->rekog_label_status == self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_label_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->rekog_moderation_status == self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_moderation_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->rekog_face_status == self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_face_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED)
+                || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND) {
 
                 $updatedrecord->status = self::CONVERSION_FINISHED;
                 $updatedrecord->timemodified = time();
                 $updatedrecord->timecompleted = time();
                 // Update the database with the modified conversion record.
+
                 $DB->update_record('local_smartmedia_conv', $updatedrecord);
 
+                // TODO: Also delete file from AWS.
         }
 
         return $updatedrecord;
