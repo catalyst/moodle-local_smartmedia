@@ -120,7 +120,7 @@ class conversion {
      */
     private function get_preset_ids() : array {
         $rawids = $this->config->transcodepresets; // Get the raw ids.
-        $untrimmedids = explode(',', $rawids); // Split ids into an array of strings by newline.
+        $untrimmedids = explode(',', $rawids); // Split ids into an array of strings by comma.
         $idarray = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
 
         return $idarray;

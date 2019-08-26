@@ -81,7 +81,7 @@ class aws_elastic_transcoder {
      */
     public function get_presets(string $presetsettings) {
         $rawids = $presetsettings; // Get the raw ids.
-        $untrimmedids = explode(',', $rawids); // Split ids into an array of strings by newline.
+        $untrimmedids = explode(',', $rawids); // Split ids into an array of strings by comma.
         $presetids = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
 
         foreach ($presetids as $presetid) {
