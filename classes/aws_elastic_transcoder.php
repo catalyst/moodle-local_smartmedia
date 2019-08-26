@@ -75,13 +75,14 @@ class aws_elastic_transcoder {
     /**
      * Get the presets available for transcoding.
      *
-     * @param string $presetsettings the string of preset ids taken from admin settings.
+     * @param string $presetsettings comma delimited string of AWS Elastic Transcoder preset ids.
      *
      * @return array $presets array of aws_ets_preset objects.
      */
     public function get_presets(string $presetsettings) {
-        $presets = [];
-        $presetids = explode(',', $presetsettings);
+        $rawids = $presetsettings; // Get the raw ids.
+        $untrimmedids = explode(',', $rawids); // Split ids into an array of strings by comma.
+        $presetids = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
 
         foreach ($presetids as $presetid) {
             // Remove any additional whitespace to avoid API errors.
