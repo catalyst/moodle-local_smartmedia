@@ -38,6 +38,8 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
      * Test getting start file id.
      */
     public function test_update_report_data() {
+        global $DB;
+
         $this->resetAfterTest();
 
         $name = 'totalfiles';
@@ -50,5 +52,10 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $proxy = $method->invoke($task, $name, $value); // Get result of invoked method.
         $proxy = $method->invoke($task, $name, $value); // Get result of invoked method.
+
+        $record = $DB->get_record('local_smartmedia_reports', array('name' => $name));
+
+        $this->assertEquals($name, $record->name);
+        $this->assertEquals($value, $record->value);
     }
 }

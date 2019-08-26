@@ -126,6 +126,12 @@ class report_process extends scheduled_task {
         return $result;
     }
 
+    /**
+     * Add a key value pair to the report database table.
+     *
+     * @param string $name Name of the value to store.
+     * @param mixed $value Value to store.
+     */
     private function update_report_data(string $name, $value) : void {
         global $DB;
 
@@ -135,10 +141,10 @@ class report_process extends scheduled_task {
 
         try {
             $transaction = $DB->start_delegated_transaction();
-            $recordid = $DB->get_record('local_smartmedia_reports', array('name' => $name));
+            $namerecord = $DB->get_record('local_smartmedia_reports', array('name' => $name), 'id');
 
-            if($recordid) {
-                $datarecord->id = $recordid;
+            if($namerecord) {
+                $datarecord->id = $namerecord->id;
                 $DB->update_record('local_smartmedia_reports', $datarecord);
             } else {
                 $DB->insert_record('local_smartmedia_reports', $datarecord);
@@ -160,10 +166,13 @@ class report_process extends scheduled_task {
 
         mtrace('local_smartmedia: Processing media file data');
         $totalfiles = $this->get_all_file_count(); // Get count of all files in files table.
-        $audiofiles = $this->get_audio_file_count(); // Get count of audio files in files table.
-        $videofiles = $this->get_video_file_count(); // Get count of video files in files table.
+        $this->update_report_data('totalfiles', $totalfiles);
 
-        // Store values in database.
+        $audiofiles = $this->get_audio_file_count(); // Get count of audio files in files table.
+        $this->update_report_data('audiofiles', $audiofiles);
+
+        $videofiles = $this->get_video_file_count(); // Get count of video files in files table.
+        $this->update_report_data('videofiles', $videofiles);
 
     }
 

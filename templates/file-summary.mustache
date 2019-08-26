@@ -29,7 +29,11 @@
         ]
     }
 }}
-<div id="report-summary-" class="card-deck">
-    {{> local_smartmedia/transcode-total }}
-    {{> local_smartmedia/file-summary }}
+
+<div class="card">
+    <h5 class="card-header">{{#str}} report:summary:filesummary, local_smartmedia {{/str}}</h5>
+    <div class="card-body">
+        <p class="card-text">pretty graph goes here..</p>
+    </div>
 </div>
+
