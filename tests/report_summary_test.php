@@ -174,4 +174,49 @@ class local_smartmedia_report_summary_testcase extends advanced_testcase {
 
         $this->assertEquals($expected, $actual);
     }
+
+    /**
+     * Test getting file totals used in the files sumamry chart
+     */
+    public function test_get_file_summary_totals () {
+        global $DB;
+
+        // Setup the dta required for the test.
+        $record1 = new \stdClass();
+        $record1->name = 'totalfiles';
+        $record1->value = 100;
+
+        $record2 = new \stdClass();
+        $record2->name = 'videofiles';
+        $record2->value = 50;
+
+        $record3 = new \stdClass();
+        $record3->name = 'audiofiles';
+        $record3->value = 30;
+
+        $dataobjects = array($record1, $record2, $record3);
+
+        // Get a class instance without invoking the constructor,
+        // this allows us to skip a lot of setup.
+        $builder = $this->getMockBuilder('\local_smartmedia\output\report_summary');
+        $builder->disableOriginalConstructor();
+        $stub = $builder->getMock();
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\output\report_summary', 'get_file_summary_totals');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $proxy = $method->invoke($stub); // Get result of invoked method.
+
+        // Should be an empty array as there are no records in DB;
+        $this->assertEmpty($proxy);
+
+        // Add the records.
+        $DB->insert_records('local_smartmedia_reports', $dataobjects);
+        $proxy = $method->invoke($stub);
+
+        $this->assertEquals(($record1->value - ($record2->value + $record3->value)), $proxy[0]);
+        $this->assertEquals($record2->value, $proxy[1]);
+        $this->assertEquals($record3->value, $proxy[2]);
+
+    }
 }

@@ -21,19 +21,22 @@
 
     Example context (json):
     {
-        "total": "$5,123,456",
-        "warnings": [
-            {
-                "message": "Total excludes high definition transcode costs: Could not obtain high definition transcode cost data for ap-southeast-2 region"
-            }
-        ]
+        "file_summary" : ""
     }
 }}
 
 <div class="card">
     <h5 class="card-header">{{#str}} report:summary:filesummary, local_smartmedia {{/str}}</h5>
     <div class="card-body">
-        <p class="card-text">pretty graph goes here..</p>
+        {{#file_summary}}
+            <h6 class="card-subtitle mb-2 text-muted">{{#str}} report:summary:title, local_smartmedia {{/str}}</h6>
+            {{{file_summary}}}
+        {{/file_summary}}
+        {{^file_summary}}
+            <h2>
+                {{#str}} report:summary:nodata, local_smartmedia {{/str}}
+            </h2>
+        {{/file_summary}}
     </div>
 </div>
 
