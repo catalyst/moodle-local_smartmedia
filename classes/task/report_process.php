@@ -143,7 +143,7 @@ class report_process extends scheduled_task {
             $transaction = $DB->start_delegated_transaction();
             $namerecord = $DB->get_record('local_smartmedia_reports', array('name' => $name), 'id');
 
-            if($namerecord) {
+            if ($namerecord) {
                 $datarecord->id = $namerecord->id;
                 $DB->update_record('local_smartmedia_reports', $datarecord);
             } else {
@@ -152,7 +152,7 @@ class report_process extends scheduled_task {
 
             $transaction->allow_commit();
 
-        } catch(\Exception $e) {
+        } catch (\Exception $e) {
             $transaction->rollback($e);
         }
     }

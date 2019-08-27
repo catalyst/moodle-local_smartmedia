@@ -207,7 +207,7 @@ class local_smartmedia_report_summary_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $proxy = $method->invoke($stub); // Get result of invoked method.
 
-        // Should be an empty array as there are no records in DB;
+        // Should be an empty array as there are no records in DB.
         $this->assertEmpty($proxy);
 
         // Add the records.

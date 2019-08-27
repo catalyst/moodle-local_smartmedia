@@ -140,12 +140,12 @@ class report_summary implements renderable, templatable {
         $audiofiles = 0;
         $otherfiles = 0;
 
-        // Get values for chart from the database;
+        // Get values for chart from the database.
         list($insql, $inparams) = $DB->get_in_or_equal(array('totalfiles', 'videofiles', 'audiofiles'));
         $select = "name $insql";  // Don't count files added by smartmedia itself.
         $values = $DB->get_records_select('local_smartmedia_reports', $select, $inparams, '', 'name, value');
 
-        if(!empty(($values))){ // Handle case where there is no data in table
+        if (!empty(($values))) { // Handle case where there is no data in table
             $totalfiles = $values['totalfiles']->value;
             $videofiles = $values['videofiles']->value;
             $audiofiles = $values['audiofiles']->value;
@@ -168,9 +168,9 @@ class report_summary implements renderable, templatable {
 
         $values = $this->get_file_summary_totals();
 
-        if(!empty(($values))){ // Handle case where there is no data in table
+        if (!empty(($values))) { // Handle case where there is no data in table.
 
-            $series =  new \core\chart_series(get_string('report:summary:filesummary:total', 'local_smartmedia'), $values);
+            $series = new \core\chart_series(get_string('report:summary:filesummary:total', 'local_smartmedia'), $values);
             $labels = array(
                     get_string('report:summary:filesummary:otherfiles', 'local_smartmedia'),
                     get_string('report:summary:filesummary:videofiles', 'local_smartmedia'),
