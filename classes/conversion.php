@@ -681,6 +681,12 @@ class conversion {
         return $results;
     }
 
+    /**
+     * Create the conversions.
+     * (Placeholder)
+     *
+     * @return array
+     */
     public function create_conversions() : array {
 
         return array();
