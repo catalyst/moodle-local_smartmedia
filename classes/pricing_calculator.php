@@ -58,7 +58,7 @@ class pricing_calculator {
      * @param location_transcode_pricing $locationpricing object containing pricing information for region.
      * @param array $presets array of aws_ets_preset objects containing preset transcode output settings.
      */
-    public function __construct(location_transcode_pricing $locationpricing, $presets = []) {
+    public function __construct(location_transcode_pricing $locationpricing, array $presets = []) {
         $this->locationpricing = $locationpricing;
         $this->region = $locationpricing->get_region();
         $this->presets = $presets;

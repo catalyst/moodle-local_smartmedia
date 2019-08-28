@@ -114,7 +114,6 @@ $string['settings:processing:proactiveconversion'] = 'Background processing';
 $string['settings:processing:proactiveconversion_desc'] = 'When enabled media files will be processed via scheduled task.';
 $string['settings:processing:transcodepresets'] = 'Trascoding presets';
 $string['settings:processing:transcodepresets_desc'] = 'Comma delimited list of AWS Elastic Transcoder presets used to convert media files.';
-$string['settings:processing:transcodepresets_invalid'] = 'Preset ID {$a} in SmartMedia settings is not a valid AWS Elastic Transcoder preset.';
 $string['settings:enrichment:transcribe'] = 'Trascribe file';
 $string['settings:enrichment:transcribe_desc'] = 'Attempt an automated transcription on audio and video files.';
 $string['settings:ffprobe:pathtoffprobe'] = 'FFProbe binary path';
