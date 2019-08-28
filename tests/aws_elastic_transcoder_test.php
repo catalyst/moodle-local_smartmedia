@@ -99,7 +99,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
      *
      * @return array the api stub and expected result from calling get_pricing_client method on stub.
      */
-    public function create_mock_elastic_transcoder_client(array $fixtures) {
+    public function create_mock_elastic_transcoder_client(array $fixtures = []) {
         // Inject our results fixture into the API dependency as a mock using a handler.
         $mockhandler = new MockHandler();
         $mockresults = [];
@@ -120,9 +120,10 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
     }
 
     /**
-     * Test that we can get presets as aws_ets_preset instances.
+     * Test that we can get presets as aws_ets_preset instances when valid
+     * preset ids are set in admin settings.
      */
-    public function test_get_presets() {
+    public function test_get_presets_set() {
 
         // Mock the elastic transcoder client so it returns fixture data presets.
         list($mock, $mockresults) = $this->create_mock_elastic_transcoder_client($this->fixture['readPreset']);
@@ -141,4 +142,20 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
         $this->assertEquals($expected, $actual);
     }
 
+    /**
+     * When presets are not set we should get empty array.
+     */
+    public function test_get_presets_not_set() {
+
+        // Mock the elastic transcoder client so it returns fixture data presets.
+        list($mock, $mockresults) = $this->create_mock_elastic_transcoder_client();
+
+        // Instantiate the class, injecting our mock.
+        $pricingclient = new aws_elastic_transcoder($mock);
+        // Get presets for empty string in admin settings.
+        $actual = $pricingclient->get_presets('');
+        $expected = $mockresults;
+
+        $this->assertEquals($expected, $actual);
+    }
 }
