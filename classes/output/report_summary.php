@@ -95,33 +95,43 @@ class report_summary implements renderable, templatable {
             $this->warnings[] = $warning;
         }
 
+        if (!$this->pricingcalculator->has_presets()) {
+            $warning = new stdClass();
+            $warning->message = get_string('report:summary:warning:invalidpresets', 'local_smartmedia', $this->region);
+            $this->warnings[] = $warning;
+        }
+
     }
 
     /**
      * Calculate the total cost of transcoding all media items.
      *
-     * @return float|int $total
+     * @return float|int|null $total cost for all transcoding across all presets, null if total cannot be calculated.
      *
      * @throws \dml_exception
      */
     private function calculate_total_cost() {
         global $DB;
 
-        // Get the duration of media type content (in seconds), zero if there is no media of type.
-        $highdefinition = $DB->get_record_select('local_smartmedia_data', 'height >= ?',
-            [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
-        $standarddefinition = $DB->get_record_select('local_smartmedia_data', '(height < ?) AND (height > 0)',
-            [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
-        $audio = $DB->get_record_select('local_smartmedia_data', '(height = 0) OR (height IS NULL)',
-            null, 'COALESCE(SUM(duration), 0) as duration');
+        if (!$this->pricingcalculator->has_presets()) {
+            $total = null;
+        } else {
+            // Get the duration of media type content (in seconds), zero if there is no media of type.
+            $highdefinition = $DB->get_record_select('local_smartmedia_data', 'height >= ?',
+                [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
+            $standarddefinition = $DB->get_record_select('local_smartmedia_data', '(height < ?) AND (height > 0)',
+                [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
+            $audio = $DB->get_record_select('local_smartmedia_data', '(height = 0) OR (height IS NULL)',
+                null, 'COALESCE(SUM(duration), 0) as duration');
 
-        $totalhdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,
-            $highdefinition->duration);
-        $totalsdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_SD_HEIGHT,
-            $standarddefinition->duration);
-        $totalaudiocost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_AUDIO_HEIGHT,
-            $audio->duration);
-        $total = $totalhdcost + $totalsdcost + $totalaudiocost;
+            $totalhdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,
+                $highdefinition->duration);
+            $totalsdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_SD_HEIGHT,
+                $standarddefinition->duration);
+            $totalaudiocost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_AUDIO_HEIGHT,
+                $audio->duration);
+            $total = $totalhdcost + $totalsdcost + $totalaudiocost;
+        }
 
         return $total;
     }
@@ -204,7 +214,14 @@ class report_summary implements renderable, templatable {
         $this->validate_pricing();
 
         $context = new stdClass();
-        $context->total = '$' . number_format($this->calculate_total_cost(), 4);
+
+        $total = $this->calculate_total_cost();
+        if (!empty($total)) {
+            $context->total = '$' . number_format($total, 4);
+        } else {
+            $context->total = get_string('report:nocostdata', 'local_smartmedia');
+        }
+
         $context->warnings = $this->warnings;
         $context->file_summary = $this->get_file_summary_chart();
 

@@ -26,6 +26,7 @@
 namespace local_smartmedia;
 
 use Aws\ElasticTranscoder\ElasticTranscoderClient;
+use Aws\Exception\AwsException;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -78,17 +79,25 @@ class aws_elastic_transcoder {
      * @param string $presetsettings comma delimited string of AWS Elastic Transcoder preset ids.
      *
      * @return array $presets array of aws_ets_preset objects.
+     * @throws \moodle_exception
      */
     public function get_presets(string $presetsettings) {
-        $rawids = $presetsettings; // Get the raw ids.
-        $untrimmedids = explode(',', $rawids); // Split ids into an array of strings by comma.
-        $presetids = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
+        $presets = [];
 
-        foreach ($presetids as $presetid) {
-            // Remove any additional whitespace to avoid API errors.
-            $presetid = trim($presetid);
-            $presetdata = $this->read_preset($presetid);
-            $presets[] = new aws_ets_preset($presetdata);
+        if (!empty($presetsettings)) {
+
+            $untrimmedids = explode(',', $presetsettings); // Split ids into an array of strings by comma.
+            $presetids = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
+
+            foreach ($presetids as $presetid) {
+                try {
+                    $presetdata = $this->read_preset($presetid);
+                    $presets[] = new aws_ets_preset($presetdata);
+                } catch (AwsException $e) {
+                    debugging($e->getAwsErrorMessage());
+                    throw new \moodle_exception("Invalid AWS Elastic Transcoder Preset ID in SmartMedia settings: '$presetid'");
+                }
+            }
         }
         return $presets;
     }

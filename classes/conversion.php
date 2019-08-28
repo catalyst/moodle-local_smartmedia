@@ -324,7 +324,7 @@ class conversion {
      * @param \stdClass $conversionrecord The cponversion record to get the settings for.
      * @return array $settings The conversion record settings.
      */
-    private function get_convserion_settings(\stdClass $conversionrecord) : array {
+    private function get_conversion_settings(\stdClass $conversionrecord) : array {
         global $DB, $CFG;
         $settings = array();
 
@@ -343,10 +343,10 @@ class conversion {
         $processes .= $conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED ? '1' : '0';
 
         $presets = $DB->get_fieldset_select('local_smartmedia_presets', 'preset', 'convid = ?', array($conversionrecord->id));
-        $prsetstring = implode(',', $presets);
+        $presetstring = implode(',', $presets);
 
         $settings['processes'] = $processes;
-        $settings['presets'] = $prsetstring;
+        $settings['presets'] = $presetstring;
         $settings['siteid'] = $CFG->siteidentifier;
 
         return $settings;
@@ -423,7 +423,7 @@ class conversion {
         $conversionrecords = $this->get_conversion_records(self::CONVERSION_ACCEPTED); // Get not yet started conversion records.
 
         foreach ($conversionrecords as $conversionrecord) { // Itterate through not yet started records.
-            $settings = $this->get_convserion_settings($conversionrecord); // Get convession settings.
+            $settings = $this->get_conversion_settings($conversionrecord); // Get convession settings.
             $file = $fs->get_file_by_hash($conversionrecord->pathnamehash); // Get the file to process.
             $results[$conversionrecord->id] = $this->send_file_for_processing($file, $settings); // Send for processing.
             $this->update_conversion_records($results); // Update conversion records.

@@ -61,6 +61,7 @@ $string['report:summary:cost:description'] = 'Transcode cost for all files';
 $string['report:summary:cost:total'] = 'Total:';
 $string['report:summary:nodata'] = 'No data found';
 $string['report:summary:transcodetotal'] = 'Transcode cost';
+$string['report:summary:warning:invalidpresets'] = 'There are no valid AWS Elastic Transcoder preset ids in your SmartMedia settings, pricing cannot be calculated.';
 $string['report:summary:warning:noaudiocost'] = 'No audio transcode data: could not obtain audio transcode pricing data for {$a} region.';
 $string['report:summary:warning:nohdcost'] = 'No high definition transcode data: Could not obtain high definition transcode pricing data for {$a} region.';
 $string['report:summary:warning:nosdcost'] = 'No standard definition transcode data: Could not obtain standard definition transcode pricing data for {$a} region.';
