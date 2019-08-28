@@ -90,8 +90,6 @@ class aws_elastic_transcoder {
             $presetids = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
 
             foreach ($presetids as $presetid) {
-                // Remove any additional whitespace to avoid API errors.
-                $presetid = trim($presetid);
                 try {
                     $presetdata = $this->read_preset($presetid);
                     $presets[] = new aws_ets_preset($presetdata);
