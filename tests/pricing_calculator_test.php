@@ -168,4 +168,19 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
         $this->assertEquals($expected, $actual);
     }
 
+    /**
+     * Test that calculate transcode costs will null if preset ids aren't in admin settings.
+     */
+    public function test_calculate_transcode_cost_no_presets() {
+
+        // Setup the location pricing for dependency injection.
+        $locationpricing = new location_transcode_pricing('ap-southeast-2');
+
+        // Instantiate the class with no presets.
+        $pricingcalculator = new pricing_calculator($locationpricing);
+        $actual = $pricingcalculator->calculate_transcode_cost(rand(0, 1080), rand(0, 3600));
+
+        $this->assertNull($actual);
+    }
+
 }
