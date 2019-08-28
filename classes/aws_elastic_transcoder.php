@@ -93,8 +93,7 @@ class aws_elastic_transcoder {
                 try {
                     $presetdata = $this->read_preset($presetid);
                     $presets[] = new aws_ets_preset($presetdata);
-                }
-                catch (AwsException $e) {
+                } catch (AwsException $e) {
                     debugging($e->getAwsErrorMessage());
                     throw new \moodle_exception("Invalid AWS Elastic Transcoder Preset ID in SmartMedia settings: '$presetid'");
                 }
