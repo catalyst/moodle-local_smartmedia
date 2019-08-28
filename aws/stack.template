@@ -466,10 +466,20 @@ Resources:
               - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
               - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
             - Effect: Allow
-              Action: 
+              Action:
               - sqs:ReceiveMessage
               - sqs:DeleteMessage
               Resource: !GetAtt SqsQueue.Arn
+            - Effect: Allow
+              Action:
+              - pricing:*
+              Resource:
+              - '*'
+            - Effect: Allow
+              Action:
+              - elastictranscoder:ReadPreset
+              Resource:
+              - '*'
   SmartMediaS3UserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties:
