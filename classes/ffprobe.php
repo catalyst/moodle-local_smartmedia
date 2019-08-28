@@ -61,12 +61,18 @@ class ffprobe {
         );
 
         // Format data.
-        $formatname = $resultobject->format->format_name; // Format name, e.g. "mov,mp4,m4a,3gp,3g2,mj2".
-        $formatlingname = $resultobject->format->format_long_name; // Format long name, e.g. "QuickTime / MOV".
-        $duration = $resultobject->format->duration; // Duration in decimal seconds, e.g. "5.312".
-        $bitrate = $resultobject->format->bit_rate; // Encoded bitrate, e.g. "1589963".
-        $size = $resultobject->format->size; // Size in bytes, e.g. "5253880".
-        $probescore = $resultobject->format->probe_score; // Confidence of metadata extracted, e.g. "100".
+        $formatname =
+            !empty($resultobject->format->format_name) ? $resultobject->format->format_name : 0; // Eg. "mov,mp4,m4a,3gp,3g2,mj2".
+        $formatlingname =
+            !empty($resultobject->format->format_long_name) ? $resultobject->format->format_long_name : 0; // Eg. "QuickTime / MOV".
+        $duration =
+            !empty($resultobject->format->duration) ? $resultobject->format->duration : 0; // Eg. "5.312".
+        $bitrate =
+            !empty($resultobject->format->bit_rate) ? $resultobject->format->bit_rate : 0; // Eg. "1589963".
+        $size =
+            !empty($resultobject->format->size) ? $resultobject->format->size : 0; // Eg. "5253880".
+        $probescore =
+            !empty($resultobject->format->probe_score) ? $resultobject->format->probe_score : 0; // Eg. "100".
 
         // Stream data.
         // Files can have multiple streams, not just one audo and one video.
@@ -81,22 +87,22 @@ class ffprobe {
             if ($stream->codec_type == 'video') {
                 $totalvideostreams++;
                 $metadata['data']['videostreams'][] = array(
-                    'codecname' => $stream->codec_name,
-                    'width' => $stream->width,
-                    'height' => $stream->height,
-                    'aspectratio' => $stream->display_aspect_ratio,
-                    'framerate' => $stream->avg_frame_rate,
-                    'bitrate' => $stream->bit_rate,
+                    'codecname' => !empty($stream->codec_name) ? $stream->codec_name : 0,
+                    'width' => !empty($stream->width) ? $stream->width : 0,
+                    'height' => !empty($stream->height) ? $stream->height : 0,
+                    'aspectratio' => !empty($stream->display_aspect_ratio) ? $stream->display_aspect_ratio : 0,
+                    'framerate' => !empty($stream->avg_frame_rate) ? $stream->avg_frame_rate : 0,
+                    'bitrate' => !empty($stream->bit_rate) ? $stream->bit_rate : 0,
                 );
             }
 
             if ($stream->codec_type == 'audio') {
                 $totalaudiostreams++;
                 $metadata['data']['audiostreams'][] = array(
-                    'codecname' => $stream->codec_name,
-                    'samplerate' => $stream->sample_rate,
-                    'channels' => $stream->channels,
-                    'bitrate' => $stream->bit_rate,
+                    'codecname' => !empty($stream->codec_name) ? $stream->codec_name : 0,
+                    'samplerate' => !empty($stream->sample_rate) ? $stream->sample_rate : 0,
+                    'channels' => !empty($stream->channels) ? $stream->channels : 0,
+                    'bitrate' => !empty($stream->bit_rate) ? $stream->bit_rate : 0,
                 );
             }
 

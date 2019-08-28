@@ -188,7 +188,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        $presets = "preset1 \n preset2 \n preset3";
+        $presets = "preset1, preset2, preset3";
         set_config('transcodepresets', $presets, 'local_smartmedia');
 
         $conversion = new \local_smartmedia\conversion();
@@ -229,7 +229,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     public function test_get_preset_ids() {
         $this->resetAfterTest(true);
 
-        $presets = "preset1 \n preset2 \n preset3";
+        $presets = "preset1, preset2, preset3";
         set_config('transcodepresets', $presets, 'local_smartmedia');
 
         $conversion = new \local_smartmedia\conversion();
@@ -249,7 +249,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     public function test_get_preset_records() {
         $this->resetAfterTest(true);
 
-        $presets = "preset1 \n preset2 \n preset3";
+        $presets = "preset1, preset2, preset3";
         set_config('transcodepresets', $presets, 'local_smartmedia');
 
         $conversion = new \local_smartmedia\conversion();
@@ -270,7 +270,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        $presets = "preset1 \n preset2 \n preset3";
+        $presets = "preset1, preset2, preset3";
         set_config('transcodepresets', $presets, 'local_smartmedia');
 
         $conversion = new \local_smartmedia\conversion();
