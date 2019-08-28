@@ -452,7 +452,7 @@ class conversion {
         if ($conversionrecord->transcoder_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->transcoder_status == self::CONVERSION_IN_PROGRESS) {
                 $services[] = 'elastic_transcoder';
-            }
+        }
         if ($conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartLabelDetection';
