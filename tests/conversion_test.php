@@ -306,7 +306,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     /**
      * Test that initial conversion records are successfully created.
      */
-    public function test_get_convserion_settings() {
+    public function test_get_conversion_settings() {
         $this->resetAfterTest(true);
         global $DB;
 
@@ -336,7 +336,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $DB->insert_record('local_smartmedia_presets', $preset2);
 
         $conversion = new \local_smartmedia\conversion();
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_convserion_settings');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_settings');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $conversionrecord);
 
