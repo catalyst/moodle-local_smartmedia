@@ -25,6 +25,7 @@
 
 namespace local_smartmedia;
 
+use Aws\Exception\AwsException;
 use Aws\Pricing\PricingClient;
 
 defined('MOODLE_INTERNAL') || die;
@@ -137,7 +138,12 @@ class aws_ets_pricing_client {
         $params['ServiceCode'] = self::SERVICE_CODE;
         $params['Filters'] = array_merge($this->get_default_product_filters(), $filters);
 
-        $result = $this->pricingclient->getProducts($params);
+        try {
+            $result = $this->pricingclient->getProducts($params);
+        } catch (AwsException $e) {
+            debugging($e->getAwsErrorMessage() . ':' . $e->getMessage());
+            throw new \moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
+        }
         $products = [];
         foreach ($result->get('PriceList') as $product) {
              $products[] = new aws_ets_product($product);
@@ -156,7 +162,12 @@ class aws_ets_pricing_client {
         $params = ['ServiceCode' => self::SERVICE_CODE];
 
         $result = $this->pricingclient->describeServices($params);
-        $services = $result->get('Services');
+        try {
+            $services = $result->get('Services');
+        } catch (AwsException $e) {
+            debugging($e->getAwsErrorMessage() . ':' . $e->getMessage());
+            throw new \moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
+        }
         $service = reset($services);
         $description = (object) $service;
         return $description;
@@ -178,7 +189,12 @@ class aws_ets_pricing_client {
         // Ensure we are only looking for Amazon ETS services.
         $params['ServiceCode'] = self::SERVICE_CODE;
 
-        $result = $this->pricingclient->getAttributeValues($params);
+        try {
+            $result = $this->pricingclient->getAttributeValues($params);
+        } catch (AwsException $e) {
+            debugging($e->getAwsErrorMessage() . ':' . $e->getMessage());
+            throw new \moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
+        }
         $values = $result->get('AttributeValues');
 
         foreach ($values as $value) {
