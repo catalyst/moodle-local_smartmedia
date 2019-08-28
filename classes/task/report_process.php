@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * A scheduled task.
+ * A scheduled task to gather data usee in plugin dashboards and reports.
  *
  * @package    local_smartmedia
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
@@ -28,7 +28,8 @@ use core\task\scheduled_task;
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Task to gather data used in reports dashboards.
+ * A scheduled task to gather data usee in plugin dashboards and reports.
+ *
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -162,8 +163,6 @@ class report_process extends scheduled_task {
      * Throw exceptions on errors (the job will be retried).
      */
     public function execute() {
-        global $DB;
-
         mtrace('local_smartmedia: Processing media file data');
         $totalfiles = $this->get_all_file_count(); // Get count of all files in files table.
         $this->update_report_data('totalfiles', $totalfiles);

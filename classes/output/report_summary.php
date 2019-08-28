@@ -145,7 +145,7 @@ class report_summary implements renderable, templatable {
         $select = "name $insql";  // Don't count files added by smartmedia itself.
         $values = $DB->get_records_select('local_smartmedia_reports', $select, $inparams, '', 'name, value');
 
-        if (!empty(($values))) { // Handle case where there is no data in table
+        if (!empty(($values))) { // Handle case where there is no data in table.
             $totalfiles = $values['totalfiles']->value;
             $videofiles = $values['videofiles']->value;
             $audiofiles = $values['audiofiles']->value;
@@ -158,7 +158,7 @@ class report_summary implements renderable, templatable {
     }
 
     /**
-     * Generate the markeup for the file sumamry chart,
+     * Generate the markup for the file summary chart,
      * used in the smart media dashboard.
      *
      * @return $output The generated chart to be fed to a template.
