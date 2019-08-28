@@ -127,6 +127,70 @@ class report_summary implements renderable, templatable {
     }
 
     /**
+     * Get the file summary totals from the DB.
+     * Used in generating chart data.
+     *
+     * @return array $totals The array of totals.
+     */
+    private function get_file_summary_totals() : array {
+        global $DB;
+        $totals = array();
+        $totalfiles = 0;
+        $videofiles = 0;
+        $audiofiles = 0;
+        $otherfiles = 0;
+
+        // Get values for chart from the database.
+        list($insql, $inparams) = $DB->get_in_or_equal(array('totalfiles', 'videofiles', 'audiofiles'));
+        $select = "name $insql";  // Don't count files added by smartmedia itself.
+        $values = $DB->get_records_select('local_smartmedia_reports', $select, $inparams, '', 'name, value');
+
+        if (!empty(($values))) { // Handle case where there is no data in table.
+            $totalfiles = $values['totalfiles']->value;
+            $videofiles = $values['videofiles']->value;
+            $audiofiles = $values['audiofiles']->value;
+
+            $otherfiles = $totalfiles - ($videofiles + $audiofiles);
+            $totals = array($otherfiles, $videofiles, $audiofiles);
+        }
+
+        return $totals;
+    }
+
+    /**
+     * Generate the markup for the file summary chart,
+     * used in the smart media dashboard.
+     *
+     * @return $output The generated chart to be fed to a template.
+     */
+    private function get_file_summary_chart() : string {
+        global $OUTPUT;
+
+        $values = $this->get_file_summary_totals();
+
+        if (!empty(($values))) { // Handle case where there is no data in table.
+
+            $series = new \core\chart_series(get_string('report:summary:filesummary:total', 'local_smartmedia'), $values);
+            $labels = array(
+                    get_string('report:summary:filesummary:otherfiles', 'local_smartmedia'),
+                    get_string('report:summary:filesummary:videofiles', 'local_smartmedia'),
+                    get_string('report:summary:filesummary:audiofiles', 'local_smartmedia')
+            );
+
+            $chart = new \core\chart_pie();
+            $chart->set_doughnut(true); // Calling set_doughnut(true) we display the chart as a doughnut.
+            $chart->add_series($series);
+            $chart->set_labels($labels);
+
+            $output = $OUTPUT->render_chart($chart);
+        } else {
+            $output = ''; // Empty string will be replaced in template.
+        }
+
+        return $output;
+    }
+
+    /**
      * Export the renderer data in a format that is suitable for a
      * mustache template.
      *
@@ -142,6 +206,7 @@ class report_summary implements renderable, templatable {
         $context = new stdClass();
         $context->total = '$' . number_format($this->calculate_total_cost(), 4);
         $context->warnings = $this->warnings;
+        $context->file_summary = $this->get_file_summary_chart();
 
         return $context;
     }

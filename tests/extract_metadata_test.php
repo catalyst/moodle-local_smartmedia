@@ -25,14 +25,14 @@
 defined('MOODLE_INTERNAL') || die();
 
 /**
- * Unit test for local_smartmedia task classes.
+ * Unit test for local_smartmedia extract metadata classes.
  *
  * @package    local_smartmedia
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_tasks_testcase extends advanced_testcase {
+class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
 
     public function setUp() {
         $this->resetAfterTest();
