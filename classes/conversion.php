@@ -162,24 +162,29 @@ class conversion {
         $cnvrec = new \stdClass();
         $cnvrec->pathnamehash = $file->get_pathnamehash();
         $cnvrec->contenthash = $file->get_contenthash();
+
+        //  All conversions will always have an overall status
+        //  and will always use elastic transcoder.
         $cnvrec->status = $this::CONVERSION_ACCEPTED;
         $cnvrec->transcoder_status = $this::CONVERSION_ACCEPTED;
-        $cnvrec->transcribe_status =
-            $this->config->transcribe == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->rekog_label_status =
-            $this->config->detectlabels == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->rekog_moderation_status =
-            $this->config->detectmoderation == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->rekog_face_status =
-            $this->config->detectfaces == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->rekog_person_status =
-            $this->config->detectpeople == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->detect_sentiment_status =
-            $this->config->detectsentiment == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->detect_phrases_status =
-            $this->config->detectphrases == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
-        $cnvrec->detect_entities_status =
-            $this->config->detectentities == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+
+        // Map the database schema to the plugin settings.
+        $settingsmap = array(
+                'transcribe_status' => 'transcribe',
+                'rekog_label_status' => 'detectlabels',
+                'rekog_moderation_status' => 'detectmoderation',
+                'rekog_face_status' => 'detectfaces',
+                'rekog_person_status' => 'detectpeople',
+                'detect_sentiment_status' => 'detectsentiment',
+                'detect_phrases_status' => 'detectphrases',
+                'detect_entities_status' => 'detectentities',
+        );
+
+        // Process the settings.
+        foreach ($settingsmap as $field => $setting){
+            $cnvrec->$field = $this->config->$setting == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        }
+
         $cnvrec->timecreated = $now;
         $cnvrec->timemodified = $now;
 
@@ -695,7 +700,7 @@ class conversion {
     }
 
     /**
-     * Get the pathnamehases for files that have metadata extracted,
+     * Get the pathnamehashes for files that have metadata extracted,
      * but that do not have conversion records.
      *
      * @return array $pathnamehashes Array of pathnamehashes.

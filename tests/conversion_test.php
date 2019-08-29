@@ -190,6 +190,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $presets = "preset1, preset2, preset3";
         set_config('transcodepresets', $presets, 'local_smartmedia');
+        set_config('detectlabels', 1, 'local_smartmedia');
 
         $conversion = new \local_smartmedia\conversion();
 
@@ -215,8 +216,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $result = $method->invoke($conversion, $file1);  // Invoke twice to check error handling.
         $result = $method->invoke($conversion, $file2);  // Invoke again to check error handling.
 
-        $result = $DB->record_exists('local_smartmedia_conv', array('pathnamehash' => $file1->get_pathnamehash()));
-        $this->assertTrue($result);
+        $result = $DB->get_record('local_smartmedia_conv', array('pathnamehash' => $file1->get_pathnamehash()), '*', MUST_EXIST);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->rekog_label_status);
 
         $result = $DB->count_records('local_smartmedia_presets');
         $this->assertEquals(3, $result);
