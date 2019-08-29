@@ -218,8 +218,8 @@ class conversion {
     private function get_conversion_status(\stored_file $file) : int {
         global $DB;
 
-        $pathnamehash = $file->get_pathnamehash();
-        $conditions = array('pathnamehash' => $pathnamehash);
+        $contenthash = $file->get_contenthash();
+        $conditions = array('contenthash' => $contenthash);
         $status = $DB->get_field('local_smartmedia_conv', 'status', $conditions);
 
         if (!$status) {
