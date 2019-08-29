@@ -163,8 +163,8 @@ class conversion {
         $cnvrec->pathnamehash = $file->get_pathnamehash();
         $cnvrec->contenthash = $file->get_contenthash();
 
-        //  All conversions will always have an overall status
-        //  and will always use elastic transcoder.
+        // All conversions will always have an overall status
+        // and will always use elastic transcoder.
         $cnvrec->status = $this::CONVERSION_ACCEPTED;
         $cnvrec->transcoder_status = $this::CONVERSION_ACCEPTED;
 
@@ -181,7 +181,7 @@ class conversion {
         );
 
         // Process the settings.
-        foreach ($settingsmap as $field => $setting){
+        foreach ($settingsmap as $field => $setting) {
             $cnvrec->$field = $this->config->$setting == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
         }
 
