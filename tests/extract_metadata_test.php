@@ -126,6 +126,7 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
         // Create an existing file metadata record.
         $metadatarecord = new \stdClass();
         $metadatarecord->contenthash = $file1->get_contenthash();
+        $metadatarecord->pathnamehash = $file1->get_pathnamehash();
         $metadatarecord->duration = 3.123;
         $metadatarecord->bitrate = 1000;
         $metadatarecord->size = 390;

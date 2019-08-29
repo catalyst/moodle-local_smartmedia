@@ -64,6 +64,8 @@ class process_conversions extends scheduled_task {
             mtrace('local_smartmedia: Creating conversion records');
             $createdconversions = $conversion->create_conversions();
 
+            mtrace('local_smartmedia: Total number of created conversions: ' . count($createdconversions));
+
         }
 
         // Process new conversions.

@@ -8,6 +8,7 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="contenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="Moodle contenthash of the file"/>
+        <FIELD NAME="pathnamehash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="duration" TYPE="number" LENGTH="10" NOTNULL="true" SEQUENCE="false" DECIMALS="3" COMMENT="The duration of the file"/>
         <FIELD NAME="bitrate" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="Total bitrate of the file"/>
         <FIELD NAME="size" TYPE="int" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="Total size of the file in bytes"/>
@@ -27,8 +28,8 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="pathnamehash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="complete file path sha1 hash - unique for each file"/>
         <FIELD NAME="contenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="Moodle contenthash of the file"/>
-        <FIELD NAME="status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="100" SEQUENCE="false" COMMENT="The processing status of the record."/>
-        <FIELD NAME="transcoder_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="201" SEQUENCE="false" COMMENT="status of the elastic transcoder process"/>
+        <FIELD NAME="status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="202" SEQUENCE="false" COMMENT="The processing status of the record."/>
+        <FIELD NAME="transcoder_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="202" SEQUENCE="false" COMMENT="status of the elastic transcoder process"/>
         <FIELD NAME="transcribe_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="Status of the transcription job"/>
         <FIELD NAME="rekog_label_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="The status of the label detection job"/>
         <FIELD NAME="rekog_moderation_status" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="404" SEQUENCE="false" COMMENT="The status of the moderation detection process"/>

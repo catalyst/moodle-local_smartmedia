@@ -159,25 +159,39 @@ class conversion {
         $now = time();
         $convid = 0;
 
-        $convrecord = new \stdClass();
-        $convrecord->pathnamehash = $file->get_pathnamehash();
-        $convrecord->contenthash = $file->get_contenthash();
-        $convrecord->status = $this::CONVERSION_ACCEPTED;
-        $convrecord->transcribe = $this->config->transcribe;
-        $convrecord->rekog_label = $this->config->detectlabels;
-        $convrecord->rekog_moderation = $this->config->detectmoderation;
-        $convrecord->rekog_face = $this->config->detectfaces;
-        $convrecord->rekog_person = $this->config->detectpeople;
-        $convrecord->detect_sentiment = $this->config->detectsentiment;
-        $convrecord->detect_phrases = $this->config->detectphrases;
-        $convrecord->detect_entities = $this->config->detectentities;
-        $convrecord->timecreated = $now;
-        $convrecord->timemodified = $now;
+        $cnvrec = new \stdClass();
+        $cnvrec->pathnamehash = $file->get_pathnamehash();
+        $cnvrec->contenthash = $file->get_contenthash();
+
+        // All conversions will always have an overall status
+        // and will always use elastic transcoder.
+        $cnvrec->status = $this::CONVERSION_ACCEPTED;
+        $cnvrec->transcoder_status = $this::CONVERSION_ACCEPTED;
+
+        // Map the database schema to the plugin settings.
+        $settingsmap = array(
+                'transcribe_status' => 'transcribe',
+                'rekog_label_status' => 'detectlabels',
+                'rekog_moderation_status' => 'detectmoderation',
+                'rekog_face_status' => 'detectfaces',
+                'rekog_person_status' => 'detectpeople',
+                'detect_sentiment_status' => 'detectsentiment',
+                'detect_phrases_status' => 'detectphrases',
+                'detect_entities_status' => 'detectentities',
+        );
+
+        // Process the settings.
+        foreach ($settingsmap as $field => $setting) {
+            $cnvrec->$field = $this->config->$setting == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+        }
+
+        $cnvrec->timecreated = $now;
+        $cnvrec->timemodified = $now;
 
         // Race conditions mean that we could try to create a conversion record multiple times.
         // This is OK and expected, we will handle the error.
         try {
-            $convid = $DB->insert_record('local_smartmedia_conv', $convrecord);
+            $convid = $DB->insert_record('local_smartmedia_conv', $cnvrec);
 
         } catch (\dml_write_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,
@@ -439,8 +453,11 @@ class conversion {
         // Using the conversion record determine which services we are looking for messages from.
         // Only get messages for conversions that have not yet finished.
         $services = array();
-        $services[] = 'elastic_transcoder'; // Files are always going to be processed by Elastic transcoder.
 
+        if ($conversionrecord->transcoder_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->transcoder_status == self::CONVERSION_IN_PROGRESS) {
+                $services[] = 'elastic_transcoder';
+        }
         if ($conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartLabelDetection';
@@ -449,7 +466,7 @@ class conversion {
             || $conversionrecord->rekog_moderation_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartContentModeration';
         }
-        if ($conversionrecord->rekog_face_status -= self::CONVERSION_ACCEPTED
+        if ($conversionrecord->rekog_face_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_face_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartFaceDetection';
         }
@@ -501,7 +518,7 @@ class conversion {
                 'component' => 'local_smartmedia',
                 'filearea' => 'media',
                 'itemid' => 0,
-                'filepath' => '/conversions/',
+                'filepath' => '/' . $conversionrecord->contenthash . '/conversions/',
                 'filename' => basename($availableobject['Key'])
 
             );
@@ -539,18 +556,17 @@ class conversion {
         $fs = get_file_storage();
 
         $filerecord = array(
-                'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
-                'component' => 'local_smartmedia',
-                'filearea' => 'metadata',
-                'itemid' => 0,
-                'filepath' => '/metadata/',
-                'filename' => $objectkey . 'json'
-
+            'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
+            'component' => 'local_smartmedia',
+            'filearea' => 'metadata',
+            'itemid' => 0,
+            'filepath' => '/' . $conversionrecord->contenthash . '/metadata/',
+            'filename' => $objectkey . '.json'
         );
 
         $downloadparams = array(
                 'Bucket' => $this->config->s3_output_bucket, // Required.
-                'Key' => $conversionrecord->contenthash . '/metadata/' . $objectkey . 'json', // Required.
+                'Key' => $conversionrecord->contenthash . '/metadata/' . $objectkey . '.json', // Required.
         );
 
         $getobject = $s3client->getObject($downloadparams);
@@ -632,23 +648,25 @@ class conversion {
         global $DB;
 
         // Only set the final completion status if all other processes are finished.
-        if (($updatedrecord->transcoder_status = self::CONVERSION_FINISHED
-                || $updatedrecord->transcoder_status = self::CONVERSION_NOT_FOUND )
-            && ($updatedrecord->rekog_label_status = self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_label_status = self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_moderation_status = self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_moderation_status = self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_face_status = self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_face_status = self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_person_status = self::CONVERSION_FINISHED)
-                || $updatedrecord->rekog_person_status = self::CONVERSION_NOT_FOUND) {
+        if (($updatedrecord->transcoder_status == self::CONVERSION_FINISHED
+                || $updatedrecord->transcoder_status == self::CONVERSION_NOT_FOUND )
+            && ($updatedrecord->rekog_label_status == self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_label_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->rekog_moderation_status == self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_moderation_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->rekog_face_status == self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_face_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED)
+                || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND) {
 
                 $updatedrecord->status = self::CONVERSION_FINISHED;
                 $updatedrecord->timemodified = time();
                 $updatedrecord->timecompleted = time();
                 // Update the database with the modified conversion record.
+
                 $DB->update_record('local_smartmedia_conv', $updatedrecord);
 
+                // TODO: Also delete file from AWS.
         }
 
         return $updatedrecord;
@@ -682,14 +700,41 @@ class conversion {
     }
 
     /**
-     * Create the conversions.
-     * (Placeholder)
+     * Get the pathnamehashes for files that have metadata extracted,
+     * but that do not have conversion records.
+     *
+     * @return array $pathnamehashes Array of pathnamehashes.
+     */
+    private function get_pathnamehashes() : array {
+        global $DB;
+
+        $limit = self::MAX_FILES;
+        $sql = "SELECT lsd.id, lsd.pathnamehash
+                  FROM {local_smartmedia_data} lsd
+             LEFT JOIN {local_smartmedia_conv} lsc ON lsd.contenthash = lsc.contenthash
+                 WHERE lsc.contenthash IS NULL";
+        $pathnamehashes = $DB->get_records_sql($sql, null, 0, $limit);
+
+        return $pathnamehashes;
+
+    }
+
+    /**
+     * Create conversion records for files that have metadata,
+     * but don't have conversion records.
      *
      * @return array
      */
     public function create_conversions() : array {
+        $pathnamehashes = $this->get_pathnamehashes(); // Get pathnamehashes for conversions.
+        $fs = get_file_storage();
 
-        return array();
+        foreach ($pathnamehashes as $pathnamehash) {
+            $file = $fs->get_file_by_hash($pathnamehash->pathnamehash);
+            $this->create_conversion($file);
+        }
+
+        return $pathnamehashes;
     }
 
 }
