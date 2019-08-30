@@ -213,7 +213,7 @@ class conversion {
      * Get the smart media conversion statuses for a given resource.
      *
      * @param \stored_file $file The Moodle file object of the asset.
-     * @return \stdClass $status The response status to the request.
+     * @return \stdClass $result object containing the status of each conversion process.
      */
     private function get_conversion_statuses(\stored_file $file) : \stdClass {
         global $DB;
@@ -293,7 +293,7 @@ class conversion {
         $conversionstatuses = $this->get_conversion_statuses($file);
 
         // If no record in table and trigger conversion is true add record.
-        if ($triggerconversion && $conversionstatus == self::CONVERSION_NOT_FOUND) {
+        if ($triggerconversion && $conversionstatuses->status == self::CONVERSION_NOT_FOUND) {
             $this->create_conversion($file);
         }
 
