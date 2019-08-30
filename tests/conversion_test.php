@@ -156,7 +156,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      * Test method that gets conversion status when there is no existing
      * conversion record in the database.
      */
-    public function test_get_conversion_status_no_record() {
+    public function test_get_conversion_statuses_no_record() {
         $this->resetAfterTest(true);
         $conversion = new \local_smartmedia\conversion();
 
@@ -173,12 +173,66 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $file = $fs->create_file_from_string($filerecord, 'the first test file');
 
         // We're testing a private method, so we need to setup reflector magic.
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_status');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_statuses');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $file);
 
-        $this->assertEquals(404, $result);
+        $this->assertEquals(404, $result->status);
+    }
 
+    /**
+     * Test method that gets conversion status when there is an existing
+     * conversion record in the database.
+     */
+    public function test_get_conversion_statuses() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversion = new \local_smartmedia\conversion();
+
+        // Setup for testing.
+        $fs = new file_storage();
+        $filerecord = array(
+            'contextid' => 31,
+            'component' => 'mod_forum',
+            'filearea' => 'attachment',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'myfile1.txt');
+
+        $file = $fs->create_file_from_string($filerecord, 'the first test file');
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->pathnamehash = $file->get_pathnamehash();
+        $conversionrecord->contenthash = $file->get_contenthash();
+        $conversionrecord->status = 202;
+        $conversionrecord->transcribe_status = 202;
+        $conversionrecord->rekog_label_status = 404;
+        $conversionrecord->rekog_moderation_status = 202;
+        $conversionrecord->rekog_face_status = 404;
+        $conversionrecord->rekog_person_status = 202;
+        $conversionrecord->detect_sentiment_status = 404;
+        $conversionrecord->detect_phrases_status = 202;
+        $conversionrecord->detect_entities_status = 404;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_statuses');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $file);
+
+        $this->assertEquals($conversionrecord->status, $result->status);
+        $this->assertEquals($conversionrecord->transcribe_status, $result->transcribe_status);
+        $this->assertEquals($conversionrecord->rekog_label_status, $result->rekog_label_status);
+        $this->assertEquals($conversionrecord->rekog_moderation_status, $result->rekog_moderation_status);
+        $this->assertEquals($conversionrecord->rekog_face_status, $result->rekog_face_status);
+        $this->assertEquals($conversionrecord->rekog_person_status, $result->rekog_person_status);
+        $this->assertEquals($conversionrecord->detect_sentiment_status, $result->detect_sentiment_status);
+        $this->assertEquals($conversionrecord->detect_phrases_status, $result->detect_phrases_status);
+        $this->assertEquals($conversionrecord->detect_entities_status, $result->detect_entities_status);
     }
 
     /**

@@ -210,23 +210,27 @@ class conversion {
     }
 
     /**
-     * Get the smart media conversion status for a given resource.
+     * Get the smart media conversion statuses for a given resource.
      *
      * @param \stored_file $file The Moodle file object of the asset.
-     * @return int $status The response status to the request.
+     * @return \stdClass $result object containing the status of each conversion process.
      */
-    private function get_conversion_status(\stored_file $file) : int {
+    private function get_conversion_statuses(\stored_file $file) : \stdClass {
         global $DB;
 
-        $pathnamehash = $file->get_pathnamehash();
-        $conditions = array('pathnamehash' => $pathnamehash);
-        $status = $DB->get_field('local_smartmedia_conv', 'status', $conditions);
+        $contenthash = $file->get_contenthash();
+        $conditions = array('contenthash' => $contenthash);
+        $result = $DB->get_record('local_smartmedia_conv', $conditions,
+            'status, transcoder_status, transcribe_status,
+            rekog_label_status, rekog_moderation_status, rekog_face_status, rekog_person_status,
+            detect_sentiment_status, detect_phrases_status, detect_entities_status');
 
-        if (!$status) {
-            $status = self::CONVERSION_NOT_FOUND;
+        if (!$result) {
+            $result = new \stdClass();
+            $result->status = self::CONVERSION_NOT_FOUND;
         }
 
-        return $status;
+        return $result;
     }
 
     /**
@@ -286,10 +290,10 @@ class conversion {
         $file = $this->get_file_from_url($href);
 
         // Query conversion table for status.
-        $conversionstatus = $this->get_conversion_status($file);
+        $conversionstatuses = $this->get_conversion_statuses($file);
 
         // If no record in table and trigger conversion is true add record.
-        if ($triggerconversion && $conversionstatus == self::CONVERSION_NOT_FOUND) {
+        if ($triggerconversion && $conversionstatuses->status == self::CONVERSION_NOT_FOUND) {
             $this->create_conversion($file);
         }
 
