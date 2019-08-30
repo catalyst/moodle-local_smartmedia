@@ -882,7 +882,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $smartfile = $fs->create_file_from_string($smartfilerecord, 'I am the smart video.');
 
         $result = $conversion->check_smartmedia_file($sourcefile, $smartfile);
-        $this->assertFalse($result); // should be false as there is no conversion record
+        $this->assertFalse($result); // Should be false as there is no conversion record.
 
         $conversionrecord = new \stdClass();
         $conversionrecord->contenthash = $sourcefile->get_contenthash();;
@@ -899,7 +899,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $DB->insert_record('local_smartmedia_conv', $conversionrecord);
 
         $result = $conversion->check_smartmedia_file($sourcefile, $smartfile);
-        $this->assertFalse($result); // should be false as there a contenthash path mismatch.
+        $this->assertFalse($result); // Should be false as there a contenthash path mismatch.
 
         $smartfilerecord['filepath'] = '/' . $sourcefile->get_contenthash() . '/conversions/';
         $smartfile = $fs->create_file_from_string($smartfilerecord, 'I am the smart video.');

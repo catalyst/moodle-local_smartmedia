@@ -72,9 +72,9 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
     // Extract the filename / filepath from the $args array.
     $filename = array_pop($args); // The last item in the $args array.
     if (!$args) {
-        $filepath = '/'; // $args is empty => the path is '/'
+        $filepath = '/'; // If $args is empty the path is '/'.
     } else {
-        $filepath = '/'.implode('/', $args).'/'; // $args contains elements of the filepath
+        $filepath = '/'.implode('/', $args).'/'; // Var $args contains elements of the filepath.
     }
 
     $smartfile = $fs->get_file($context->id, 'local_smartmedia', $filearea, $itemid, $filepath, $filename);
@@ -88,7 +88,7 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
         return false; // Source file doesn't match smart file.
     }
 
-    //  TODO: add check to make sure user can access source file. (MDL-66006).
+    // TODO: add check to make sure user can access source file. (MDL-66006).
 
     // We can now send the file back to the browser - in this case with a cache lifetime of 1 day and no filtering.
     send_stored_file($smartfile, 86400, 0, $forcedownload, $options);
