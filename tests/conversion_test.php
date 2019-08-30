@@ -847,4 +847,65 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
     }
 
+    /**
+     * Test getting pathnamehashes for new conversion records.
+     */
+    public function test_check_smartmedia_file() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        $conversion = new \local_smartmedia\conversion();
+
+        // Create some test files.
+        $fs = get_file_storage();
+
+        $sourcefilerecord = array(
+                'contextid' => 1461,
+                'component' => 'mod_label',
+                'filearea' => 'intro',
+                'itemid' => 0,
+                'filepath' => '/',
+                'filename' => 'video1.mp4');
+
+        // For this test it doesn't actually matter these are not real multimedia files.
+        $sourcefile = $fs->create_file_from_string($sourcefilerecord, 'I am the first video.');
+
+        $smartfilerecord = array(
+                'contextid' => 1,
+                'component' => 'local_smartmedia',
+                'filearea' => 'media',
+                'itemid' => 0,
+                'filepath' => '/aaaaaaaaaaaaaaaaaa/conversions/',
+                'filename' => $sourcefile->get_contenthash() . 'mp4');
+
+        // For this test it doesn't actually matter these are not real multimedia files.
+        $smartfile = $fs->create_file_from_string($smartfilerecord, 'I am the smart video.');
+
+        $result = $conversion->check_smartmedia_file($sourcefile, $smartfile);
+        $this->assertFalse($result); // should be false as there is no conversion record
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->contenthash = $sourcefile->get_contenthash();;
+        $conversionrecord->pathnamehash = $sourcefile->get_pathnamehash();
+        $conversionrecord->status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+
+        $result = $conversion->check_smartmedia_file($sourcefile, $smartfile);
+        $this->assertFalse($result); // should be false as there a contenthash path mismatch.
+
+        $smartfilerecord['filepath'] = '/' . $sourcefile->get_contenthash() . '/conversions/';
+        $smartfile = $fs->create_file_from_string($smartfilerecord, 'I am the smart video.');
+        $result = $conversion->check_smartmedia_file($sourcefile, $smartfile);
+        $this->assertTrue($result);
+
+    }
+
 }
