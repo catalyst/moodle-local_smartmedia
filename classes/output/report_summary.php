@@ -152,7 +152,7 @@ class report_summary implements renderable, templatable {
 
         // Get values for chart from the database.
         list($insql, $inparams) = $DB->get_in_or_equal(array('totalfiles', 'videofiles', 'audiofiles'));
-        $select = "name $insql";  // Don't count files added by smartmedia itself.
+        $select = "name $insql";
         $values = $DB->get_records_select('local_smartmedia_reports', $select, $inparams, '', 'name, value');
 
         if (!empty(($values))) { // Handle case where there is no data in table.
@@ -165,6 +165,38 @@ class report_summary implements renderable, templatable {
         }
 
         return $totals;
+    }
+
+    /**
+     * Get the process summary totals from the DB.
+     * Used in generating chart data.
+     *
+     * @return array $totals The array of totals.
+     */
+    private function get_process_summary_totals() : array {
+        global $DB;
+        $totals = array();
+        $uniquemultimediaobjects = 0;
+        $metadataprocessedfiles = 0;
+        $transcodedfiles = 0;
+
+        // Get values for chart from the database.
+        $fields = array('uniquemultimediaobjects', 'metadataprocessedfiles', 'transcodedfiles');
+        list($insql, $inparams) = $DB->get_in_or_equal($fields);
+        $select = "name $insql";
+        $values = $DB->get_records_select('local_smartmedia_reports', $select, $inparams, '', 'name, value');
+
+        if (!empty(($values))) { // Handle case where there is no data in table.
+            $uniquemultimediaobjects = $values['uniquemultimediaobjects']->value;
+            $metadataprocessedfiles = $values['metadataprocessedfiles']->value;
+            $transcodedfiles = $values['transcodedfiles']->value;
+
+            $totals = array($uniquemultimediaobjects, $metadataprocessedfiles, $transcodedfiles);
+        }
+
+        return $totals;
+
+
     }
 
     /**
@@ -201,6 +233,42 @@ class report_summary implements renderable, templatable {
     }
 
     /**
+     * Generate the markup for the process summary chart,
+     * used in the smart media dashboard.
+     *
+     * @return $output The generated chart to be fed to a template.
+     */
+    private function get_process_summary_chart() : string {
+        global $OUTPUT;
+
+        $values = $this->get_process_summary_totals();
+
+        if (!empty(($values))) { // Handle case where there is no data in table.
+
+            $series1 = new \core\chart_series(
+                get_string('report:summary:processsummary:uniquemultimediaobjects', 'local_smartmedia'), [$values[0]]);
+            $series2 = new \core\chart_series(
+                get_string('report:summary:processsummary:metadataprocessedfiles', 'local_smartmedia'), [$values[1]]);
+            $series3 = new \core\chart_series(
+                get_string('report:summary:processsummary:transcodedfiles', 'local_smartmedia'), [$values[2]]);
+            $labels = array(get_string('report:summary:totals', 'local_smartmedia'));
+
+            $chart = new \core\chart_bar();
+            $chart->add_series($series1);
+            $chart->add_series($series2);
+            $chart->add_series($series3);
+            $chart->set_labels($labels);
+
+            $output = $OUTPUT->render_chart($chart);
+        } else {
+            $output = ''; // Empty string will be replaced in template.
+        }
+
+        return $output;
+
+    }
+
+    /**
      * Export the renderer data in a format that is suitable for a
      * mustache template.
      *
@@ -224,6 +292,7 @@ class report_summary implements renderable, templatable {
 
         $context->warnings = $this->warnings;
         $context->file_summary = $this->get_file_summary_chart();
+        $context->process_summary = $this->get_process_summary_chart();
 
         return $context;
     }

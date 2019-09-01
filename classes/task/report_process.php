@@ -139,7 +139,7 @@ class report_process extends scheduled_task {
         $mimetypes = array_merge(self::AUDIO_MIME_TYPES, self::VIDEO_MIME_TYPES);
         list($insql, $inparams) = $DB->get_in_or_equal($mimetypes);
         $inparams[] = 'local_smartmedia';
-        $sql = "SELECT COUNT(DISTINCT contenthashes) AS count from {files} WHERE mimetype $insql AND component <> ?";
+        $sql = "SELECT COUNT(DISTINCT contenthash) AS count from {files} WHERE mimetype $insql AND component <> ?";
         $result = $DB->count_records_sql($sql, $inparams);
 
         return $result;
@@ -219,6 +219,15 @@ class report_process extends scheduled_task {
 
         $videofiles = $this->get_video_file_count(); // Get count of video files in files table.
         $this->update_report_data('videofiles', $videofiles);
+
+        $uniquemultimediaobjects = $this->get_unique_multimedia_objects(); // Get count of multimedia objects files table.
+        $this->update_report_data('uniquemultimediaobjects', $uniquemultimediaobjects);
+
+        $metadataprocessedfiles = $this->get_metadata_processed_files(); // Get count of processed multimedia files.
+        $this->update_report_data('metadataprocessedfiles', $metadataprocessedfiles);
+
+        $transcodedfiles = $this->get_transcoded_files(); // Get count of transcoded multimedia files.
+        $this->update_report_data('transcodedfiles', $transcodedfiles);
 
     }
 
