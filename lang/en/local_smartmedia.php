@@ -28,6 +28,9 @@ defined('MOODLE_INTERNAL') || die();
 $string['pluginname'] = 'Smart Media';
 
 $string['ffprobe:invalidpath'] = 'Invalid FFProbe path';
+$string['privacy:metadata:local_smartmedia:externalpurpose'] = 'This information is sent to AWS API in order the file to be converted to an alternative format. The file is temporarily kept in an AWS S3 bucket and gets deleted after the conversion is done.';
+$string['privacy:metadata:local_smartmedia:filecontent'] = 'The content of the file.';
+$string['privacy:metadata:local_smartmedia:params'] = 'The query parameters passed to AWS API.';
 $string['provision:creatings3'] = 'Creating resource S3 Bucket';
 $string['provision:bucketcreated'] = 'Created {$a->bucket} bucket, at location {$a->location}';
 $string['provision:bucketexists'] = 'Bucket exists';
