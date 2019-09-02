@@ -195,8 +195,6 @@ class report_summary implements renderable, templatable {
         }
 
         return $totals;
-
-
     }
 
     /**

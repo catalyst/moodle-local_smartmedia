@@ -128,7 +128,7 @@ class report_process extends scheduled_task {
     }
 
     /**
-     * Count all the unqiue file objects (contenthashes) for
+     * Count all the unique file objects (contenthashes) for
      * multimedia files from the Moodle files table.
      *
      * @return int count of found records.
