@@ -496,6 +496,39 @@ class conversion {
     }
 
     /**
+     * Given a source file and a smartmedia file object,
+     * check that the two files are correctly related to each other.
+     * That is the smartmedia file was derived from the source file.
+     *
+     * This is used in checking that the smartmedia file is OK to
+     * send to an end user.
+     *
+     * @param \stored_file $sourcefile The source file we want to check against.
+     * @param \stored_file $smartfile The smartmedia file we want to make sure is associated with the source.
+     * @return bool True if the checks are valid, false otherwise.
+     */
+    public function check_smartmedia_file(\stored_file $sourcefile, \stored_file $smartfile) : bool {
+        global $DB;
+
+        // The contenthash of the source file should have a matching entry in the local_smartmedia_conv table.
+        $select = 'contenthash = ? AND status <> ?';
+        $params = array($sourcefile->get_contenthash(), self::CONVERSION_ERROR);
+        $sourcehashexists = $DB->record_exists_select('local_smartmedia_conv', $select, $params);
+        if (!$sourcehashexists) {
+            return false;
+        }
+
+        // The contenthash of the source file should match the contenthash part of the smartmedia file filepath.
+        $smartfilepath = $smartfile->get_filepath();
+        $patharray = explode('/', $smartfilepath);
+        if ($sourcefile->get_contenthash() != $patharray[1]) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Get the transcoded media files from AWS S3,
      *
      * @param \stdClass $conversionrecord The conversion record from the database.
