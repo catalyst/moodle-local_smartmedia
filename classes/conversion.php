@@ -303,7 +303,7 @@ class conversion {
         }
 
         // If processing complete get all urls and data for source href.
-        if ($conversionstatuses->status == self::CONVERSION_ACCEPTED) {
+        if ($conversionstatuses->status == self::CONVERSION_ACCEPTED || $conversionstatuses->status == self::CONVERSION_FINISHED) {
 
             $fs = get_file_storage();
 
