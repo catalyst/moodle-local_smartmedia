@@ -279,9 +279,13 @@ class conversion {
     /**
      * Get smart media for file.
      *
-     * @param \moodle_url $href
-     * @param bool $triggerconversion
-     * @return array
+     * @param \moodle_url $href the url of the file to find smart media for.
+     * @param bool $triggerconversion true if conversion should be triggered by this method, false otherwise.
+     * @return array $smartmedia 2D array of \stored_file objects for the smart media associated with the $href file,
+     *                  converted media is contained in 'media' element, metadata and other smart media files in the
+     *                  'data' element.
+     *                  Example:
+     *                      ['media' => [\stored_file $file1, ...], 'data' => [\stored_file $file2, ...]]
      */
     public function get_smart_media(\moodle_url $href, bool $triggerconversion = false) : array {
         $smartmedia = array();
@@ -298,12 +302,43 @@ class conversion {
         }
 
         // If processing complete get all urls and data for source href.
+        if ($conversionstatuses->status == self::CONVERSION_ACCEPTED) {
+
+            $fs = get_file_storage();
+            $files = $fs->get_area_files(1, 'local_smartmedia', 'media', 0);
+            $mediafilepath = '/' . $file->get_contenthash() . '/conversions/';
+            $smartmedia['media'] = $this->filter_files_by_filepath($files, $mediafilepath);
+
+            $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);
+            $datafilepath = '/' . $file->get_contenthash() . '/metadata/';
+            $smartmedia['data'] = $this->filter_files_by_filepath($files, $datafilepath);
+        }
 
         // TODO: Cache the result for a very long time as once processing is finished it will never change
         // and when processing is finished we will explictly clear the cache.
 
         return $smartmedia;
 
+    }
+
+    /**
+     * Get all stored files which are within a particular filepath.
+     *
+     * @param array $files \stored_file objects to filter.
+     * @param string $filepath the filepath to filter \stored_file objects by.
+     *
+     * @return array $filteredfiles of \stored_file objects in the $filepath.
+     */
+    private function filter_files_by_filepath($files, $filepath) {
+
+        $filteredfiles = [];
+
+        foreach ($files as $file) {
+            if ($file->get_filepath() == $filepath && !$file->is_directory()) {
+                $filteredfiles[] = $file;
+            }
+        }
+        return $filteredfiles;
     }
 
     /**
