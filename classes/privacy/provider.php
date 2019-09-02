@@ -51,7 +51,7 @@ class provider implements
      * @return  collection A listing of user data stored through this system.
      */
     public static function get_metadata(collection $collection) : collection {
-        $collection->add_external_location_link('librelambda', [
+        $collection->add_external_location_link('smartmedia', [
             'params' => 'privacy:metadata:local_smartmedia:params',
             'filecontent' => 'privacy:metadata:local_smartmedia:filecontent',
         ], 'privacy:metadata:local_smartmedia:externalpurpose');
