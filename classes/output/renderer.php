@@ -105,8 +105,9 @@ class renderer extends plugin_renderer_base {
 
         $html = '';
         $html .= $this->header();
-        $html .= $this->heading(get_string('report:heading', 'local_smartmedia', $region));
+        $html .= $this->heading(get_string('dashboard:heading', 'local_smartmedia', $region));
         $html .= $this->render_report_summary($pricingcalculator, $region);
+        $html .= $this->heading(get_string('report:heading', 'local_smartmedia', $region));
         $html .= $tablehtml;
         $html .= $this->footer();
 
