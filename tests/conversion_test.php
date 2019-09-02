@@ -62,7 +62,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      * Test getting smart media.
      */
     public function test_get_smart_media() {
-        global $DB;
+        global $DB, $CFG;
 
         $this->resetAfterTest(true);
 
@@ -81,6 +81,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             'filepath' => '/',
             'filename' => 'myfile1.mp4');
         $initialfile = $fs->create_file_from_string($initialfilerecord, 'the first test file');
+        $contenthash = $initialfile->get_contenthash();
 
         // Mock a transcode file received from s3.
         $convertedmediarecord = array(
@@ -104,8 +105,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         // Add a successful conversion status for this file.
         $conversionrecord = new \stdClass();
-        $conversionrecord->pathnamehash = $initialfile->get_pathnamehash();
-        $conversionrecord->contenthash = $initialfile->get_contenthash();
+        $conversionrecord->pathnamehash = $contenthash;
+        $conversionrecord->contenthash = $contenthash;
         $conversionrecord->status = 202;
         $conversionrecord->transcribe_status = 202;
         $conversionrecord->rekog_label_status = 202;
@@ -128,8 +129,17 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $smartmedia = $conversion->get_smart_media($href);
 
-        $this->assertEquals($convertedmediafile, $smartmedia['media'][0]);
-        $this->assertEquals($converteddatafile, $smartmedia['data'][0]);
+        // Check that the smart media urls match the passed in mock data.
+        $expectedmediaurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions"
+            . "/$presetid-myfile1.mp4";
+        $mediaurl = reset($smartmedia['media']);
+
+        $expecteddataurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/metadata/0/$contenthash/metadata"
+            . "/Labels.json";
+        $dataurl = reset($smartmedia['data']);
+
+        $this->assertEquals($expectedmediaurl, $mediaurl->out());
+        $this->assertEquals($expecteddataurl, $dataurl->out());
     }
 
     /**
@@ -177,6 +187,60 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $this->assertContains($convertedmediafile, $result1);
         $this->assertContains($converteddatafile, $result2);
+    }
+
+    /**
+     * Test mapping passed in \stored_file objects to \moodle_url objects.
+     */
+    public function test_map_files_to_urls() {
+        global $CFG;
+
+        $this->resetAfterTest(true);
+
+        // Setup for testing.
+        $fs = new file_storage();
+
+        $contenthash = '7ddf32e17a6ac5ce04a8ecbf782ca509';
+
+        // Mock a transcode file.
+        $convertedmediarecord = array(
+            'contextid' => 1,
+            'component' => 'local_smartmedia',
+            'filearea' => 'media',
+            'itemid' => 0,
+            'filepath' => '/' . $contenthash . '/conversions/',
+            'filename' => '1351620000001-100180-myfile1.mp4');
+        $convertedmediafile = $fs->create_file_from_string($convertedmediarecord, 'the first test file');
+
+        // Mock a metadata file.
+        $converteddatarecord = array(
+            'contextid' => 1,
+            'component' => 'local_smartmedia',
+            'filearea' => 'metadata',
+            'itemid' => 0,
+            'filepath' => '/' . $contenthash . '/metadata/',
+            'filename' => 'Labels.json');
+        $converteddatafile = $fs->create_file_from_string($converteddatarecord, 'Label data');
+
+        $files = [$convertedmediafile, $converteddatafile];
+
+        $conversion = new \local_smartmedia\conversion();
+
+        // We're testing a private method, so we need to setup reflector magic.
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'map_files_to_urls');
+        $method->setAccessible(true); // Allow accessing of private method.
+
+        $actual = $method->invoke($conversion, $files);
+
+        // Check that the returned urls match the passed in mock data.
+        $expectedmediaurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions"
+            . "/1351620000001-100180-myfile1.mp4";
+
+        $expecteddataurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/metadata/0/$contenthash/metadata"
+            . "/Labels.json";
+
+        $this->assertEquals($expectedmediaurl, $actual[0]->out());
+        $this->assertEquals($expecteddataurl, $actual[1]->out());
     }
 
     /**

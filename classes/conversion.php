@@ -26,6 +26,7 @@ namespace local_smartmedia;
 defined('MOODLE_INTERNAL') || die();
 
 use Aws\S3\Exception\S3Exception;
+use moodle_url;
 
 /**
  * Class for smart media conversion operations.
@@ -305,13 +306,16 @@ class conversion {
         if ($conversionstatuses->status == self::CONVERSION_ACCEPTED) {
 
             $fs = get_file_storage();
+
             $files = $fs->get_area_files(1, 'local_smartmedia', 'media', 0);
             $mediafilepath = '/' . $file->get_contenthash() . '/conversions/';
-            $smartmedia['media'] = $this->filter_files_by_filepath($files, $mediafilepath);
+            $mediafiles = $this->filter_files_by_filepath($files, $mediafilepath);
+            $smartmedia['media'] = $this->map_files_to_urls($mediafiles);
 
             $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);
             $datafilepath = '/' . $file->get_contenthash() . '/metadata/';
-            $smartmedia['data'] = $this->filter_files_by_filepath($files, $datafilepath);
+            $datafiles = $this->filter_files_by_filepath($files, $datafilepath);
+            $smartmedia['data'] = $this->map_files_to_urls($datafiles);
         }
 
         // TODO: Cache the result for a very long time as once processing is finished it will never change
@@ -359,6 +363,22 @@ class conversion {
         $filerecords = $DB->get_records('local_smartmedia_conv', $conditions, '', $fields, 0, $limit);
 
         return $filerecords;
+    }
+
+    /**
+     * Map all passed in files to moodle urls for linking to the files.
+     *
+     * @param array $files an array of plugin files to map to urls.
+     *
+     * @return array $urls of \moodle_url objects for the files.
+     */
+    private function map_files_to_urls($files) : array {
+        $urls = [];
+        foreach ($files as $file) {
+            $urls[] = moodle_url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
+                $file->get_itemid(), $file->get_filepath(), $file->get_filename());
+        }
+        return $urls;
     }
 
     /**
