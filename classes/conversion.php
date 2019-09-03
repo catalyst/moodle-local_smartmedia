@@ -26,6 +26,7 @@ namespace local_smartmedia;
 defined('MOODLE_INTERNAL') || die();
 
 use Aws\S3\Exception\S3Exception;
+use moodle_url;
 
 /**
  * Class for smart media conversion operations.
@@ -279,9 +280,13 @@ class conversion {
     /**
      * Get smart media for file.
      *
-     * @param \moodle_url $href
-     * @param bool $triggerconversion
-     * @return array
+     * @param \moodle_url $href the url of the file to find smart media for.
+     * @param bool $triggerconversion true if conversion should be triggered by this method, false otherwise.
+     * @return array $smartmedia 2D array of \stored_file objects for the smart media associated with the $href file,
+     *                  converted media is contained in 'media' element, metadata and other smart media files in the
+     *                  'data' element.
+     *                  Example:
+     *                      ['media' => [\stored_file $file1, ...], 'data' => [\stored_file $file2, ...]]
      */
     public function get_smart_media(\moodle_url $href, bool $triggerconversion = false) : array {
         $smartmedia = array();
@@ -298,12 +303,46 @@ class conversion {
         }
 
         // If processing complete get all urls and data for source href.
+        if ($conversionstatuses->status == self::CONVERSION_ACCEPTED || $conversionstatuses->status == self::CONVERSION_FINISHED) {
+
+            $fs = get_file_storage();
+
+            $files = $fs->get_area_files(1, 'local_smartmedia', 'media', 0);
+            $mediafilepath = '/' . $file->get_contenthash() . '/conversions/';
+            $mediafiles = $this->filter_files_by_filepath($files, $mediafilepath);
+            $smartmedia['media'] = $this->map_files_to_urls($mediafiles);
+
+            $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);
+            $datafilepath = '/' . $file->get_contenthash() . '/metadata/';
+            $datafiles = $this->filter_files_by_filepath($files, $datafilepath);
+            $smartmedia['data'] = $this->map_files_to_urls($datafiles);
+        }
 
         // TODO: Cache the result for a very long time as once processing is finished it will never change
         // and when processing is finished we will explictly clear the cache.
 
         return $smartmedia;
 
+    }
+
+    /**
+     * Get all stored files which are within a particular filepath.
+     *
+     * @param array $files \stored_file objects to filter.
+     * @param string $filepath the filepath to filter \stored_file objects by.
+     *
+     * @return array $filteredfiles of \stored_file objects in the $filepath.
+     */
+    private function filter_files_by_filepath($files, $filepath) {
+
+        $filteredfiles = [];
+
+        foreach ($files as $file) {
+            if ($file->get_filepath() == $filepath && !$file->is_directory()) {
+                $filteredfiles[] = $file;
+            }
+        }
+        return $filteredfiles;
     }
 
     /**
@@ -324,6 +363,22 @@ class conversion {
         $filerecords = $DB->get_records('local_smartmedia_conv', $conditions, '', $fields, 0, $limit);
 
         return $filerecords;
+    }
+
+    /**
+     * Map all passed in files to moodle urls for linking to the files.
+     *
+     * @param array $files an array of plugin files to map to urls.
+     *
+     * @return array $urls of \moodle_url objects for the files.
+     */
+    private function map_files_to_urls($files) : array {
+        $urls = [];
+        foreach ($files as $file) {
+            $urls[] = moodle_url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
+                $file->get_itemid(), $file->get_filepath(), $file->get_filename());
+        }
+        return $urls;
     }
 
     /**
