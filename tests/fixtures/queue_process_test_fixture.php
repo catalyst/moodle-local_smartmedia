@@ -84,6 +84,34 @@ return array(
                     ),
                 ),
             ),
+            2 =>
+            array (
+                'MessageId' => 'ecd44ebd-d5b6-4b6f-bda6-f9374995c3ac',
+                'ReceiptHandle' => 'AQEBPWXP6D/gDYUNKrZtSMwWN9tvH/AkANg+OQKcY71YTC6RGenmm9AspWF4zJYOZA+PIwOTfoqL00iPzGCtF2ybPvcHtypRWGQ3nsR8tWR2EPNDURYCWxmvqaSQWh0tUHi9iakJewicFjsy+JOQnbI8yiq88AqhksWQzRrvgoGglUIpbyBPmSuK2wqpd5IDS4VGrMdBjlwr+VkBrCHCJs350Kl5MZw8cNPqN/YX3Mds3rKcQBKOytuMj5QP8ejW781q79nVyu9SyaDVOh3KPGSpmeUQ7upNlIRn3x12pJ4RTPZSAu1/ifiqt4je0yP9umgT16M7fzBT0p3y1Rk0RVDw8+AJ2I5FkJ19jKvkdDDDJyb5sXDFlLgIom/R94honk0bTdJSRSIiF1GB2FFCrFIwN+89pkYkKN3JvPvZXTOrXho=',
+                'MD5OfBody' => 'd2fa266e5c1f2e16dee1ff344cec4aec',
+                'Body' => '{"siteid": "wck1bOkID2Nj6mCG3bsQqUwxPz54eQaxmoodle.local", "objectkey": "SampleVideo1mb", "process": "StartLabelDetection", "status": "SUCCEEDED", "message": {"JobId": "40169f69f27719a7966c44e3b9c6bb72a064dddb50edc8ab459520283623fddc", "Status": "SUCCEEDED", "API": "StartLabelDetection", "JobTag": "1566091572480-6zh1ov", "Timestamp": 1566091618782, "Video": {"S3ObjectName": "SampleVideo1mb/conversions/SampleVideo1mb.mp4", "S3Bucket": "smt1566089892-output"}}, "timestamp": 1566091817}',
+                'Attributes' =>
+                array (
+                    'SenderId' => 'AROA2C7YAPAQNI2XBZMTN:smt1566089892_rekognition_complete',
+                    'ApproximateFirstReceiveTimestamp' => '1566091817238',
+                    'ApproximateReceiveCount' => '5',
+                    'SentTimestamp' => '1566091817238',
+                ),
+                'MD5OfMessageAttributes' => '58695f7626857aca927f4b4281ca4ae5',
+                'MessageAttributes' =>
+                array (
+                    'inputkey' =>
+                    array (
+                        'StringValue' => 'SampleVideo1mb',
+                        'DataType' => 'String',
+                    ),
+                    'siteid' =>
+                    array (
+                        'StringValue' => 'wck1bOkID2Nj6mCG3bsQqUwxPz54eQaxmoodle.local',
+                        'DataType' => 'String',
+                    ),
+                ),
+            ),
         ),
         '@metadata' =>
         array (
@@ -164,5 +192,33 @@ return array(
                 ),
             ),
         ),
+        'ecd44ebd-d5b6-4b6f-bda6-f9374995c3dd' =>
+            array (
+                    'MessageId' => 'ecd44ebd-d5b6-4b6f-bda6-f9374995c3ac',
+                    'ReceiptHandle' => 'AQEBPWXP6D/gDYUNKrZtSMwWN9tvH/AkANg+OQKcY71YTC6RGenmm9AspWF4zJYOZA+PIwOTfoqL00iPzGCtF2ybPvcHtypRWGQ3nsR8tWR2EPNDURYCWxmvqaSQWh0tUHi9iakJewicFjsy+JOQnbI8yiq88AqhksWQzRrvgoGglUIpbyBPmSuK2wqpd5IDS4VGrMdBjlwr+VkBrCHCJs350Kl5MZw8cNPqN/YX3Mds3rKcQBKOytuMj5QP8ejW781q79nVyu9SyaDVOh3KPGSpmeUQ7upNlIRn3x12pJ4RTPZSAu1/ifiqt4je0yP9umgT16M7fzBT0p3y1Rk0RVDw8+AJ2I5FkJ19jKvkdDDDJyb5sXDFlLgIom/R94honk0bTdJSRSIiF1GB2FFCrFIwN+89pkYkKN3JvPvZXTOrXho=',
+                    'MD5OfBody' => 'd2fa266e5c1f2e16dee1ff344cec4aec',
+                    'Body' => '{"siteid": "wck1bOkID2Nj6mCG3bsQqUwxPz54eQaxmoodle.local", "objectkey": "SampleVideo1mb", "process": "StartLabelDetection", "status": "SUCCEEDED", "message": {"JobId": "40169f69f27719a7966c44e3b9c6bb72a064dddb50edc8ab459520283623fddc", "Status": "SUCCEEDED", "API": "StartLabelDetection", "JobTag": "1566091572480-6zh1ov", "Timestamp": 1566091618782, "Video": {"S3ObjectName": "SampleVideo1mb/conversions/SampleVideo1mb.mp4", "S3Bucket": "smt1566089892-output"}}, "timestamp": 1566091817}',
+                    'Attributes' =>
+                    array (
+                            'SenderId' => 'AROA2C7YAPAQNI2XBZMTN:smt1566089892_rekognition_complete',
+                            'ApproximateFirstReceiveTimestamp' => '1566091817238',
+                            'ApproximateReceiveCount' => '5',
+                            'SentTimestamp' => '1566091817238',
+                    ),
+                    'MD5OfMessageAttributes' => '58695f7626857aca927f4b4281ca4ae5',
+                    'MessageAttributes' =>
+                    array (
+                            'inputkey' =>
+                            array (
+                                    'StringValue' => 'SampleVideo1mb',
+                                    'DataType' => 'String',
+                            ),
+                            'siteid' =>
+                            array (
+                                    'StringValue' => 'wck1bOkID2Nj6mCG3bsQqUwxPz54eQaxmoodle.local',
+                                    'DataType' => 'String',
+                            ),
+                    ),
+            ),
     )
 );

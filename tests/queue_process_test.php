@@ -84,8 +84,8 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
         $result = $method->invoke($queueprocess);
 
         $this->assertCount(2, $result);
-        $this->assertArrayHasKey('b804a5e3-0086-4da6-be10-966ebf6083ea', $result);
-        $this->assertArrayHasKey('ecd44ebd-d5b6-4b6f-bda6-f9374995c3ac', $result);
+        $this->assertArrayHasKey('49e4e0a1b2a24b669cef908c8e3be862', $result);
+        $this->assertArrayHasKey('d2fa266e5c1f2e16dee1ff344cec4aec', $result);
     }
 
     /**
@@ -119,6 +119,7 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
         $mock = new MockHandler();
         $mock->append(new Result(array()));
         $mock->append(new Result(array()));
+        $mock->append(new Result(array()));
 
         $queueprocess = new \local_smartmedia\queue_process();
         $queueprocess->create_client($mock);
@@ -130,7 +131,7 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($queueprocess, $messages);
 
-        $this->assertCount(2, $result);
+        $this->assertCount(3, $result);
     }
 
 }
