@@ -126,7 +126,8 @@ class queue_process {
             // Not only do the number of messages received vary,
             // SQS can also deliver the same message multiple times.
             foreach ($newmessages as $newmessage) {
-                $messagehash = $newmessage['MD5OfBody'];
+                $messagebody = json_decode($newmessage['Body']);
+                $messagehash = md5(json_encode($messagebody->message));
                 $messagesiteid = $newmessage['MessageAttributes']['siteid']['StringValue'];
 
                 // We could be using the same AWS queue for multiple Moodles,
@@ -151,19 +152,20 @@ class queue_process {
 
         foreach ($messages as $message) {
             $messagebody = json_decode($message['Body']);
+            $messagejson = json_encode($messagebody->message);
             $record = new \stdClass();
             $record->objectkey = $messagebody->objectkey;
             $record->process = $messagebody->process;
             $record->status = $messagebody->status;
-            $record->messagehash = $message['MD5OfBody'];
-            $record->message = json_encode($messagebody->message);
+            $record->messagehash = md5($messagejson);
+            $record->message = $messagejson;
             $record->senttime = $messagebody->timestamp;
             $record->timecreated = time();
 
             $messagerecords[] = $record;
         }
 
-        // Because AWS SQS can deliver the same messge more than once,
+        // Because AWS SQS can deliver the same message more than once,
         // there is a chance we might try to insert the same message into
         // the database more than once.
         // So try to insert all records in bulk and if that explodes,

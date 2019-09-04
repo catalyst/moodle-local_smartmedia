@@ -84,8 +84,8 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
         $result = $method->invoke($queueprocess);
 
         $this->assertCount(2, $result);
-        $this->assertArrayHasKey('49e4e0a1b2a24b669cef908c8e3be862', $result);
-        $this->assertArrayHasKey('d2fa266e5c1f2e16dee1ff344cec4aec', $result);
+        $this->assertArrayHasKey('433e99fcfec5c3f50406f05705c209de', $result);
+        $this->assertArrayHasKey('c0f0564c18ec9468eae999f5416c2b35', $result);
     }
 
     /**
