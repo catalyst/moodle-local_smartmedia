@@ -303,19 +303,20 @@ class conversion {
         }
 
         // If processing complete get all urls and data for source href.
-        if ($conversionstatuses->status == self::CONVERSION_ACCEPTED || $conversionstatuses->status == self::CONVERSION_FINISHED) {
+        if ($conversionstatuses->status == self::CONVERSION_IN_PROGRESS ||
+                $conversionstatuses->status == self::CONVERSION_FINISHED) {
 
             $fs = get_file_storage();
 
             $files = $fs->get_area_files(1, 'local_smartmedia', 'media', 0);
             $mediafilepath = '/' . $file->get_contenthash() . '/conversions/';
             $mediafiles = $this->filter_files_by_filepath($files, $mediafilepath);
-            $smartmedia['media'] = $this->map_files_to_urls($mediafiles);
+            $smartmedia['media'] = $this->map_files_to_urls($mediafiles, $file->get_id());
 
             $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);
             $datafilepath = '/' . $file->get_contenthash() . '/metadata/';
             $datafiles = $this->filter_files_by_filepath($files, $datafilepath);
-            $smartmedia['data'] = $this->map_files_to_urls($datafiles);
+            $smartmedia['data'] = $this->map_files_to_urls($datafiles, $file->get_id());
         }
 
         // TODO: Cache the result for a very long time as once processing is finished it will never change
@@ -369,14 +370,17 @@ class conversion {
      * Map all passed in files to moodle urls for linking to the files.
      *
      * @param array $files an array of plugin files to map to urls.
+     * @param int $fileid the file id of the parent moodle file for these conversion files.
      *
      * @return array $urls of \moodle_url objects for the files.
      */
-    private function map_files_to_urls($files) : array {
+    private function map_files_to_urls($files, int $fileid) : array {
         $urls = [];
         foreach ($files as $file) {
-            $urls[] = moodle_url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
+            $url = moodle_url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
                 $file->get_itemid(), $file->get_filepath(), $file->get_filename());
+            $url->param('id', $fileid);
+            $urls[] = $url;
         }
         return $urls;
     }
