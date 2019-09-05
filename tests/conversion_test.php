@@ -107,15 +107,15 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord = new \stdClass();
         $conversionrecord->pathnamehash = $contenthash;
         $conversionrecord->contenthash = $contenthash;
-        $conversionrecord->status = 202;
-        $conversionrecord->transcribe_status = 202;
-        $conversionrecord->rekog_label_status = 202;
-        $conversionrecord->rekog_moderation_status = 202;
-        $conversionrecord->rekog_face_status = 202;
-        $conversionrecord->rekog_person_status = 202;
-        $conversionrecord->detect_sentiment_status = 202;
-        $conversionrecord->detect_phrases_status = 202;
-        $conversionrecord->detect_entities_status = 202;
+        $conversionrecord->status = 201;
+        $conversionrecord->transcribe_status = 201;
+        $conversionrecord->rekog_label_status = 201;
+        $conversionrecord->rekog_moderation_status = 201;
+        $conversionrecord->rekog_face_status = 201;
+        $conversionrecord->rekog_person_status = 201;
+        $conversionrecord->detect_sentiment_status = 201;
+        $conversionrecord->detect_phrases_status = 201;
+        $conversionrecord->detect_entities_status = 201;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -129,13 +129,13 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $smartmedia = $conversion->get_smart_media($href);
 
-        // Check that the smart media urls match the passed in mock data.
+        // Check that the smart media urls match the passed in mock data and `id` parameter matches initial moodle file id.
         $expectedmediaurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions"
-            . "/$presetid-myfile1.mp4";
+            . "/$presetid-myfile1.mp4?id=" . $initialfile->get_id();
         $mediaurl = reset($smartmedia['media']);
 
         $expecteddataurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/metadata/0/$contenthash/metadata"
-            . "/Labels.json";
+            . "/Labels.json?id=" . $initialfile->get_id();
         $dataurl = reset($smartmedia['data']);
 
         $this->assertEquals($expectedmediaurl, $mediaurl->out());
@@ -202,6 +202,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $contenthash = '7ddf32e17a6ac5ce04a8ecbf782ca509';
 
+        // Mock the parent moodle file id for conversions, as we don't actually have one in this test.
+        $parentfileid = 154600;
+
         // Mock a transcode file.
         $convertedmediarecord = array(
             'contextid' => 1,
@@ -230,14 +233,14 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'map_files_to_urls');
         $method->setAccessible(true); // Allow accessing of private method.
 
-        $actual = $method->invoke($conversion, $files);
+        $actual = $method->invoke($conversion, $files, $parentfileid);
 
         // Check that the returned urls match the passed in mock data.
         $expectedmediaurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions"
-            . "/1351620000001-100180-myfile1.mp4";
+            . "/1351620000001-100180-myfile1.mp4?id=$parentfileid";
 
         $expecteddataurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/metadata/0/$contenthash/metadata"
-            . "/Labels.json";
+            . "/Labels.json?id=$parentfileid";
 
         $this->assertEquals($expectedmediaurl, $actual[0]->out());
         $this->assertEquals($expecteddataurl, $actual[1]->out());
