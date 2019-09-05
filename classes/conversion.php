@@ -378,8 +378,7 @@ class conversion {
         $urls = [];
         foreach ($files as $file) {
             $url = moodle_url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
-                $file->get_itemid(), $file->get_filepath(), $file->get_filename());
-            $url->param('id', $fileid);
+                $fileid, $file->get_filepath(), $file->get_filename());
             $urls[] = $url;
         }
         return $urls;

@@ -61,13 +61,12 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
     // - It is a valid file.
     // - It is the correct source file for the requested smartmedia file.
     // - The user is allowed to access the source file (which means they can access this smartmedia file.
+    $fileid = array_shift($args);
     $fs = get_file_storage();
-    $sourcefile = $fs->get_file_by_id($options['id']);
+    $sourcefile = $fs->get_file_by_id($fileid);
     if (!$sourcefile) {
         return false; // Return early if sourcefile id is invalid.
     }
-
-    $itemid = 0; // The first item in the $args array.
 
     // Extract the filename / filepath from the $args array.
     $filename = array_pop($args); // The last item in the $args array.
@@ -76,6 +75,7 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
     } else {
         $filepath = '/'.implode('/', $args).'/'; // Var $args contains elements of the filepath.
     }
+    $itemid = 0; // Item id is always zero for smartmedia files.
 
     $smartfile = $fs->get_file($context->id, 'local_smartmedia', $filearea, $itemid, $filepath, $filename);
     if (!$smartfile) {

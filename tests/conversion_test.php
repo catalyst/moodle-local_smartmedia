@@ -130,12 +130,12 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $smartmedia = $conversion->get_smart_media($href);
 
         // Check that the smart media urls match the passed in mock data and `id` parameter matches initial moodle file id.
-        $expectedmediaurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions"
-            . "/$presetid-myfile1.mp4?id=" . $initialfile->get_id();
+        $expectedmediaurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/media/" . $initialfile->get_id()
+            . "/$contenthash/conversions/$presetid-myfile1.mp4";
         $mediaurl = reset($smartmedia['media']);
 
-        $expecteddataurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/metadata/0/$contenthash/metadata"
-            . "/Labels.json?id=" . $initialfile->get_id();
+        $expecteddataurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/metadata/" . $initialfile->get_id()
+            . "/$contenthash/metadata/Labels.json";
         $dataurl = reset($smartmedia['data']);
 
         $this->assertEquals($expectedmediaurl, $mediaurl->out());
@@ -236,11 +236,11 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $actual = $method->invoke($conversion, $files, $parentfileid);
 
         // Check that the returned urls match the passed in mock data.
-        $expectedmediaurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions"
-            . "/1351620000001-100180-myfile1.mp4?id=$parentfileid";
+        $expectedmediaurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/media/$parentfileid/$contenthash/conversions"
+            . "/1351620000001-100180-myfile1.mp4";
 
-        $expecteddataurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/metadata/0/$contenthash/metadata"
-            . "/Labels.json?id=$parentfileid";
+        $expecteddataurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/metadata/$parentfileid/$contenthash/metadata"
+            . "/Labels.json";
 
         $this->assertEquals($expectedmediaurl, $actual[0]->out());
         $this->assertEquals($expecteddataurl, $actual[1]->out());
