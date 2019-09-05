@@ -126,13 +126,14 @@ class queue_process {
             // Not only do the number of messages received vary,
             // SQS can also deliver the same message multiple times.
             foreach ($newmessages as $newmessage) {
-                $messageid = $newmessage['MessageId'];
+                $messagebody = json_decode($newmessage['Body']);
+                $messagehash = md5(json_encode($messagebody->message));
                 $messagesiteid = $newmessage['MessageAttributes']['siteid']['StringValue'];
 
                 // We could be using the same AWS queue for multiple Moodles,
                 // so we only store messages for our Moodle.
                 if ($messagesiteid == $CFG->siteidentifier) {
-                    $messages[$messageid] = $newmessage;
+                    $messages[$messagehash] = $newmessage;
                 }
             }
         }
@@ -151,18 +152,65 @@ class queue_process {
 
         foreach ($messages as $message) {
             $messagebody = json_decode($message['Body']);
+            $messagejson = json_encode($messagebody->message);
             $record = new \stdClass();
             $record->objectkey = $messagebody->objectkey;
             $record->process = $messagebody->process;
             $record->status = $messagebody->status;
-            $record->message = json_encode($messagebody->message);
+            $record->messagehash = md5($messagejson);
+            $record->message = $messagejson;
             $record->senttime = $messagebody->timestamp;
             $record->timecreated = time();
 
             $messagerecords[] = $record;
         }
 
-        $DB->insert_records('local_smartmedia_queue_msgs', $messagerecords);
+        // Because AWS SQS can deliver the same message more than once,
+        // there is a chance we might try to insert the same message into
+        // the database more than once.
+        // So try to insert all records in bulk and if that explodes,
+        // process the records one at a time.
+        $multiinsert = true;
+        try {
+            $transaction = $DB->start_delegated_transaction();
+            $DB->insert_records('local_smartmedia_queue_msgs', $messagerecords);
+            $transaction->allow_commit();
+        } catch (\dml_write_exception $e) {
+            $multiinsert = false;
+        }
+
+        // Retry inserting messages one at a time.
+        // Less efficent than the bulk insert but we can
+        // filter out the duplicate.
+        if (!$multiinsert) {
+
+            // First we rollback the multi-insert transaction.
+            try {
+                $transaction->rollback($e);
+            } catch (\dml_write_exception $e) {
+                // If error is anything else but a duplicate insert, this is unexected,
+                // so re-throw the error.
+                if (!strpos($e->getMessage(), 'locasmarqueumsgs_mes_uix')) {
+                    throw $e;
+                }
+
+            }
+
+            // Next process messages one at a time.
+            foreach ($messagerecords as $messagerecord) {
+                try {
+                    $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord);
+
+                } catch (\dml_write_exception $e) {
+                    // If error is anything else but a duplicate insert, this is unexected,
+                    // so re-throw the error.
+                    if (!strpos($e->getMessage(), 'locasmarqueumsgs_mes_uix')) {
+                        throw $e;
+                    }
+                }
+
+            }
+        }
 
     }
 

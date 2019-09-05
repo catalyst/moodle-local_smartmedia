@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/smartmedia/db" VERSION="20190825" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+<XMLDB PATH="local/smartmedia/db" VERSION="20190904" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -71,6 +71,7 @@
         <FIELD NAME="objectkey" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="The key of the object in the AWS S3 input bucket. This will be the same as the contenthash from the Moodle file table."/>
         <FIELD NAME="process" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The AWS process the message pertains to"/>
         <FIELD NAME="status" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="The status code of the message"/>
+        <FIELD NAME="messagehash" TYPE="char" LENGTH="32" NOTNULL="true" SEQUENCE="false" COMMENT="MD5 hash of the message body."/>
         <FIELD NAME="message" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="The full message"/>
         <FIELD NAME="senttime" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The timestamp of when the message was sent to the queue"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The timestamp of when this record was created"/>
@@ -78,6 +79,9 @@
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="messagehash" UNIQUE="true" FIELDS="messagehash"/>
+      </INDEXES>
     </TABLE>
     <TABLE NAME="local_smartmedia_reports" COMMENT="Various data used in smartmedia reports">
       <FIELDS>

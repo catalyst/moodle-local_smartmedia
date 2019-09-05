@@ -667,6 +667,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $messagerecord1->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
         $messagerecord1->process = 'StartContentModeration';
         $messagerecord1->status = 'SUCCEEDED';
+        $messagerecord1->messagehash = md5('a');
         $messagerecord1->message = '{}';
         $messagerecord1->senttime = '1566091817';
         $messagerecord1->timecreated = '1566197550';
@@ -675,6 +676,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $messagerecord2->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
         $messagerecord2->process = 'elastic_transcoder';
         $messagerecord2->status = 'COMPLETED';
+        $messagerecord2->messagehash = md5('b');
         $messagerecord2->message = '{}';
         $messagerecord2->senttime = '1566091817';
         $messagerecord2->timecreated = '1566197550';
@@ -682,6 +684,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $messagerecord3 = new \stdClass();
         $messagerecord3->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
         $messagerecord3->process = 'elastic_transcoder';
+        $messagerecord3->messagehash = md5('c');
         $messagerecord3->status = 'PROGRESSING';
         $messagerecord3->message = '{}';
         $messagerecord3->senttime = '1566091817';
