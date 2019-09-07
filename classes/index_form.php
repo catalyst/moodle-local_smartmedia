@@ -43,6 +43,7 @@ class index_form extends \moodleform {
     public function definition() {
         $config = get_config('local_smartmedia');
         $mform = $this->_form;
+        $attributes=array('size'=>'22');
 
         // AWS Settings settings.
         $mform->addElement('header','awsheader',
@@ -69,7 +70,7 @@ class index_form extends \moodleform {
             $mform->setDefault('api_region', 'ap-southeast-2');
         }
 
-        $mform->addElement('text', 'api_key',  get_string ('settings:aws:key', 'local_smartmedia'));
+        $mform->addElement('text', 'api_key',  get_string ('settings:aws:key', 'local_smartmedia'), $attributes);
         $mform->setType('api_key', PARAM_TEXT);
         $mform->addHelpButton('api_key', 'settings:aws:key', 'local_smartmedia');
         $mform->addRule('api_key', get_string ('required'), 'required', '', 'client');
@@ -79,7 +80,7 @@ class index_form extends \moodleform {
             $mform->setDefault('api_key', '');
         }
 
-        $mform->addElement('text', 'api_secret',  get_string ('settings:aws:secret', 'local_smartmedia'));
+        $mform->addElement('passwordunmask', 'api_secret',  get_string ('settings:aws:secret', 'local_smartmedia'));
         $mform->setType('api_secret', PARAM_TEXT);
         $mform->addHelpButton('api_secret', 'settings:aws:secret', 'local_smartmedia');
         $mform->addRule('api_secret', get_string ('required'), 'required', '', 'client');
@@ -89,7 +90,7 @@ class index_form extends \moodleform {
             $mform->setDefault('api_secret', '');
         }
 
-        $mform->addElement('text', 's3_input_bucket',  get_string ('settings:aws:input_bucket', 'local_smartmedia'));
+        $mform->addElement('text', 's3_input_bucket',  get_string ('settings:aws:input_bucket', 'local_smartmedia'), $attributes);
         $mform->setType('s3_input_bucket', PARAM_ALPHANUMEXT);
         $mform->addHelpButton('s3_input_bucket', 'settings:aws:input_bucket', 'local_smartmedia');
         $mform->addRule('s3_input_bucket', get_string ('required'), 'required', '', 'client');
@@ -99,7 +100,7 @@ class index_form extends \moodleform {
             $mform->setDefault('s3_input_bucket', '');
         }
 
-        $mform->addElement('text', 's3_output_bucket',  get_string ('settings:aws:output_bucket', 'local_smartmedia'));
+        $mform->addElement('text', 's3_output_bucket',  get_string ('settings:aws:output_bucket', 'local_smartmedia'), $attributes);
         $mform->setType('s3_output_bucket', PARAM_ALPHANUMEXT);
         $mform->addHelpButton('s3_output_bucket', 'settings:aws:output_bucket', 'local_smartmedia');
         $mform->addRule('s3_output_bucket', get_string ('required'), 'required', '', 'client');
@@ -109,7 +110,7 @@ class index_form extends \moodleform {
             $mform->setDefault('s3_output_bucket', '');
         }
 
-        $mform->addElement('text', 'sqs_queue_url',  get_string ('settings:aws:sqs_queue_url', 'local_smartmedia'));
+        $mform->addElement('text', 'sqs_queue_url',  get_string ('settings:aws:sqs_queue_url', 'local_smartmedia'), ['size' => 50]);
         $mform->setType('sqs_queue_url', PARAM_URL);
         $mform->addHelpButton('sqs_queue_url', 'settings:aws:sqs_queue_url', 'local_smartmedia');
         $mform->addRule('sqs_queue_url', get_string ('required'), 'required', '', 'client');
@@ -122,15 +123,13 @@ class index_form extends \moodleform {
         // Processing settings.
         $mform->addElement('header', 'processingheader', get_string('settings:processing:header', 'local_smartmedia'));
 
-        // TODO: remove lang string: settings:processing:transcodepresets and associated
-
         $mform->addElement(
             'advcheckbox',
             'quality_low',
             get_string ('settings:processing:quality_low', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('quality_low', PARAM_INT);
-        $mform->addHelpButton('quality_low', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('quality_low', 'settings:processing:quality_low', 'local_smartmedia');
         $quality_low = isset($config->quality_low) ? $config->quality_low : 1;
         $mform->setDefault('quality_low', $quality_low);
 
@@ -140,7 +139,7 @@ class index_form extends \moodleform {
             get_string ('settings:processing:quality_medium', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('quality_medium', PARAM_INT);
-        $mform->addHelpButton('quality_medium', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('quality_medium', 'settings:processing:quality_medium', 'local_smartmedia');
         $quality_medium = isset($config->quality_medium) ? $config->quality_medium : 0;
         $mform->setDefault('quality_medium', $quality_medium);
 
@@ -150,7 +149,7 @@ class index_form extends \moodleform {
             get_string ('settings:processing:quality_high', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('quality_high', PARAM_INT);
-        $mform->addHelpButton('quality_high', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('quality_high', 'settings:processing:quality_high', 'local_smartmedia');
         $quality_high = isset($config->quality_high) ? $config->quality_high : 1;
         $mform->setDefault('quality_high', $quality_high);
 
@@ -160,7 +159,7 @@ class index_form extends \moodleform {
             get_string ('settings:processing:audio_output', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('audio_output', PARAM_INT);
-        $mform->addHelpButton('audio_output', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('audio_output', 'settings:processing:audio_output', 'local_smartmedia');
         $audio_output = isset($config->audio_output) ? $config->audio_output : 1;
         $mform->setDefault('audio_output', $audio_output);
 
@@ -170,7 +169,7 @@ class index_form extends \moodleform {
             get_string ('settings:processing:download_files', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('download_files', PARAM_INT);
-        $mform->addHelpButton('download_files', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('download_files', 'settings:processing:download_files', 'local_smartmedia');
         $download_files = isset($config->download_files) ? $config->download_files : 1;
         $mform->setDefault('download_files', $download_files);
 
@@ -180,7 +179,7 @@ class index_form extends \moodleform {
             get_string ('settings:processing:proactiveconversion', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('proactiveconversion', PARAM_INT);
-        $mform->addHelpButton('proactiveconversion', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('proactiveconversion', 'settings:processing:proactiveconversion', 'local_smartmedia');
         $proactiveconversion = isset($config->proactiveconversion) ? $config->proactiveconversion : 1;
         $mform->setDefault('proactiveconversion', $proactiveconversion);
 
@@ -193,7 +192,7 @@ class index_form extends \moodleform {
             get_string ('settings:enrichment:detectlabels', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('detectlabels', PARAM_INT);
-        $mform->addHelpButton('detectlabels', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('detectlabels', 'settings:enrichment:detectlabels', 'local_smartmedia');
         $detectlabels = isset($config->detectlabels) ? $config->detectlabels : 0;
         $mform->setDefault('detectlabels', $detectlabels);
 
@@ -203,7 +202,7 @@ class index_form extends \moodleform {
             get_string ('settings:enrichment:detectmoderation', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('detectmoderation', PARAM_INT);
-        $mform->addHelpButton('detectmoderation', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('detectmoderation', 'settings:enrichment:detectmoderation', 'local_smartmedia');
         $detectmoderation = isset($config->detectmoderation) ? $config->detectmoderation : 0;
         $mform->setDefault('detectmoderation', $detectmoderation);
 
@@ -213,7 +212,7 @@ class index_form extends \moodleform {
             get_string ('settings:enrichment:detectfaces', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('detectfaces', PARAM_INT);
-        $mform->addHelpButton('detectfaces', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('detectfaces', 'settings:enrichment:detectfaces', 'local_smartmedia');
         $detectfaces = isset($config->detectfaces) ? $config->detectfaces : 0;
         $mform->setDefault('detectfaces', $detectfaces);
 
@@ -223,7 +222,7 @@ class index_form extends \moodleform {
             get_string ('settings:enrichment:detectpeople', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('detectpeople', PARAM_INT);
-        $mform->addHelpButton('detectpeople', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('detectpeople', 'settings:enrichment:detectpeople', 'local_smartmedia');
         $detectpeople = isset($config->detectpeople) ? $config->detectpeople : 0;
         $mform->setDefault('detectpeople', $detectpeople);
 
@@ -233,7 +232,7 @@ class index_form extends \moodleform {
             get_string ('settings:enrichment:transcribe', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('transcribe', PARAM_INT);
-        $mform->addHelpButton('transcribe', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('transcribe', 'settings:enrichment:transcribe', 'local_smartmedia');
         $transcribe = isset($config->transcribe) ? $config->transcribe : 0;
         $mform->setDefault('transcribe', $transcribe);
 
@@ -243,7 +242,7 @@ class index_form extends \moodleform {
             get_string ('settings:enrichment:detectsentiment', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('detectsentiment', PARAM_INT);
-        $mform->addHelpButton('detectsentiment', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('detectsentiment', 'settings:enrichment:detectsentiment', 'local_smartmedia');
         $mform->disabledIf('detectsentiment', 'transcribe', 'unchecked');
         $detectsentiment = isset($config->detectsentiment) ? $config->detectsentiment : 0;
         $mform->setDefault('detectsentiment', $detectsentiment);
@@ -254,7 +253,7 @@ class index_form extends \moodleform {
             get_string ('settings:enrichment:detectphrases', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('detectphrases', PARAM_INT);
-        $mform->addHelpButton('detectphrases', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('detectphrases', 'settings:enrichment:detectphrases', 'local_smartmedia');
         $mform->disabledIf('detectphrases', 'transcribe', 'unchecked');
         $detectphrases = isset($config->detectphrases) ? $config->detectphrases : 0;
         $mform->setDefault('detectphrases', $detectphrases);
@@ -265,7 +264,7 @@ class index_form extends \moodleform {
             get_string ('settings:enrichment:detectentities', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('detectentities', PARAM_INT);
-        $mform->addHelpButton('detectentities', 'wildcardend', 'local_smartmedia');
+        $mform->addHelpButton('detectentities', 'settings:enrichment:detectentities', 'local_smartmedia');
         $mform->disabledIf('detectentities', 'transcribe', 'unchecked');
         $detectentities = isset($config->detectentities) ? $config->detectentities : 0;
         $mform->setDefault('detectentities', $detectentities);
@@ -273,7 +272,7 @@ class index_form extends \moodleform {
         // FFprobe settings.
         $mform->addElement('header', 'ffprobeheader', get_string('settings:ffprobe:header', 'local_smartmedia'));
 
-        $mform->addElement('text', 'pathtoffprobe',  get_string ('settings:aws:input_bucket', 'local_smartmedia'));
+        $mform->addElement('text', 'pathtoffprobe',  get_string ('settings:ffprobe:pathtoffprobe', 'local_smartmedia'));
         $mform->setType('pathtoffprobe', PARAM_PATH);
         $mform->addHelpButton('pathtoffprobe', 'settings:aws:input_bucket', 'local_smartmedia');
         $mform->addRule('pathtoffprobe', get_string ('required'), 'required', '', 'client');
