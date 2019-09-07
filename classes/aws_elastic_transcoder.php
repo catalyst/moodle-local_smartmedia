@@ -50,6 +50,54 @@ class aws_elastic_transcoder {
     private $transcoderclient;
 
     /**
+     * Transcoder presets for low quality video file conversion.
+     *
+     * @var array
+     */
+    private const LOW_PRESETS = array(
+        '1351620000001-200045', // System preset: HLS Video - 600k.
+        '1351620000001-500050' // System preset: MPEG-Dash Video - 600k.
+    );
+
+    /**
+     * Transcoder presets for medium quality video file conversion.
+     *
+     * @var array
+     */
+    private const MEDIUM_PRESETS = array(
+        '1351620000001-200035', // System preset: HLS Video - 1M.
+        '1351620000001-500040' // System preset: MPEG-Dash Video - 1.2M.
+    );
+
+    /**
+     * Transcoder presets for high quality video file conversion.
+     *
+     * @var array
+     */
+    private const HIGH_PRESETS = array(
+        '1351620000001-200015', // System preset: HLS Video - 2M.
+        '1351620000001-500030' // System preset: MPEG-Dash Video - 2.4M.
+    );
+
+    /**
+     * Transcoder presets for audio file conversion.
+     *
+     * @var array
+     */
+    private const AUDIO_PRESETS = array(
+        '1351620000001-300020' // System preset: Audio MP3 - 192 kilobits/second.
+    );
+
+    /**
+     * Transcoder presets for video file download conversion.
+     *
+     * @var array
+     */
+    private const DOWNLOAD_PRESETS = array(
+        '1351620000001-100070' // System preset: Facebook, SmugMug, Vimeo, YouTube.
+    );
+
+    /**
      * aws_ets_pricing_client constructor.
      *
      * @param \Aws\ElasticTranscoder\ElasticTranscoderClient $transcoderclient the client for accessing AWS ETS.
@@ -74,14 +122,13 @@ class aws_elastic_transcoder {
     }
 
     /**
-     * Get the presets available for transcoding.
-     *
-     * @param string $presetsettings comma delimited string of AWS Elastic Transcoder preset ids.
+     * Get the presets based on the conversion settings.
      *
      * @return array $presets array of aws_ets_preset objects.
      * @throws \moodle_exception
      */
-    public function get_presets(string $presetsettings) {
+    public function get_presets() {
+        get_config('local_smartmedia', 'api_region');
         $presets = [];
 
         if (!empty($presetsettings)) {
