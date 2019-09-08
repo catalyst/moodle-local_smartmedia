@@ -113,20 +113,6 @@ class conversion {
         $this->config = get_config('local_smartmedia');
     }
 
-
-    /**
-     *  Get the configured transcoding presets as an array.
-     *
-     * @return array $idarray Trimmed array of transcoding presets.
-     */
-    private function get_preset_ids() : array {
-        $rawids = $this->config->transcodepresets; // Get the raw ids.
-        $untrimmedids = explode(',', $rawids); // Split ids into an array of strings by comma.
-        $idarray = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
-
-        return $idarray;
-    }
-
     /**
      * Given a conversion id create records for each configured transcoding preset id,
      * ready to be stored in the Moodle database.
@@ -136,7 +122,7 @@ class conversion {
      */
     private function get_preset_records(int $convid) : array {
         $presetrecords = array();
-        $presetids = $this->get_preset_ids();
+        $presetids = aws_elastic_transcoder::get_preset_ids();
 
         foreach ($presetids as $presetid) {
             $record = new \stdClass();

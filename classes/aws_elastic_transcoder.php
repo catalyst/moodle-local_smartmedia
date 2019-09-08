@@ -122,19 +122,50 @@ class aws_elastic_transcoder {
     }
 
     /**
+     * Return an array of preset ids based on plugin configuration.
+     *
+     * @return array $presetids The preset ids.
+     */
+    static public function get_preset_ids() : array {
+        $pluginconfig = get_config('local_smartmedia');
+        $presetids = [];
+
+        // Collate enabled presets.
+        if (!empty($pluginconfig->quality_low)) {
+            $presetids = array_merge(self::LOW_PRESETS, $presetids);
+        }
+
+        if (!empty($pluginconfig->quality_medium)) {
+            $presetids = array_merge(self::MEDIUM_PRESETS, $presetids);
+        }
+
+        if (!empty($pluginconfig->quality_high)) {
+            $presetids = array_merge(self::HIGH_PRESETS, $presetids);
+        }
+
+        if (!empty($pluginconfig->audio_output)) {
+            $presetids = array_merge(self::AUDIO_PRESETS, $presetids);
+        }
+
+        if (!empty($pluginconfig->download_files)) {
+            $presetids = array_merge(self::DOWNLOAD_PRESETS, $presetids);
+        }
+
+        return $presetids;
+
+    }
+
+    /**
      * Get the presets based on the conversion settings.
      *
      * @return array $presets array of aws_ets_preset objects.
      * @throws \moodle_exception
      */
-    public function get_presets() {
-        get_config('local_smartmedia', 'api_region');
+    public function get_presets() : array {
         $presets = [];
+        $presetids = self::get_preset_ids();
 
-        if (!empty($presetsettings)) {
-
-            $untrimmedids = explode(',', $presetsettings); // Split ids into an array of strings by comma.
-            $presetids = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
+        if (!empty($presetids)) {
 
             foreach ($presetids as $presetid) {
                 try {

@@ -53,6 +53,19 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function setUp() {
         global $CFG;
+        set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
+        set_config('api_key', 'somefakekey', 'local_smartmedia');
+        set_config('api_secret', 'somefakesecret', 'local_smartmedia');
+        set_config('s3_input_bucket', 'inputbucket', 'local_smartmedia');
+        set_config('s3_output_bucket', 'outputbucket', 'local_smartmedia');
+        set_config('detectlabels', 1, 'local_smartmedia');
+        set_config('detectmoderation', 1, 'local_smartmedia');
+        set_config('detectfaces', 1, 'local_smartmedia');
+        set_config('detectpeople', 1, 'local_smartmedia');
+        set_config('detectsentiment', 1, 'local_smartmedia');
+        set_config('detectphrases', 1, 'local_smartmedia');
+        set_config('detectentities', 1, 'local_smartmedia');
+        set_config('transcribe', 1, 'local_smartmedia');
 
         // Get fixture for tests.
         $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/conversion_test_fixture.php');
@@ -403,9 +416,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        $presets = "preset1, preset2, preset3";
-        set_config('transcodepresets', $presets, 'local_smartmedia');
-        set_config('detectlabels', 1, 'local_smartmedia');
+        set_config('quality_low', 1, 'local_smartmedia');
+        set_config('quality_high', 1, 'local_smartmedia');
 
         $conversion = new \local_smartmedia\conversion();
 
@@ -435,28 +447,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->rekog_label_status);
 
         $result = $DB->count_records('local_smartmedia_presets');
-        $this->assertEquals(3, $result);
+        $this->assertEquals(4, $result);
 
-    }
-
-    /**
-     * Test getting preset array from settings.
-     */
-    public function test_get_preset_ids() {
-        $this->resetAfterTest(true);
-
-        $presets = "preset1, preset2, preset3";
-        set_config('transcodepresets', $presets, 'local_smartmedia');
-
-        $conversion = new \local_smartmedia\conversion();
-
-        // We're testing a private method, so we need to setup reflector magic.
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_preset_ids');
-        $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion);
-
-        $this->assertCount(3, $result);
-        $this->assertEquals('preset2', $result[1]);
     }
 
     /**
@@ -465,18 +457,28 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     public function test_get_preset_records() {
         $this->resetAfterTest(true);
 
-        $presets = "preset1, preset2, preset3";
-        set_config('transcodepresets', $presets, 'local_smartmedia');
+        set_config('quality_low', 1, 'local_smartmedia');
+        set_config('quality_high', 1, 'local_smartmedia');
 
         $conversion = new \local_smartmedia\conversion();
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_preset_records');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, 123);
+        $results = $method->invoke($conversion, 123);
 
-        $this->assertCount(3, $result);
-        $this->assertEquals('preset2', $result[1]->preset);
+        $presetids = array();
+        foreach ($results as $result) {
+            $presetids[] = $result->preset;
+        }
+
+        $this->assertCount(4, $presetids);
+        $this->assertContains('1351620000001-200015', $presetids);
+        $this->assertContains('1351620000001-500030', $presetids);
+        $this->assertContains('1351620000001-200045', $presetids);
+        $this->assertContains('1351620000001-500050', $presetids);
+        $this->assertNotContains('1351620000001-200035', $presetids);
+        $this->assertNotContains('1351620000001-500040', $presetids);
     }
 
     /**
@@ -485,10 +487,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     public function test_get_conversion_records() {
         $this->resetAfterTest(true);
         global $DB;
-
-        $presets = "preset1, preset2, preset3";
-        set_config('transcodepresets', $presets, 'local_smartmedia');
-
         $conversion = new \local_smartmedia\conversion();
 
         // Setup for testing.
