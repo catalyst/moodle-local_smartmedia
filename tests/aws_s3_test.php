@@ -83,6 +83,14 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
      * We mock out the S3 client response as we are not trying to connect to the live AWS API.
      */
     public function test_is_bucket_accessible_false() {
+        $this->resetAfterTest();
+
+        set_config('api_key', 'key', 'local_smartmedia');
+        set_config('api_secret', 'secret', 'local_smartmedia');
+        set_config('s3_input_bucket', 'bucket1', 'local_smartmedia');
+        set_config('s3_output_bucket', 'bucket2', 'local_smartmedia');
+        set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
+
         // Set up the AWS mock.
         $mock = new MockHandler();
         $mock->append(function (CommandInterface $cmd, RequestInterface $req) {
@@ -105,6 +113,15 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
      * We mock out the S3 client response as we are not trying to connect to the live AWS API.
      */
     public function test_is_bucket_accessible_true() {
+
+        $this->resetAfterTest();
+
+        set_config('api_key', 'key', 'local_smartmedia');
+        set_config('api_secret', 'secret', 'local_smartmedia');
+        set_config('s3_input_bucket', 'bucket1', 'local_smartmedia');
+        set_config('s3_output_bucket', 'bucket2', 'local_smartmedia');
+        set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
+
          // Set up the AWS mock.
          $mock = new MockHandler();
          $mock->append(new Result(array()));
@@ -124,6 +141,14 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
      * Test bucket permissions method of converter class.
      */
     public function test_have_bucket_permissions_false() {
+        $this->resetAfterTest();
+
+        set_config('api_key', 'key', 'local_smartmedia');
+        set_config('api_secret', 'secret', 'local_smartmedia');
+        set_config('s3_input_bucket', 'bucket1', 'local_smartmedia');
+        set_config('s3_output_bucket', 'bucket2', 'local_smartmedia');
+        set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
+
         // Set up the AWS mock.
         $mock = new MockHandler();
         $mock->append(function (CommandInterface $cmd, RequestInterface $req) {
@@ -151,6 +176,14 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
      * Test bucket permissions method of converter class.
      */
     public function test_have_bucket_permissions_true() {
+        $this->resetAfterTest();
+
+        set_config('api_key', 'key', 'local_smartmedia');
+        set_config('api_secret', 'secret', 'local_smartmedia');
+        set_config('s3_input_bucket', 'bucket1', 'local_smartmedia');
+        set_config('s3_output_bucket', 'bucket2', 'local_smartmedia');
+        set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
+
         // Set up the AWS mock.
         $mock = new MockHandler();
         $mock->append(new Result(array()));

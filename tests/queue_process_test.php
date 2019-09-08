@@ -54,6 +54,13 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
     public function setUp() {
         global $CFG;
 
+        set_config('api_key', 'key', 'local_smartmedia');
+        set_config('api_secret', 'secret', 'local_smartmedia');
+        set_config('s3_input_bucket', 'bucket1', 'local_smartmedia');
+        set_config('s3_output_bucket', 'bucket2', 'local_smartmedia');
+        set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
+        set_config('sqs_queue_url', 'https://foo.bar', 'local_smartmedia');
+
         // Get fixture for tests.
         $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/queue_process_test_fixture.php');
     }

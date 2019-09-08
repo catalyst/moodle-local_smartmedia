@@ -43,10 +43,10 @@ class index_form extends \moodleform {
     public function definition() {
         $config = get_config('local_smartmedia');
         $mform = $this->_form;
-        $attributes=array('size'=>'22');
+        $attributes = array('size' => '22');
 
         // AWS Settings settings.
-        $mform->addElement('header','awsheader',
+        $mform->addElement('header', 'awsheader',
             get_string('settings:aws:header', 'local_smartmedia'),
             get_string('settings:aws:header_desc', 'local_smartmedia'));
 
@@ -130,8 +130,8 @@ class index_form extends \moodleform {
             get_string('enable'), array(), array(0, 1));
         $mform->setType('quality_low', PARAM_INT);
         $mform->addHelpButton('quality_low', 'settings:processing:quality_low', 'local_smartmedia');
-        $quality_low = isset($config->quality_low) ? $config->quality_low : 1;
-        $mform->setDefault('quality_low', $quality_low);
+        $qualitylow = isset($config->quality_low) ? $config->quality_low : 1;
+        $mform->setDefault('quality_low', $qualitylow);
 
         $mform->addElement(
             'advcheckbox',
@@ -140,8 +140,8 @@ class index_form extends \moodleform {
             get_string('enable'), array(), array(0, 1));
         $mform->setType('quality_medium', PARAM_INT);
         $mform->addHelpButton('quality_medium', 'settings:processing:quality_medium', 'local_smartmedia');
-        $quality_medium = isset($config->quality_medium) ? $config->quality_medium : 0;
-        $mform->setDefault('quality_medium', $quality_medium);
+        $qualitymedium = isset($config->quality_medium) ? $config->quality_medium : 0;
+        $mform->setDefault('quality_medium', $qualitymedium);
 
         $mform->addElement(
             'advcheckbox',
@@ -150,8 +150,8 @@ class index_form extends \moodleform {
             get_string('enable'), array(), array(0, 1));
         $mform->setType('quality_high', PARAM_INT);
         $mform->addHelpButton('quality_high', 'settings:processing:quality_high', 'local_smartmedia');
-        $quality_high = isset($config->quality_high) ? $config->quality_high : 1;
-        $mform->setDefault('quality_high', $quality_high);
+        $qualityhigh = isset($config->quality_high) ? $config->quality_high : 1;
+        $mform->setDefault('quality_high', $qualityhigh);
 
         $mform->addElement(
             'advcheckbox',
@@ -160,8 +160,8 @@ class index_form extends \moodleform {
             get_string('enable'), array(), array(0, 1));
         $mform->setType('audio_output', PARAM_INT);
         $mform->addHelpButton('audio_output', 'settings:processing:audio_output', 'local_smartmedia');
-        $audio_output = isset($config->audio_output) ? $config->audio_output : 1;
-        $mform->setDefault('audio_output', $audio_output);
+        $audiooutput = isset($config->audio_output) ? $config->audio_output : 1;
+        $mform->setDefault('audio_output', $audiooutput);
 
         $mform->addElement(
             'advcheckbox',
@@ -170,8 +170,8 @@ class index_form extends \moodleform {
             get_string('enable'), array(), array(0, 1));
         $mform->setType('download_files', PARAM_INT);
         $mform->addHelpButton('download_files', 'settings:processing:download_files', 'local_smartmedia');
-        $download_files = isset($config->download_files) ? $config->download_files : 1;
-        $mform->setDefault('download_files', $download_files);
+        $downloadfiles = isset($config->download_files) ? $config->download_files : 1;
+        $mform->setDefault('download_files', $downloadfiles);
 
         $mform->addElement(
             'advcheckbox',
