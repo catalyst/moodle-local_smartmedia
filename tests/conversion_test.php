@@ -456,29 +456,98 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_get_preset_records() {
         $this->resetAfterTest(true);
+        global $DB;
 
         set_config('quality_low', 1, 'local_smartmedia');
         set_config('quality_high', 1, 'local_smartmedia');
+        set_config('audio_output', 1, 'local_smartmedia');
+        set_config('download_files', 1, 'local_smartmedia');
+
+        // Create file metadata records.
+        $metadatarecord1 = new \stdClass();
+        $metadatarecord1->contenthash = 'fakecontenthash1';
+        $metadatarecord1->pathnamehash = 'fakepathnamehash1';
+        $metadatarecord1->duration = 3.123;
+        $metadatarecord1->bitrate = 1000;
+        $metadatarecord1->size = 390;
+        $metadatarecord1->videostreams = 1;
+        $metadatarecord1->audiostreams = 1;
+        $metadatarecord1->width = 1920;
+        $metadatarecord1->height = 1080;
+        $metadatarecord1->metadata = '{}';
+
+        $id1 = $DB->insert_record('local_smartmedia_data', $metadatarecord1);
+
+        $metadatarecord2 = new \stdClass();
+        $metadatarecord2->contenthash = 'fakecontenthash2';
+        $metadatarecord2->pathnamehash = 'fakepathnamehash2';
+        $metadatarecord2->duration = 3.123;
+        $metadatarecord2->bitrate = 1000;
+        $metadatarecord2->size = 390;
+        $metadatarecord2->videostreams = 1;
+        $metadatarecord2->audiostreams = 0;
+        $metadatarecord2->width = 1920;
+        $metadatarecord2->height = 1080;
+        $metadatarecord2->metadata = '{}';
+
+        $id2 = $DB->insert_record('local_smartmedia_data', $metadatarecord2);
+
+        $metadatarecord3 = new \stdClass();
+        $metadatarecord3->contenthash = 'fakecontenthash3';
+        $metadatarecord3->pathnamehash = 'fakepathnamehash3';
+        $metadatarecord3->duration = 3.123;
+        $metadatarecord3->bitrate = 1000;
+        $metadatarecord3->size = 390;
+        $metadatarecord3->videostreams = 0;
+        $metadatarecord3->audiostreams = 1;
+        $metadatarecord3->width = 0;
+        $metadatarecord3->height = 0;
+        $metadatarecord3->metadata = '{}';
+
+        $id3 = $DB->insert_record('local_smartmedia_data', $metadatarecord3);
 
         $conversion = new \local_smartmedia\conversion();
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_preset_records');
         $method->setAccessible(true); // Allow accessing of private method.
-        $results = $method->invoke($conversion, 123);
 
+        $results = $method->invoke($conversion, 123, 'fakecontenthash1');
         $presetids = array();
         foreach ($results as $result) {
             $presetids[] = $result->preset;
         }
 
-        $this->assertCount(4, $presetids);
+        $this->assertCount(6, $presetids);
         $this->assertContains('1351620000001-200015', $presetids);
         $this->assertContains('1351620000001-500030', $presetids);
         $this->assertContains('1351620000001-200045', $presetids);
         $this->assertContains('1351620000001-500050', $presetids);
-        $this->assertNotContains('1351620000001-200035', $presetids);
-        $this->assertNotContains('1351620000001-500040', $presetids);
+        $this->assertContains('1351620000001-300020', $presetids);
+        $this->assertContains('1351620000001-100070', $presetids);
+
+        $results = $method->invoke($conversion, 123, 'fakecontenthash2');
+        $presetids = array();
+        foreach ($results as $result) {
+            $presetids[] = $result->preset;
+        }
+
+        $this->assertCount(5, $presetids);
+        $this->assertContains('1351620000001-200015', $presetids);
+        $this->assertContains('1351620000001-500030', $presetids);
+        $this->assertContains('1351620000001-200045', $presetids);
+        $this->assertContains('1351620000001-500050', $presetids);
+        $this->assertContains('1351620000001-100070', $presetids);
+
+        $results = $method->invoke($conversion, 123, 'fakecontenthash3');
+        $presetids = array();
+        foreach ($results as $result) {
+            $presetids[] = $result->preset;
+        }
+
+        $this->assertCount(1, $presetids);
+        $this->assertContains('1351620000001-300020', $presetids);
+
     }
 
     /**

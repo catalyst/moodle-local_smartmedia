@@ -54,7 +54,7 @@ class aws_elastic_transcoder {
      *
      * @var array
      */
-    private const LOW_PRESETS = array(
+    public const LOW_PRESETS = array(
         '1351620000001-200045', // System preset: HLS Video - 600k.
         '1351620000001-500050' // System preset: MPEG-Dash Video - 600k.
     );
@@ -64,7 +64,7 @@ class aws_elastic_transcoder {
      *
      * @var array
      */
-    private const MEDIUM_PRESETS = array(
+    public const MEDIUM_PRESETS = array(
         '1351620000001-200035', // System preset: HLS Video - 1M.
         '1351620000001-500040' // System preset: MPEG-Dash Video - 1.2M.
     );
@@ -74,7 +74,7 @@ class aws_elastic_transcoder {
      *
      * @var array
      */
-    private const HIGH_PRESETS = array(
+    public const HIGH_PRESETS = array(
         '1351620000001-200015', // System preset: HLS Video - 2M.
         '1351620000001-500030' // System preset: MPEG-Dash Video - 2.4M.
     );
@@ -84,7 +84,7 @@ class aws_elastic_transcoder {
      *
      * @var array
      */
-    private const AUDIO_PRESETS = array(
+    public const AUDIO_PRESETS = array(
         '1351620000001-300020' // System preset: Audio MP3 - 192 kilobits/second.
     );
 
@@ -93,7 +93,7 @@ class aws_elastic_transcoder {
      *
      * @var array
      */
-    private const DOWNLOAD_PRESETS = array(
+    public const DOWNLOAD_PRESETS = array(
         '1351620000001-100070' // System preset: Facebook, SmugMug, Vimeo, YouTube.
     );
 
