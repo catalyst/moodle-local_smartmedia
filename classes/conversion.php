@@ -107,10 +107,26 @@ class conversion {
     );
 
     /**
-     * Class constructor
+     * @var mixed hash-like object of settings for local_smartmedia.
      */
-    public function __construct() {
+    private $config;
+
+    /**
+     * @var \local_smartmedia\aws_elastic_transcoder the transcoder for accessing communicating with the
+     * AWS Elastic Transcoding Service.
+     */
+    private $transcoder;
+
+    /**
+     * Class constructor.
+     *
+     * @param \local_smartmedia\aws_elastic_transcoder $transcoder
+     *
+     * @throws \dml_exception
+     */
+    public function __construct(aws_elastic_transcoder $transcoder) {
         $this->config = get_config('local_smartmedia');
+        $this->transcoder = $transcoder;
     }
 
     /**
@@ -118,12 +134,16 @@ class conversion {
      * ready to be stored in the Moodle database.
      *
      * @param int $convid The conversion id to create the preset records for.
+     * @param string $contenthash The contenthash of the file to filter presets by based on streams.
+     *
      * @return array $presetrecords The preset records to insert into the Moodle database.
+     * @throws \dml_exception
+     * @throws \moodle_exception
      */
     private function get_preset_records(int $convid, string $contenthash) : array {
         global $DB;
         $presetrecords = array();
-        $presetids = aws_elastic_transcoder::get_preset_ids();
+        $presetids = $this->transcoder->get_preset_ids();
 
         // Get metadata for file from database.
         $streams = $DB->get_record('local_smartmedia_data', array('contenthash' => $contenthash), 'videostreams, audiostreams');
@@ -145,13 +165,17 @@ class conversion {
             $presetids = array_diff($presetids, $videostreams);
         }
 
-        // Create array of preset records.
-        foreach ($presetids as $presetid) {
-            $record = new \stdClass();
-            $record->convid = $convid;
-            $record->preset = $presetid;
+        $presets = $this->transcoder->get_presets();
 
-            $presetrecords[] = $record;
+        foreach ($presets as $preset) {
+            if (in_array($preset->get_id(), $presetids)) {
+                $record = new \stdClass();
+                $record->convid = $convid;
+                $record->preset = $preset->get_id();
+                $record->fragmented = $preset->is_output_fragmented() ? 1 : 0;
+
+                $presetrecords[] = $record;
+            }
         }
 
         return $presetrecords;
@@ -161,7 +185,12 @@ class conversion {
      * Create the smart media conversion record.
      * These records will be processed by a scheduled task.
      *
-     * @param \stored_file $file The file object to create the converion for.
+     * @param \stored_file $file The file object to create the conversion for.
+     *
+     * @throws \coding_exception
+     * @throws \dml_exception
+     * @throws \dml_write_exception
+     * @throws \moodle_exception
      */
     private function create_conversion(\stored_file $file) : void {
         global $DB;
@@ -688,7 +717,7 @@ class conversion {
      * Process the conversion records and get the files from AWS.
      *
      * @param \stdClass $conversionrecord The conversion record from the database.
-     * @param array $queuemessages Quemessages from the database relating to this conversion record.
+     * @param array $queuemessages Queue messages from the database relating to this conversion record.
      * @param \GuzzleHttp\Handler|null $handler Optional handler.
      * @return \stdClass $conversionrecord The updated conversion record.
      */

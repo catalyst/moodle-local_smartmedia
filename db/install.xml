@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/smartmedia/db" VERSION="20190904" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+<XMLDB PATH="local/smartmedia/db" VERSION="20190908" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -56,6 +56,7 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="convid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The ID of the corresponding record in the smartmedia conversion table"/>
         <FIELD NAME="preset" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="fragmented" TYPE="int" LENGTH="1" NOTNULL="true" SEQUENCE="false" COMMENT="True if the preset returns fragmented files used for adaptive bitrate streaming, false otherwise."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>

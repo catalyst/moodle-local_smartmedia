@@ -178,4 +178,27 @@ class aws_ets_preset {
         $result = ($height >= LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT);
         return $result;
     }
+
+    /**
+     * Does this preset output fragmented media?
+     * (Fragmented output means one input may be transcoded to deliver segmented outputs, such as for adaptive bitrate streaming)
+     *
+     * @return bool true if the output is fragmented, false otherwise.
+     */
+    public function is_output_fragmented() {
+        $result = false;
+        if (in_array($this->format, LOCAL_SMARTMEDIA_PRESET_FRAGMENTED_CONTAINERS)) {
+            $result = true;
+        }
+        return $result;
+    }
+
+    /**
+     * Getter for this preset's id.
+     *
+     * @return string AWS preset id.
+     */
+    public function get_id() : string {
+        return $this->id;
+    }
 }

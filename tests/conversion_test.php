@@ -27,11 +27,14 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 
+use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Result;
 use Aws\MockHandler;
 use Aws\CommandInterface;
 use Psr\Http\Message\RequestInterface;
 use Aws\S3\Exception\S3Exception;
+use local_smartmedia\aws_api;
+use local_smartmedia\aws_elastic_transcoder;
 
 /**
  * Unit test for local_smartmedia conversion class.
@@ -47,6 +50,26 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      * @var array Fixtures used in this test.
      */
     public $fixture;
+
+    /**
+     * @var string the AWS region to test against.
+     */
+    public $region;
+
+    /**
+     * @var string 'YYYY-MM-DD' date version of the AWS Elastic Transcoder Client API version to test against.
+     */
+    public $etsversion;
+
+    /**
+     * @var string the AWS API Key to test against.
+     */
+    public $apikey;
+
+    /**
+     * @var string the AWS API Secret to test against.
+     */
+    public $apisecret;
 
     /*
      * Set up method for this test suite.
@@ -67,8 +90,39 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         set_config('detectentities', 1, 'local_smartmedia');
         set_config('transcribe', 1, 'local_smartmedia');
 
+        // Plugin settings.
+        $this->region = 'ap-southeast-2';
+        $this->etsversion = '2012-09-25';
+        $this->apikey = 'ABCDEFGHIJKLMNO';
+        $this->apisecret = '012345678910aBcDeFgHiJkLmNOpQrSTuVwXyZ';
+
         // Get fixture for tests.
         $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/conversion_test_fixture.php');
+    }
+
+    /**
+     * Create a mock of \Aws\ElasticTranscoderClient for injecting into \local_smartmedia\aws_elastic_transcoder.
+     *
+     * @param array $fixtures array of mock data to use for results of api calls.
+     *
+     * @return array the api stub and expected result from calling get_pricing_client method on stub.
+     */
+    public function create_mock_elastic_transcoder_client(array $fixtures = []) {
+        // Inject our results fixture into the API dependency as a mock using a handler.
+        $mockhandler = new MockHandler();
+        foreach ($fixtures as $fixture) {
+            $mockresult = new Result($fixture);
+            $mockhandler->append($mockresult);
+        }
+
+        // Create the mock response Elastic Transcoder Client.
+        $mock = new ElasticTranscoderClient([
+            'region' => $this->region,
+            'version' => $this->etsversion,
+            'credentials' => ['key' => $this->apikey, 'secret' => $this->apisecret],
+            'handler' => $mockhandler]);
+
+        return $mock;
     }
 
     /**
@@ -138,7 +192,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             $initialfilerecord['contextid'], $initialfilerecord['component'], $initialfilerecord['filearea'],
             $initialfilerecord['itemid'], $initialfilerecord['filepath'], $initialfilerecord['filename']);
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         $smartmedia = $conversion->get_smart_media($href);
 
@@ -189,7 +245,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $files = [$convertedmediafile, $converteddatafile];
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'filter_files_by_filepath');
@@ -240,7 +298,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $files = [$convertedmediafile, $converteddatafile];
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'map_files_to_urls');
@@ -310,7 +370,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             $filerecord3['itemid'], $filerecord3['filepath'], $filerecord3['filename']);
 
         // Instansiate new conversion class.
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_file_from_url');
@@ -332,7 +394,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_get_conversion_statuses_no_record() {
         $this->resetAfterTest(true);
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // Setup for testing.
         $fs = new file_storage();
@@ -362,7 +426,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // Setup for testing.
         $fs = new file_storage();
@@ -419,7 +485,12 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         set_config('quality_low', 1, 'local_smartmedia');
         set_config('quality_high', 1, 'local_smartmedia');
 
-        $conversion = new \local_smartmedia\conversion();
+        // Mock the elastic transcoder client so it returns low quality and high quality presets.
+        $mockdata = array_merge($this->fixture['readPreset']['quality_low'], $this->fixture['readPreset']['quality_high']);
+        $mock = $this->create_mock_elastic_transcoder_client($mockdata);
+
+        $transcoder = new aws_elastic_transcoder($mock);
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // Setup for testing.
         $fs = new file_storage();
@@ -462,6 +533,16 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         set_config('quality_high', 1, 'local_smartmedia');
         set_config('audio_output', 1, 'local_smartmedia');
         set_config('download_files', 1, 'local_smartmedia');
+
+        // Mock the elastic transcoder client so it returns fixture preset data for low quality, high quality, audio and download.
+        $fixturedata = array_values(array_merge(
+            $this->fixture['readPreset']['quality_low'],
+            $this->fixture['readPreset']['quality_high'],
+            $this->fixture['readPreset']['audio_output'],
+            $this->fixture['readPreset']['download_files']));
+        // We invoke the method three times, so we need to mock this data three times.
+        $mockdata = array_merge($fixturedata, $fixturedata, $fixturedata);
+        $mock = $this->create_mock_elastic_transcoder_client($mockdata);
 
         // Create file metadata records.
         $metadatarecord1 = new \stdClass();
@@ -506,7 +587,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $id3 = $DB->insert_record('local_smartmedia_data', $metadatarecord3);
 
-        $conversion = new \local_smartmedia\conversion();
+        $transcoder = new aws_elastic_transcoder($mock);
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_preset_records');
@@ -555,8 +637,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_get_conversion_records() {
         $this->resetAfterTest(true);
-        global $DB;
-        $conversion = new \local_smartmedia\conversion();
+
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // Setup for testing.
         $fs = new file_storage();
@@ -585,7 +669,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertEquals($file->get_contenthash(), $record->contenthash);
     }
 
-
     /**
      * Test that initial conversion records are successfully created.
      */
@@ -610,15 +693,19 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $preset1 = new \stdClass();
         $preset1->convid = 508000;
         $preset1->preset = 'preset1';
+        $preset1->fragmented = 1;
 
         $preset2 = new \stdClass();
         $preset2->convid = 508000;
         $preset2->preset = 'preset2';
+        $preset2->fragmented = 0;
 
         $DB->insert_record('local_smartmedia_presets', $preset1);
         $DB->insert_record('local_smartmedia_presets', $preset2);
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_settings');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $conversionrecord);
@@ -636,7 +723,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $CFG;
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // Setup for testing.
         $fs = new file_storage();
@@ -695,7 +784,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timemodified = time();
 
         $recordid = $DB->insert_record('local_smartmedia_conv', $conversionrecord);
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         $updates = array();
         $updates[$recordid] = $conversion::CONVERSION_IN_PROGRESS;
@@ -717,7 +808,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
@@ -789,7 +882,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
@@ -834,7 +929,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
@@ -881,7 +978,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $mock->append(new Result(array()));
         $mock->append(new Result(array()));
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
@@ -925,7 +1024,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $mock = new MockHandler();
         $mock->append(new Result(array()));
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
@@ -965,7 +1066,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'update_completion_status');
         $method->setAccessible(true); // Allow accessing of private method.
 
@@ -1120,7 +1223,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $recordid = $DB->insert_record('local_smartmedia_conv', $conversionrecord);
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_pathnamehashes');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion);
@@ -1139,7 +1244,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // Create some test files.
         $fs = get_file_storage();
