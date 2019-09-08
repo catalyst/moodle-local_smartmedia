@@ -165,14 +165,16 @@ class conversion {
             $presetids = array_diff($presetids, $videostreams);
         }
 
+        // Get all configured presets available.
         $presets = $this->transcoder->get_presets();
 
         foreach ($presets as $preset) {
+            // Only add records for presets which weren't filtered out based on stream data.
             if (in_array($preset->get_id(), $presetids)) {
                 $record = new \stdClass();
                 $record->convid = $convid;
                 $record->preset = $preset->get_id();
-                $record->fragmented = $preset->is_output_fragmented() ? 1 : 0;
+                $record->container = $preset->get_container();
 
                 $presetrecords[] = $record;
             }
@@ -446,21 +448,38 @@ class conversion {
         $processes .= $conversionrecord->detect_phrases_status == self::CONVERSION_ACCEPTED ? '1' : '0';
         $processes .= $conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED ? '1' : '0';
 
-        $presets = $DB->get_fieldset_select('local_smartmedia_presets', 'preset', 'convid = ?', array($conversionrecord->id));
-        $presetstring = implode(',', $presets);
+        $presets = $DB->get_records('local_smartmedia_presets');
 
         $settings['processes'] = $processes;
-        $settings['presets'] = $presetstring;
+        $settings['presets'] = $this->create_presets_metadata($presets);
         $settings['siteid'] = $CFG->siteidentifier;
 
         return $settings;
     }
 
     /**
+     * Create a json encoded string of preset data where AWS ETS preset id is the key and the container type
+     * is the value.
+     * Example: "{'1351620000001-100070': 'mp4', '1351620000001-500030': 'fmp4'}"
+     *
+     * @param array $presets array of preset records.
+     * @return string $metadata json encoded string.
+     */
+    private function create_presets_metadata(array $presets) : string {
+        $presetarray = [];
+
+        foreach ($presets as $preset) {
+            $presetarray[$preset->preset] = $preset->container;
+        }
+        $metadata = json_encode($presetarray);
+        return $metadata;
+    }
+
+    /**
      * Send file for conversion processing in AWS.
      *
      * @param \stored_file $file The file to upload for conversion.
-     * @param array $settings Settings to be used for file convsersion.
+     * @param array $settings Settings to be used for file conversion.
      * @param \GuzzleHttp\Handler|null $handler Optional handler.
      * @return int $status The status code of the upload.
      */

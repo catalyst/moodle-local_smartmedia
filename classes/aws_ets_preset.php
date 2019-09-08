@@ -46,9 +46,9 @@ class aws_ets_preset {
     private $id;
 
     /**
-     * @var string $format the file format of preset outputs.
+     * @var string $container the file container type of preset outputs.
      */
-    private $format;
+    private $container;
 
     /**
      * @var string $type media type of 'Audio' or 'Video'.
@@ -73,7 +73,7 @@ class aws_ets_preset {
      */
     public function __construct(array $preset) {
         $this->id = $preset['Id'];
-        $this->format = $preset['Container'];
+        $this->container = $preset['Container'];
         if (isset($preset['Video']) && $preset['Video']['MaxHeight'] > 0) {
             $this->type = LOCAL_SMARTMEDIA_TYPE_VIDEO;
             $this->height = $preset['Video']['MaxHeight'];
@@ -187,7 +187,7 @@ class aws_ets_preset {
      */
     public function is_output_fragmented() {
         $result = false;
-        if (in_array($this->format, LOCAL_SMARTMEDIA_PRESET_FRAGMENTED_CONTAINERS)) {
+        if (in_array($this->container, LOCAL_SMARTMEDIA_PRESET_OUTPUT_FRAGMENTED_CONTAINERS)) {
             $result = true;
         }
         return $result;
@@ -200,5 +200,14 @@ class aws_ets_preset {
      */
     public function get_id() : string {
         return $this->id;
+    }
+
+    /**
+     * Getter for this preset's container type.
+     *
+     * @return string AWS preset output file container type.
+     */
+    public function get_container() : string {
+        return $this->container;
     }
 }
