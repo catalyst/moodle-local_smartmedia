@@ -118,7 +118,12 @@ class conversion {
      * ready to be stored in the Moodle database.
      *
      * @param int $convid The conversion id to create the preset records for.
+     * @param string $contenthash The contenthash of the file to filter presets by based on streams.
+     *
      * @return array $presetrecords The preset records to insert into the Moodle database.
+     *
+     * @throws \dml_exception
+     * @throws \moodle_exception
      */
     private function get_preset_records(int $convid, string $contenthash) : array {
         global $DB;
