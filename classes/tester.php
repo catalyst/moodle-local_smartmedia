@@ -101,6 +101,10 @@ class tester {
         $client = $this->s3client;
         $fileinfo = pathinfo($filepath);
 
+        $presets = array('1351620000001-200045' => 'ts', '1351620000001-500050' => 'fmp4',
+                    '1351620000001-100070' => 'mp4', '1351620000001-300020' => 'mp3');
+        $presets = json_encode($presets);
+
         $uploadparams = array(
             'Bucket' => $bucketname,
             'Key' => $fileinfo['filename'], // Required.
@@ -108,7 +112,7 @@ class tester {
             'Metadata' => array(
                 'siteid' => $CFG->siteidentifier,
                 'processes' => '11111111',
-                'presets' => '1351620000001-100070,1351620000001-100240,1351620000001-300020'
+                'presets' => $presets,
             )
         );
 

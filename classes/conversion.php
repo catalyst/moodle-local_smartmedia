@@ -26,6 +26,7 @@ namespace local_smartmedia;
 defined('MOODLE_INTERNAL') || die();
 
 use Aws\S3\Exception\S3Exception;
+use Aws\MockHandler;
 use moodle_url;
 
 /**
@@ -107,10 +108,26 @@ class conversion {
     );
 
     /**
-     * Class constructor
+     * @var mixed hash-like object of settings for local_smartmedia.
      */
-    public function __construct() {
+    private $config;
+
+    /**
+     * @var \local_smartmedia\aws_elastic_transcoder the transcoder for accessing communicating with the
+     * AWS Elastic Transcoding Service.
+     */
+    private $transcoder;
+
+    /**
+     * Class constructor.
+     *
+     * @param \local_smartmedia\aws_elastic_transcoder $transcoder
+     *
+     * @throws \dml_exception
+     */
+    public function __construct(aws_elastic_transcoder $transcoder) {
         $this->config = get_config('local_smartmedia');
+        $this->transcoder = $transcoder;
     }
 
     /**
@@ -128,7 +145,7 @@ class conversion {
     private function get_preset_records(int $convid, string $contenthash) : array {
         global $DB;
         $presetrecords = array();
-        $presetids = aws_elastic_transcoder::get_preset_ids();
+        $presetids = $this->transcoder->get_preset_ids();
 
         // Get metadata for file from database.
         $streams = $DB->get_record('local_smartmedia_data', array('contenthash' => $contenthash), 'videostreams, audiostreams');
@@ -150,13 +167,19 @@ class conversion {
             $presetids = array_diff($presetids, $videostreams);
         }
 
-        // Create array of preset records.
-        foreach ($presetids as $presetid) {
-            $record = new \stdClass();
-            $record->convid = $convid;
-            $record->preset = $presetid;
+        // Get all configured presets available.
+        $presets = $this->transcoder->get_presets();
 
-            $presetrecords[] = $record;
+        foreach ($presets as $preset) {
+            // Only add records for presets which weren't filtered out based on stream data.
+            if (in_array($preset->get_id(), $presetids)) {
+                $record = new \stdClass();
+                $record->convid = $convid;
+                $record->preset = $preset->get_id();
+                $record->container = $preset->get_container();
+
+                $presetrecords[] = $record;
+            }
         }
 
         return $presetrecords;
@@ -166,7 +189,12 @@ class conversion {
      * Create the smart media conversion record.
      * These records will be processed by a scheduled task.
      *
-     * @param \stored_file $file The file object to create the converion for.
+     * @param \stored_file $file The file object to create the conversion for.
+     *
+     * @throws \coding_exception
+     * @throws \dml_exception
+     * @throws \dml_write_exception
+     * @throws \moodle_exception
      */
     private function create_conversion(\stored_file $file) : void {
         global $DB;
@@ -422,22 +450,39 @@ class conversion {
         $processes .= $conversionrecord->detect_phrases_status == self::CONVERSION_ACCEPTED ? '1' : '0';
         $processes .= $conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED ? '1' : '0';
 
-        $presets = $DB->get_fieldset_select('local_smartmedia_presets', 'preset', 'convid = ?', array($conversionrecord->id));
-        $presetstring = implode(',', $presets);
+        $presets = $DB->get_records('local_smartmedia_presets');
 
         $settings['processes'] = $processes;
-        $settings['presets'] = $presetstring;
+        $settings['presets'] = $this->create_presets_metadata($presets);
         $settings['siteid'] = $CFG->siteidentifier;
 
         return $settings;
     }
 
     /**
+     * Create a json encoded string of preset data where AWS ETS preset id is the key and the container type
+     * is the value.
+     * Example: "{'1351620000001-100070': 'mp4', '1351620000001-500030': 'fmp4'}"
+     *
+     * @param array $presets array of preset records.
+     * @return string $metadata json encoded string.
+     */
+    private function create_presets_metadata(array $presets) : string {
+        $presetarray = [];
+
+        foreach ($presets as $preset) {
+            $presetarray[$preset->preset] = $preset->container;
+        }
+        $metadata = json_encode($presetarray);
+        return $metadata;
+    }
+
+    /**
      * Send file for conversion processing in AWS.
      *
      * @param \stored_file $file The file to upload for conversion.
-     * @param array $settings Settings to be used for file convsersion.
-     * @param \GuzzleHttp\Handler|null $handler Optional handler.
+     * @param array $settings Settings to be used for file conversion.
+     * @param \Aws\MockHandler|null $handler Optional handler.
      * @return int $status The status code of the upload.
      */
     private function send_file_for_processing(\stored_file $file, array $settings, $handler=null) : int {
@@ -603,11 +648,14 @@ class conversion {
      * Get the transcoded media files from AWS S3,
      *
      * @param \stdClass $conversionrecord The conversion record from the database.
-     * @param \GuzzleHttp\Handler|null $handler Optional handler.
+     * @param \Aws\MockHandler|null $handler Optional handler.
+     *
+     * @return array $transcodedfiles Array of \stored_file objects.
      */
-    private function get_transcode_files(\stdClass $conversionrecord, $handler=null) : void {
+    private function get_transcode_files(\stdClass $conversionrecord, $handler=null) : array {
         $awss3 = new \local_smartmedia\aws_s3();
         $s3client = $awss3->create_client($handler);
+        $transcodedfiles = [];
 
         // Transcoding could have made many files, but the job only calls success when all files are generated.
         // So first we get a list of the files.
@@ -618,35 +666,91 @@ class conversion {
         );
         $availableobjects = $s3client->listObjects($listparams);
 
-        // Then we itterate over that list and get all the files available.
+        // Then we iterate over that list and get all the files available.
         $fs = get_file_storage();
-        foreach ($availableobjects['Contents'] as $availableobject) {
+        foreach ($availableobjects->get('Contents') as $availableobject) {
+            $filename = basename($availableobject['Key']);
             $filerecord = array(
                 'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
                 'component' => 'local_smartmedia',
                 'filearea' => 'media',
                 'itemid' => 0,
                 'filepath' => '/' . $conversionrecord->contenthash . '/conversions/',
-                'filename' => basename($availableobject['Key'])
-
+                'filename' => $filename,
             );
 
             $downloadparams = array(
-                    'Bucket' => $this->config->s3_output_bucket, // Required.
-                    'Key' => $availableobject['Key'], // Required.
+                'Bucket' => $this->config->s3_output_bucket, // Required.
+                'Key' => $availableobject['Key'], // Required.
             );
 
             $getobject = $s3client->getObject($downloadparams);
+            $filecontent = $getobject->get('Body');
 
             $tmpfile = tmpfile();
-            fwrite($tmpfile, $getobject['Body']);
+            fwrite($tmpfile, $filecontent);
             $tmppath = stream_get_meta_data($tmpfile)['uri'];
 
-            $fs->create_file_from_pathname($filerecord, $tmppath);
+            // The playlist files (including iframe playlists) created in s3 transcoding contain
+            // relative file paths to Variant Streams for adaptive bitsteaming media, these need to be amended
+            // to have Moodle plugin filepaths.
+            if ($this->is_file_playlist($filename)) {
+                $newfile = $this->replace_playlist_urls_with_pluginfile_urls($tmpfile, $conversionrecord->contenthash);
+                $tmppath = stream_get_meta_data($newfile)['uri'];
+            }
+
+            $trancodedfile = $fs->create_file_from_pathname($filerecord, $tmppath);
             fclose($tmpfile);
+            if (isset($newfile)) {
+                fclose($newfile);
+                unset($newfile); // Make sure we aren't overriding the same resource every time.
+            }
+            $transcodedfiles[] = $trancodedfile;
+        }
+        return $transcodedfiles;
+        // TODO: Also remove files from AWS.
+    }
+
+    /**
+     * Replace relative urls in a media playlist with pluginfile urls so the playlist may serve files in Moodle.
+     *
+     * @param resource $filehandle the handle for the file to replace urls in.
+     * @param string $contenthash the content hash for conversion to search for and replace.
+     *
+     * @return resource $newfile file handle for a new file created with amended playlist data/
+     */
+    private function replace_playlist_urls_with_pluginfile_urls($filehandle, string $contenthash) {
+        global $CFG;
+
+        rewind($filehandle);
+        $newfile = tmpfile();
+        $pluginfilepath = $CFG->wwwroot . "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
+
+        while (!feof($filehandle)) {
+            $line = fgets($filehandle);
+            // Replace all matching content hashes with the plugin file path for smartmedia with this content.
+            $line = preg_replace('/' . $contenthash . '_/', $pluginfilepath, $line);
+            fwrite($newfile, $line);
+        }
+        return $newfile;
+    }
+
+
+    /**
+     * Check if a file is a playlist file by filename.
+     *
+     * @param string $filename the file to check (including file extension)
+     *
+     * @return bool true if the file is playlist, false otherwise.
+     */
+    private function is_file_playlist(string $filename) : bool {
+        $result = false;
+
+        if (preg_match('/.m3u8|.mpd/', $filename)) {
+            $result = true;
         }
 
-        // TODO: Also remove files from AWS.
+        return $result;
     }
 
     /**
@@ -654,7 +758,7 @@ class conversion {
      *
      * @param \stdClass $conversionrecord The conversion record from the database.
      * @param string $process The process to get the file for.
-     * @param \GuzzleHttp\Handler|null $handler Optional handler.
+     * @param \Aws\MockHandler|null $handler Optional handler.
      */
     private function get_data_file(\stdClass $conversionrecord, string $process, $handler=null) {
         $awss3 = new \local_smartmedia\aws_s3();
@@ -693,8 +797,8 @@ class conversion {
      * Process the conversion records and get the files from AWS.
      *
      * @param \stdClass $conversionrecord The conversion record from the database.
-     * @param array $queuemessages Quemessages from the database relating to this conversion record.
-     * @param \GuzzleHttp\Handler|null $handler Optional handler.
+     * @param array $queuemessages Queue messages from the database relating to this conversion record.
+     * @param \Aws\MockHandler|null $handler Optional handler.
      * @return \stdClass $conversionrecord The updated conversion record.
      */
     private function process_conversion(\stdClass $conversionrecord, array $queuemessages, $handler=null) : \stdClass {

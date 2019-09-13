@@ -23,6 +23,9 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use local_smartmedia\aws_api;
+use local_smartmedia\aws_elastic_transcoder;
+
 defined('MOODLE_INTERNAL') || die();
 
 // Minimum height above which media is considered high definition.
@@ -33,6 +36,13 @@ define('LOCAL_SMARTMEDIA_AUDIO_HEIGHT', 0);
 // Media type constants.
 define('LOCAL_SMARTMEDIA_TYPE_AUDIO', 'Audio');
 define('LOCAL_SMARTMEDIA_TYPE_VIDEO', 'Video');
+
+// Preset Container types which have fragmented outputs for adaptive bitrate streaming.
+define('LOCAL_SMARTMEDIA_PRESET_OUTPUT_FRAGMENTED_CONTAINERS', ['ts', 'fmp4']);
+
+// Valid container types for preset output files.
+define('LOCAL_SMARTMEDIA_PRESET_OUTPUT_CONTAINER_TYPES',
+    ['flac', 'flv', 'fmp4', 'gif', 'mp3', 'mp4', 'mpg', 'mxf', 'oga', 'ogg', 'ts', 'webm']);
 
 /**
  * Serve the files from the local smartmedia file areas.
@@ -82,7 +92,9 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
         return false; // Return early if smartfile id is invalid.
     }
 
-    $conversion = new \local_smartmedia\conversion();
+    $api = new aws_api();
+    $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+    $conversion = new \local_smartmedia\conversion($transcoder);
     $filecheck = $conversion->check_smartmedia_file($sourcefile, $smartfile);
     if (!$filecheck) {
         return false; // Source file doesn't match smart file.
