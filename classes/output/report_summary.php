@@ -117,11 +117,13 @@ class report_summary implements renderable, templatable {
             $total = null;
         } else {
             // Get the duration of media type content (in seconds), zero if there is no media of type.
-            $highdefinition = $DB->get_record_select('local_smartmedia_data', 'height >= ?',
+            $highdefinition = $DB->get_record_select('local_smartmedia_data', 'height >= ? AND videostreams > 0',
                 [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
-            $standarddefinition = $DB->get_record_select('local_smartmedia_data', '(height < ?) AND (height > 0)',
+            $standarddefinition = $DB->get_record_select('local_smartmedia_data',
+                '(height < ?) AND (height > 0) AND videostreams > 0',
                 [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
-            $audio = $DB->get_record_select('local_smartmedia_data', '(height = 0) OR (height IS NULL)',
+            $audio = $DB->get_record_select('local_smartmedia_data',
+                '((height = 0) OR (height IS NULL)) AND audiostreams > 0',
                 null, 'COALESCE(SUM(duration), 0) as duration');
 
             $totalhdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,

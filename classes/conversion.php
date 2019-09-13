@@ -138,6 +138,7 @@ class conversion {
      * @param string $contenthash The contenthash of the file to filter presets by based on streams.
      *
      * @return array $presetrecords The preset records to insert into the Moodle database.
+     *
      * @throws \dml_exception
      * @throws \moodle_exception
      */

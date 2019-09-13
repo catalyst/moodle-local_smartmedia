@@ -188,7 +188,8 @@ class report_table extends table_sql implements renderable {
      * @throws \coding_exception
      */
     public function col_cost($row) {
-        $cost = $this->pricingcalculator->calculate_transcode_cost($row->height, $row->duration);
+        $cost = $this->pricingcalculator->calculate_transcode_cost($row->height, $row->duration, $row->videostreams,
+            $row->audiostreams);
 
         // We still want to allow zero cost, so explicitly check for `null` only.
         if ($cost === null) {
