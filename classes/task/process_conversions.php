@@ -24,6 +24,8 @@
 namespace local_smartmedia\task;
 
 use core\task\scheduled_task;
+use local_smartmedia\aws_api;
+use local_smartmedia\aws_elastic_transcoder;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -56,7 +58,9 @@ class process_conversions extends scheduled_task {
         $processedqueue = $queueprocess->process_queue();
         mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueue);
 
-        $conversion = new \local_smartmedia\conversion();
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
 
         // Create conversion records if proactive conversions are enabled.
         $backgroundprocessing = get_config('local_smartmedia', 'proactiveconversion');

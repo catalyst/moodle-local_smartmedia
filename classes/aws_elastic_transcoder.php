@@ -126,7 +126,7 @@ class aws_elastic_transcoder {
      *
      * @return array $presetids The preset ids.
      */
-    static public function get_preset_ids() : array {
+    public function get_preset_ids() : array {
         $pluginconfig = get_config('local_smartmedia');
         $presetids = [];
 
@@ -163,7 +163,7 @@ class aws_elastic_transcoder {
      */
     public function get_presets() : array {
         $presets = [];
-        $presetids = self::get_preset_ids();
+        $presetids = $this->get_preset_ids();
 
         if (!empty($presetids)) {
 

@@ -46,9 +46,9 @@ class aws_ets_preset {
     private $id;
 
     /**
-     * @var string $format the file format of preset outputs.
+     * @var string $container the file container type of preset outputs.
      */
-    private $format;
+    private $container;
 
     /**
      * @var string $type media type of 'Audio' or 'Video'.
@@ -73,7 +73,7 @@ class aws_ets_preset {
      */
     public function __construct(array $preset) {
         $this->id = $preset['Id'];
-        $this->format = $preset['Container'];
+        $this->container = $preset['Container'];
         if (isset($preset['Video']) && $preset['Video']['MaxHeight'] > 0) {
             $this->type = LOCAL_SMARTMEDIA_TYPE_VIDEO;
             $this->height = $preset['Video']['MaxHeight'];
@@ -177,5 +177,37 @@ class aws_ets_preset {
     public function is_input_high_definition($height) {
         $result = ($height >= LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT);
         return $result;
+    }
+
+    /**
+     * Does this preset output fragmented media?
+     * (Fragmented output means one input may be transcoded to deliver segmented outputs, such as for adaptive bitrate streaming)
+     *
+     * @return bool true if the output is fragmented, false otherwise.
+     */
+    public function is_output_fragmented() {
+        $result = false;
+        if (in_array($this->container, LOCAL_SMARTMEDIA_PRESET_OUTPUT_FRAGMENTED_CONTAINERS)) {
+            $result = true;
+        }
+        return $result;
+    }
+
+    /**
+     * Getter for this preset's id.
+     *
+     * @return string AWS preset id.
+     */
+    public function get_id() : string {
+        return $this->id;
+    }
+
+    /**
+     * Getter for this preset's container type.
+     *
+     * @return string AWS preset output file container type.
+     */
+    public function get_container() : string {
+        return $this->container;
     }
 }

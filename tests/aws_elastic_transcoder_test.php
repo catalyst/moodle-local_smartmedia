@@ -31,6 +31,7 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 use Aws\MockHandler;
 use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Result;
+use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
 use local_smartmedia\aws_ets_preset;
 
@@ -109,7 +110,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
             $mockhandler->append($mockresult);
         }
 
-        // Create the mock response Pricing Client.
+        // Create the mock response Elastic Transcoder Client.
         $mock = new ElasticTranscoderClient([
             'region' => $this->region,
             'version' => $this->version,
@@ -131,8 +132,8 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
         list($mock, $mockresults) = $this->create_mock_elastic_transcoder_client($this->fixture['readPreset']);
 
         // Instantiate the class, injecting our mock.
-        $pricingclient = new aws_elastic_transcoder($mock);
-        $actual = $pricingclient->get_presets();
+        $transcoder = new aws_elastic_transcoder($mock);
+        $actual = $transcoder->get_presets();
 
         // Get the expected results from the fixture to compare.
         $expected = [];
@@ -153,9 +154,9 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
         list($mock, $mockresults) = $this->create_mock_elastic_transcoder_client();
 
         // Instantiate the class, injecting our mock.
-        $pricingclient = new aws_elastic_transcoder($mock);
+        $transcoder = new aws_elastic_transcoder($mock);
         // Get presets for empty string in admin settings.
-        $actual = $pricingclient->get_presets('');
+        $actual = $transcoder->get_presets();
         $expected = $mockresults;
 
         $this->assertEquals($expected, $actual);
@@ -166,13 +167,18 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
      */
     public function test_get_preset_ids() {
 
+        // Set up our transcoder instance.
+        set_config('api_region', $this->region, 'local_smartmedia');
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+
         // First test should be empty as no config set.
-        $presetids = aws_elastic_transcoder::get_preset_ids();
+        $presetids = $transcoder->get_preset_ids();
         $this->assertEmpty($presetids);
 
         set_config('quality_low', 1, 'local_smartmedia');
         set_config('quality_high', 1, 'local_smartmedia');
-        $presetids = aws_elastic_transcoder::get_preset_ids();
+        $presetids = $transcoder->get_preset_ids();
         $this->assertCount(4, $presetids);
         $this->assertContains('1351620000001-200015', $presetids);
         $this->assertContains('1351620000001-500030', $presetids);
@@ -182,7 +188,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
         $this->assertNotContains('1351620000001-500040', $presetids);
 
         set_config('quality_medium', 1, 'local_smartmedia');
-        $presetids = aws_elastic_transcoder::get_preset_ids();
+        $presetids = $transcoder->get_preset_ids();
         $this->assertCount(6, $presetids);
         $this->assertContains('1351620000001-200015', $presetids);
         $this->assertContains('1351620000001-500030', $presetids);

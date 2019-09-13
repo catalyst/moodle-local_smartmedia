@@ -68,7 +68,7 @@ def sqs_send_message(key, bucket, record, metadata):
     )
 
 
-def submit_transcode_jobs(s3key, pipeline_id, preset_ids):
+def submit_transcode_jobs(s3key, pipeline_id, presets):
     """
     Submits jobs to Elastic Transcoder.
     """
@@ -76,14 +76,43 @@ def submit_transcode_jobs(s3key, pipeline_id, preset_ids):
     logger.info('Triggering transcode job...')
 
     outputs = []
-    for preset_id in preset_ids:
-        logger.info(preset_id)
-        result = et_client.read_preset(Id=preset_id)
-        preset = result.get('Preset')
+    playlists = {} # Start as a dictionary, so we can add outputs by playlist key.
+
+    # Create a playlist for MPEG-DASH adaptive streaming if required.
+    if 'fmp4' in presets.values() :
+        fmp4playlist = {}
+        fmp4playlist['Name'] = '{0}_mpegdash_playlist'.format(s3key)
+        fmp4playlist['Format'] = 'MPEG-DASH'
+        fmp4playlist['OutputKeys'] = []
+        playlists['fmp4playlist'] = fmp4playlist
+
+    # Create a playlist for HLS adaptive streaming if required.
+    if 'ts' in presets.values() :
+        tsplaylist = {}
+        tsplaylist['Name'] = '{0}_hls_playlist'.format(s3key)
+        tsplaylist['Format'] = 'HLSv4'
+        tsplaylist['OutputKeys'] = []
+        playlists['tsplaylist'] = tsplaylist
+
+    for preset_id, container in presets.items() :
         output = {}
-        output['Key'] = '{0}_{1}.{2}'.format(s3key, preset_id, preset['Container'])
+        filename = '{0}_{1}'.format(s3key, preset_id)
+        # HLS outputs will add .ts file extension automatically, so don't append container type.
+        if container == 'ts' :
+            output['Key'] = filename
+        else :
+            output['Key'] = '{0}.{1}'.format(filename, container)
         output['PresetId'] = preset_id
         output['ThumbnailPattern'] = ''
+
+        # Add output to appropriate playlist if the preset outputs fragmented media.
+        if container == 'fmp4' or container == 'ts' :
+            output['SegmentDuration'] = '3' # Hard code segments to 3 seconds duration.
+            if container == 'fmp4' :
+                playlists['fmp4playlist']['OutputKeys'].append(output['Key'])
+            if container == 'ts' :
+                playlists['tsplaylist']['OutputKeys'].append(filename)
+
         outputs.append(output)
 
     response = et_client.create_job(
@@ -92,19 +121,20 @@ def submit_transcode_jobs(s3key, pipeline_id, preset_ids):
          Input={
             'Key': s3key,
         },
-        Outputs=outputs
+        Outputs=outputs,
+        Playlists=list(playlists.values()) # Convert dictionary to list.
     )
 
     logger.info(response)
 
-def get_preset_ids(key, bucket, metadata):
+def get_presets(key, bucket, metadata):
     """
     Get applicable elastic transcoder presets from S3 metadata
     """
-    raw_preset_ids = metadata['presets']
-    untrimmed_preset_ids = raw_preset_ids.split(',')
-    presets_ids = map(str.strip, untrimmed_preset_ids)
-    return presets_ids
+    raw_preset_data = metadata['presets']
+    decoded_presets = json.loads(raw_preset_data)
+    logger.info(decoded_presets)
+    return decoded_presets
 
 def lambda_handler(event, context):
     """
@@ -119,7 +149,7 @@ def lambda_handler(event, context):
     logging_level = os.environ.get('LoggingLevel', logging.ERROR)
     logger.setLevel(int(logging_level))
 
-    logging.info(event)
+    logger.info(event)
 
     #  Get Pipeline ID from environment variable
     pipeline_id = os.environ.get('PipelineId')
@@ -148,7 +178,7 @@ def lambda_handler(event, context):
         # Send message to SQS queue.
         sqs_send_message(key, bucket, record, metadata)
 
-        preset_ids = get_preset_ids(key, bucket, metadata)
+        presets = get_presets(key, bucket, metadata)
 
-        submit_transcode_jobs(key, pipeline_id, preset_ids)
+        submit_transcode_jobs(key, pipeline_id, presets)
 
