@@ -113,20 +113,6 @@ class conversion {
         $this->config = get_config('local_smartmedia');
     }
 
-
-    /**
-     *  Get the configured transcoding presets as an array.
-     *
-     * @return array $idarray Trimmed array of transcoding presets.
-     */
-    private function get_preset_ids() : array {
-        $rawids = $this->config->transcodepresets; // Get the raw ids.
-        $untrimmedids = explode(',', $rawids); // Split ids into an array of strings by comma.
-        $idarray = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
-
-        return $idarray;
-    }
-
     /**
      * Given a conversion id create records for each configured transcoding preset id,
      * ready to be stored in the Moodle database.
@@ -134,10 +120,32 @@ class conversion {
      * @param int $convid The conversion id to create the preset records for.
      * @return array $presetrecords The preset records to insert into the Moodle database.
      */
-    private function get_preset_records(int $convid) : array {
+    private function get_preset_records(int $convid, string $contenthash) : array {
+        global $DB;
         $presetrecords = array();
-        $presetids = $this->get_preset_ids();
+        $presetids = aws_elastic_transcoder::get_preset_ids();
 
+        // Get metadata for file from database.
+        $streams = $DB->get_record('local_smartmedia_data', array('contenthash' => $contenthash), 'videostreams, audiostreams');
+
+        // If file is video only remove audio streams.
+        if ($streams && $streams->audiostreams == 0) {
+            $audiostreams = aws_elastic_transcoder::AUDIO_PRESETS;
+            $presetids = array_diff($presetids, $audiostreams);
+        }
+
+        // If file is audio only remove video streams.
+        if ($streams && $streams->videostreams == 0) {
+            $videostreams = array_merge(
+                aws_elastic_transcoder::LOW_PRESETS,
+                aws_elastic_transcoder::MEDIUM_PRESETS,
+                aws_elastic_transcoder::HIGH_PRESETS,
+                aws_elastic_transcoder::DOWNLOAD_PRESETS
+                );
+            $presetids = array_diff($presetids, $videostreams);
+        }
+
+        // Create array of preset records.
         foreach ($presetids as $presetid) {
             $record = new \stdClass();
             $record->convid = $convid;
@@ -205,7 +213,7 @@ class conversion {
         // If we have a valid conversion record from the insert, then create the presets record.
         // With the above logic we shouldn't get race conditions here.
         if ($convid > 0) {
-            $presetrecords = $this->get_preset_records($convid);
+            $presetrecords = $this->get_preset_records($convid, $cnvrec->contenthash);
             $DB->insert_records('local_smartmedia_presets', $presetrecords);
         }
     }

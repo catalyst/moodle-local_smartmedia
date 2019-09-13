@@ -124,13 +124,15 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
      * preset ids are set in admin settings.
      */
     public function test_get_presets_set() {
+        set_config('quality_low', 1, 'local_smartmedia');
+        set_config('quality_high', 1, 'local_smartmedia');
 
         // Mock the elastic transcoder client so it returns fixture data presets.
         list($mock, $mockresults) = $this->create_mock_elastic_transcoder_client($this->fixture['readPreset']);
 
         // Instantiate the class, injecting our mock.
         $pricingclient = new aws_elastic_transcoder($mock);
-        $actual = $pricingclient->get_presets($this->presets);
+        $actual = $pricingclient->get_presets();
 
         // Get the expected results from the fixture to compare.
         $expected = [];
@@ -157,5 +159,34 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
         $expected = $mockresults;
 
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Test that we can get preset ids based on settings.
+     */
+    public function test_get_preset_ids() {
+
+        // First test should be empty as no config set.
+        $presetids = aws_elastic_transcoder::get_preset_ids();
+        $this->assertEmpty($presetids);
+
+        set_config('quality_low', 1, 'local_smartmedia');
+        set_config('quality_high', 1, 'local_smartmedia');
+        $presetids = aws_elastic_transcoder::get_preset_ids();
+        $this->assertCount(4, $presetids);
+        $this->assertContains('1351620000001-200015', $presetids);
+        $this->assertContains('1351620000001-500030', $presetids);
+        $this->assertContains('1351620000001-200045', $presetids);
+        $this->assertContains('1351620000001-500050', $presetids);
+        $this->assertNotContains('1351620000001-200035', $presetids);
+        $this->assertNotContains('1351620000001-500040', $presetids);
+
+        set_config('quality_medium', 1, 'local_smartmedia');
+        $presetids = aws_elastic_transcoder::get_preset_ids();
+        $this->assertCount(6, $presetids);
+        $this->assertContains('1351620000001-200015', $presetids);
+        $this->assertContains('1351620000001-500030', $presetids);
+        $this->assertContains('1351620000001-200045', $presetids);
+        $this->assertContains('1351620000001-500050', $presetids);
     }
 }

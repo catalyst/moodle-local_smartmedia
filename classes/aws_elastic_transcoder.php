@@ -50,6 +50,54 @@ class aws_elastic_transcoder {
     private $transcoderclient;
 
     /**
+     * Transcoder presets for low quality video file conversion.
+     *
+     * @var array
+     */
+    public const LOW_PRESETS = array(
+        '1351620000001-200045', // System preset: HLS Video - 600k.
+        '1351620000001-500050' // System preset: MPEG-Dash Video - 600k.
+    );
+
+    /**
+     * Transcoder presets for medium quality video file conversion.
+     *
+     * @var array
+     */
+    public const MEDIUM_PRESETS = array(
+        '1351620000001-200035', // System preset: HLS Video - 1M.
+        '1351620000001-500040' // System preset: MPEG-Dash Video - 1.2M.
+    );
+
+    /**
+     * Transcoder presets for high quality video file conversion.
+     *
+     * @var array
+     */
+    public const HIGH_PRESETS = array(
+        '1351620000001-200015', // System preset: HLS Video - 2M.
+        '1351620000001-500030' // System preset: MPEG-Dash Video - 2.4M.
+    );
+
+    /**
+     * Transcoder presets for audio file conversion.
+     *
+     * @var array
+     */
+    public const AUDIO_PRESETS = array(
+        '1351620000001-300020' // System preset: Audio MP3 - 192 kilobits/second.
+    );
+
+    /**
+     * Transcoder presets for video file download conversion.
+     *
+     * @var array
+     */
+    public const DOWNLOAD_PRESETS = array(
+        '1351620000001-100070' // System preset: Facebook, SmugMug, Vimeo, YouTube.
+    );
+
+    /**
      * aws_ets_pricing_client constructor.
      *
      * @param \Aws\ElasticTranscoder\ElasticTranscoderClient $transcoderclient the client for accessing AWS ETS.
@@ -74,20 +122,50 @@ class aws_elastic_transcoder {
     }
 
     /**
-     * Get the presets available for transcoding.
+     * Return an array of preset ids based on plugin configuration.
      *
-     * @param string $presetsettings comma delimited string of AWS Elastic Transcoder preset ids.
+     * @return array $presetids The preset ids.
+     */
+    static public function get_preset_ids() : array {
+        $pluginconfig = get_config('local_smartmedia');
+        $presetids = [];
+
+        // Collate enabled presets.
+        if (!empty($pluginconfig->quality_low)) {
+            $presetids = array_merge(self::LOW_PRESETS, $presetids);
+        }
+
+        if (!empty($pluginconfig->quality_medium)) {
+            $presetids = array_merge(self::MEDIUM_PRESETS, $presetids);
+        }
+
+        if (!empty($pluginconfig->quality_high)) {
+            $presetids = array_merge(self::HIGH_PRESETS, $presetids);
+        }
+
+        if (!empty($pluginconfig->audio_output)) {
+            $presetids = array_merge(self::AUDIO_PRESETS, $presetids);
+        }
+
+        if (!empty($pluginconfig->download_files)) {
+            $presetids = array_merge(self::DOWNLOAD_PRESETS, $presetids);
+        }
+
+        return $presetids;
+
+    }
+
+    /**
+     * Get the presets based on the conversion settings.
      *
      * @return array $presets array of aws_ets_preset objects.
      * @throws \moodle_exception
      */
-    public function get_presets(string $presetsettings) {
+    public function get_presets() : array {
         $presets = [];
+        $presetids = self::get_preset_ids();
 
-        if (!empty($presetsettings)) {
-
-            $untrimmedids = explode(',', $presetsettings); // Split ids into an array of strings by comma.
-            $presetids = array_map('trim', $untrimmedids); // Remove whitespace from each id in array.
+        if (!empty($presetids)) {
 
             foreach ($presetids as $presetid) {
                 try {
