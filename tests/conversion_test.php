@@ -105,7 +105,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      *
      * @param array $fixtures array of mock data to use for results of api calls.
      *
-     * @return array the api stub and expected result from calling get_pricing_client method on stub.
+     * @return \Aws\ElasticTranscoder\ElasticTranscoderClient mock with \Aws\Result instances injected in handler.
      */
     public function create_mock_elastic_transcoder_client(array $fixtures = []) {
         // Inject our results fixture into the API dependency as a mock using a handler.
@@ -676,6 +676,12 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
+        set_config('quality_low', 1, 'local_smartmedia');
+
+        // Mock the elastic transcoder client so it returns fixture preset data for low quality.
+        $mockdata = array_values($this->fixture['readPreset']['quality_low']);
+        $mock = $this->create_mock_elastic_transcoder_client($mockdata);
+
         $conversionrecord = new \stdClass();
         $conversionrecord->id = 508000;
         $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
@@ -690,30 +696,21 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->detect_phrases_status = 202;
         $conversionrecord->detect_entities_status = 404;
 
-        $preset1 = new \stdClass();
-        $preset1->convid = 508000;
-        $preset1->preset = 'preset1';
-        $preset1->fragmented = 1;
-
-        $preset2 = new \stdClass();
-        $preset2->convid = 508000;
-        $preset2->preset = 'preset2';
-        $preset2->fragmented = 0;
-
-        $DB->insert_record('local_smartmedia_presets', $preset1);
-        $DB->insert_record('local_smartmedia_presets', $preset2);
-
-        $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_elastic_transcoder($mock);
         $conversion = new \local_smartmedia\conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_settings');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $conversionrecord);
 
         $this->assertEquals('10101010', $result['processes']);
-        $this->assertStringContainsString('preset1', $result['presets']);
-        $this->assertStringContainsString('preset2', $result['presets']);
-
+        // Check that all low quality fixture presets are present in the metadata.
+        foreach ($this->fixture['readPreset']['quality_low'] as $preset) {
+            $this->assertStringContainsString($preset['Preset']['Id'], $result['presets']);
+        }
+        // Check that no medium quality fixture presets are present in the metadata.
+        foreach ($this->fixture['readPreset']['quality_medium'] as $preset) {
+            $this->assertStringNotContainsString($preset['Preset']['Id'], $result['presets']);
+        }
     }
 
     /**
@@ -880,7 +877,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_process_conversion_transcode_failed() {
         $this->resetAfterTest(true);
-        global $DB;
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
