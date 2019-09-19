@@ -429,11 +429,11 @@ class conversion {
      * Get the configured covnersion for this conversion record in a format that will
      * be sent to AWS for processing.
      *
-     * @param \stdClass $conversionrecord The cponversion record to get the settings for.
+     * @param \stdClass $conversionrecord The conversion record to get the settings for.
      * @return array $settings The conversion record settings.
      */
     private function get_conversion_settings(\stdClass $conversionrecord) : array {
-        global $DB, $CFG;
+        global $CFG;
         $settings = array();
 
         // Metadata space per S3 object is limited so do some dirty encoding
@@ -450,7 +450,7 @@ class conversion {
         $processes .= $conversionrecord->detect_phrases_status == self::CONVERSION_ACCEPTED ? '1' : '0';
         $processes .= $conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED ? '1' : '0';
 
-        $presets = $DB->get_records('local_smartmedia_presets');
+        $presets = $this->get_preset_records($conversionrecord->id, $conversionrecord->contenthash);
 
         $settings['processes'] = $processes;
         $settings['presets'] = $this->create_presets_metadata($presets);
@@ -465,6 +465,7 @@ class conversion {
      * Example: "{'1351620000001-100070': 'mp4', '1351620000001-500030': 'fmp4'}"
      *
      * @param array $presets array of preset records.
+     *
      * @return string $metadata json encoded string.
      */
     private function create_presets_metadata(array $presets) : string {
