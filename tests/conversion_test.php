@@ -1353,4 +1353,53 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
     }
 
+    /**
+     * Test getting getting only relevant media files.
+     */
+    public function test_get_media_files() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        // Create some test files.
+        $fs = get_file_storage();
+
+        $smartfilerecord = array(
+                'contextid' => 1,
+                'component' => 'local_smartmedia',
+                'filearea' => 'media',
+                'itemid' => 0,
+                'filepath' => '/aaaaaaaaaaaaaaaaaa/conversions/',
+                'filename' => 'contenthash_mpegdash_playlist.mpd');
+
+        // For this test it doesn't actually matter these are not real multimedia files.
+        $fs->create_file_from_string($smartfilerecord, 'I am the mpeg-dash playlist.');
+
+        $smartfilerecord['filename'] = 'contenthash_hls_playlist.m3u8';
+        $fs->create_file_from_string($smartfilerecord, 'I am the HLS playlist.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp4';
+        $fs->create_file_from_string($smartfilerecord, 'I am the mp4 download video.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp3';
+        $fs->create_file_from_string($smartfilerecord, 'I am the audio only mp3.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.ts';
+        $fs->create_file_from_string($smartfilerecord, 'I am a segment file.');
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_media_files');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, 'aaaaaaaaaaaaaaaaaa');
+
+        $this->assertCount(4, $result);
+
+        foreach($result as $file){
+            $this->assertNotEquals('contenthash_preset-id.ts', $file->get_filename());
+        }
+
+    }
+
 }

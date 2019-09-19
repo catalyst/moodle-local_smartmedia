@@ -319,6 +319,33 @@ class conversion {
     }
 
     /**
+     * Get the media files for delivery to the smartmedia filter.
+     * Only return playlist and download file types. Not the
+     * associated files.
+     *
+     * @param string $contenthash
+     * @return array
+     */
+    private function get_media_files(string $contenthash) : array {
+
+        // Get all media files for this source file.
+        $fs = get_file_storage();
+        $files = $fs->get_area_files(1, 'local_smartmedia', 'media', 0);
+        $mediafilepath = '/' . $contenthash . '/conversions/';
+        $mediafiles = $this->filter_files_by_filepath($files, $mediafilepath);
+
+        // Next filter the file list to only include: playlists, the mp4 and mp3 download files.
+        foreach ($mediafiles as $key => $mediafile) {
+            $match = preg_match('/\_hls_playlist\.m3u8|_mpegdash_playlist\.mpd|\.mp4|\.mp3/', $mediafile->get_filename());
+            if (!$match) {
+                unset($mediafiles[$key]);
+            }
+        }
+        return $mediafiles;
+
+    }
+
+    /**
      * Get smart media for file.
      *
      * @param \moodle_url $href the url of the file to find smart media for.
@@ -347,13 +374,10 @@ class conversion {
         if ($conversionstatuses->status == self::CONVERSION_IN_PROGRESS ||
                 $conversionstatuses->status == self::CONVERSION_FINISHED) {
 
-            $fs = get_file_storage();
-
-            $files = $fs->get_area_files(1, 'local_smartmedia', 'media', 0);
-            $mediafilepath = '/' . $file->get_contenthash() . '/conversions/';
-            $mediafiles = $this->filter_files_by_filepath($files, $mediafilepath);
+            $mediafiles = $this->get_media_files($file->get_contenthash());
             $smartmedia['media'] = $this->map_files_to_urls($mediafiles, $file->get_id());
 
+            $fs = get_file_storage();
             $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);
             $datafilepath = '/' . $file->get_contenthash() . '/metadata/';
             $datafiles = $this->filter_files_by_filepath($files, $datafilepath);
