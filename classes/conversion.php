@@ -345,6 +345,51 @@ class conversion {
 
     }
 
+    private function replace_urls(string $filecontent, int $id) : string {
+
+        //$pluginfilepath = $CFG->wwwroot . "/pluginfile.php/1/local_smartmedia/media/$id/$contenthash/conversions/";
+
+        return $filecontent;
+
+    }
+
+    /**
+     * We need to make specific playlist files for each smartmedia object
+     * that relate explicitily to each source file. This means that there will
+     * end up being many playlist files per smartmedia object. Therefore we
+     * only generate these playlists when we first need them.
+     *
+     * We store the playlist after it is generated.
+     *
+     * @param array $mappedfiles
+     * @param int $fileid
+     * @return array
+     */
+    private function generate_playlists(array $mappedfiles, int $fileid) : array {
+        $fs = get_file_storage();
+
+        // For each playlist try to get playlist.
+        // If playlist doesn't exist create it.
+        foreach ($mappedfiles as $key => $mappedfile) {
+            $match = preg_match('/\_hls_playlist\.m3u8|_mpegdash_playlist\.mpd/', $mappedfile->get_filename());
+            if ($match) {
+                $playlist = $fs->get_file(1, 'local_smartmedia', 'media', $fileid,
+                    $mappedfile->get_filepath(), $mappedfile->get_filename());
+                if (!$playlist) {
+                    error_log('generate playlist');
+                    $filecontent = $mappedfile->get_content();
+                    //$updatedcontent = $this->replace_urls($filecontent, $fileid);
+                    // $playlist = $fs->create_file_from_string($filerecord, $filecontent);
+
+                }
+
+                $mappedfiles[$key] = $playlist;
+            }
+        }
+
+        return $mappedfiles;
+    }
+
     /**
      * Get smart media for file.
      *
@@ -375,7 +420,8 @@ class conversion {
                 $conversionstatuses->status == self::CONVERSION_FINISHED) {
 
             $mediafiles = $this->get_media_files($file->get_contenthash());
-            $smartmedia['media'] = $this->map_files_to_urls($mediafiles, $file->get_id());
+            $updatedplaylists = $this->generate_playlists($mediafiles, $file->get_id());
+            $smartmedia['media'] = $this->map_files_to_urls($updatedplaylists, $file->get_id());
 
             $fs = get_file_storage();
             $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);
@@ -744,12 +790,12 @@ class conversion {
      *
      * @return resource $newfile file handle for a new file created with amended playlist data/
      */
-    private function replace_playlist_urls_with_pluginfile_urls($filehandle, string $contenthash) {
+    private function replace_playlist_urls_with_pluginfile_urls($filehandle, string $contenthash, int $id=0) {
         global $CFG;
 
         rewind($filehandle);
         $newfile = tmpfile();
-        $pluginfilepath = $CFG->wwwroot . "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
+        $pluginfilepath = $CFG->wwwroot . "/pluginfile.php/1/local_smartmedia/media/$id/$contenthash/conversions/";
 
         while (!feof($filehandle)) {
             $line = fgets($filehandle);

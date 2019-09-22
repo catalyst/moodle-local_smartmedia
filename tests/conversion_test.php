@@ -1402,4 +1402,71 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
     }
 
+    /**
+     * Test playlist generation.
+     */
+    public function test_generate_playlists() {
+        $this->resetAfterTest(true);
+
+        // Create some test files.
+        $fs = get_file_storage();
+        $files = array();
+
+        $smartfilerecord = array(
+            'contextid' => 1,
+            'component' => 'local_smartmedia',
+            'filearea' => 'media',
+            'itemid' => 0,
+            'filepath' => '/aaaaaaaaaaaaaaaaaa/conversions/',
+            'filename' => 'contenthash_mpegdash_playlist.mpd');
+
+        // For this test it doesn't actually matter these are not real multimedia files.
+        $files[] = $fs->create_file_from_string($smartfilerecord, $this->fixture['mpd_playlist_fixture']);
+
+        $smartfilerecord['filename'] = 'contenthash_hls_playlist.m3u8';
+        $files[] = $fs->create_file_from_string($smartfilerecord, $this->fixture['hls_playlist_fixture']);
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp4';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the mp4 download video.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp3';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the audio only mp3.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.ts';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am a segment file.');
+
+        // Source file id.
+        $fileid = 1391;
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'generate_playlists');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $files, $fileid);
+
+    }
+
+    /**
+     * Test playlist generation.
+     */
+    public function test_replace_urls() {
+        $this->resetAfterTest(true);
+
+        $filecontent = $this->fixture['mpd_playlist_fixture'];
+        $fileid = 1391;
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_urls');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $filecontent, $fileid);
+
+        error_log($result);
+
+    }
+
 }
