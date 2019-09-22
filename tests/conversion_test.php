@@ -1396,7 +1396,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $this->assertCount(4, $result);
 
-        foreach($result as $file){
+        foreach ($result as $file) {
             $this->assertNotEquals('contenthash_preset-id.ts', $file->get_filename());
         }
 
