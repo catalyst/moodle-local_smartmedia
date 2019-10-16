@@ -345,11 +345,17 @@ class conversion {
 
     }
 
+    /**
+     * Replace the item ids in URLs in playlist files.
+     *
+     * @param string $filecontent File content to replace URLs in.
+     * @param int $id Item id to be used in replacement.
+     * @return string $replacedcontent Updated file content.
+     */
     private function replace_urls(string $filecontent, int $id) : string {
+        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/)(0)/', $id, $filecontent);
 
-        //$pluginfilepath = $CFG->wwwroot . "/pluginfile.php/1/local_smartmedia/media/$id/$contenthash/conversions/";
-
-        return $filecontent;
+        return $replacedcontent;
 
     }
 
@@ -379,7 +385,7 @@ class conversion {
                     error_log('generate playlist');
                     $filecontent = $mappedfile->get_content();
                     //$updatedcontent = $this->replace_urls($filecontent, $fileid);
-                    // $playlist = $fs->create_file_from_string($filerecord, $filecontent);
+                    //$playlist = $fs->create_file_from_string($filerecord, $filecontent);
 
                 }
 

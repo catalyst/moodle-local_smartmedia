@@ -1449,7 +1449,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     }
 
     /**
-     * Test playlist generation.
+     * Test playlist URL replacement.
      */
     public function test_replace_urls() {
         $this->resetAfterTest(true);
@@ -1465,7 +1465,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $filecontent, $fileid);
 
-        error_log($result);
+        $this->assertNotContains('media/0/13ed14cef7', $result);
+        $this->assertContains('media/1391/13ed14cef7', $result);
 
     }
 
