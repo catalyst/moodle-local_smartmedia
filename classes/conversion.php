@@ -372,6 +372,7 @@ class conversion {
      * @return array
      */
     private function generate_playlists(array $mappedfiles, int $fileid) : array {
+        $playlists = array();
         $fs = get_file_storage();
 
         // For each playlist try to get playlist.
@@ -382,10 +383,17 @@ class conversion {
                 $playlist = $fs->get_file(1, 'local_smartmedia', 'media', $fileid,
                     $mappedfile->get_filepath(), $mappedfile->get_filename());
                 if (!$playlist) {
-                    error_log('generate playlist');
+                    $filerecord = new \stdClass();
+                    $filerecord->contextid = 1;
+                    $filerecord->component = 'local_smartmedia';
+                    $filerecord->filearea = 'media';
+                    $filerecord->itemid = $fileid;
+                    $filerecord->filepath = $mappedfile->get_filepath();
+                    $filerecord->filename = $mappedfile->get_filename();
+
                     $filecontent = $mappedfile->get_content();
-                    //$updatedcontent = $this->replace_urls($filecontent, $fileid);
-                    //$playlist = $fs->create_file_from_string($filerecord, $filecontent);
+                    $updatedcontent = $this->replace_urls($filecontent, $fileid);
+                    $playlist = $fs->create_file_from_string($filerecord, $updatedcontent);
 
                 }
 

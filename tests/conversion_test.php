@@ -1446,6 +1446,15 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $files, $fileid);
 
+        foreach ($result as $file) {
+            if ($file->get_filename() == 'contenthash_mpegdash_playlist.mpd') {
+                $this->assertEquals(1391, $file->get_itemid());
+            } else if ($file->get_filename() == 'contenthash_hls_playlist.m3u8') {
+                $this->assertEquals(1391, $file->get_itemid());
+            } else {
+                $this->assertEquals(0, $file->get_itemid());
+            }
+        }
     }
 
     /**
