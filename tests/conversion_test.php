@@ -1015,6 +1015,52 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     }
 
     /**
+     * Test processing conversions for a record with no current queue messages.
+     */
+    public function test_process_conversion_no_messages() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        // Set up the AWS mock.
+        $mock = new MockHandler();
+        $mock->append(new Result($this->fixture['listobjects']));
+        foreach ($this->fixture['listobjects']['Contents'] as $object) {
+            // The fixture contains mock body data for non-binary files only.
+            if (array_key_exists('Body', $object)) {
+                $mock->append(new Result($object));
+            } else {
+                $mock->append(new Result(array()));
+            }
+        }
+
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = 'SampleVideo1mb';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $messages = array();
+
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $conversionrecord, $messages, $mock);
+
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->transcoder_status);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
+    }
+
+    /**
      * Test ability to correctly replace urls in playlist files with pluginfile urls.
      */
     public function test_replace_playlist_urls_with_pluginfile_urls() {
@@ -1169,6 +1215,23 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $result = $method->invoke($conversion, $conversionrecord);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
+
+        // Try again with only transcode configured to run.
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = 'SampleVideo1mb';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 

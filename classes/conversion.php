@@ -889,6 +889,11 @@ class conversion {
     private function process_conversion(\stdClass $conversionrecord, array $queuemessages, $handler=null) : \stdClass {
         global $DB;
 
+        // If there are no queue messages exit early.
+        if (empty($queuemessages)) {
+            return $conversionrecord;
+        }
+
         foreach ($queuemessages as $message) {
             if ($message->status == 'ERROR' && $message->process == 'elastic_transcoder') {
                 // If Elastic Transcoder conversion has failed then all other conversions have also failed.
@@ -945,16 +950,15 @@ class conversion {
         global $DB;
 
         // Only set the final completion status if all other processes are finished.
-        if (($updatedrecord->transcoder_status == self::CONVERSION_FINISHED
-                || $updatedrecord->transcoder_status == self::CONVERSION_NOT_FOUND )
+        if (($updatedrecord->transcoder_status == self::CONVERSION_FINISHED)
             && ($updatedrecord->rekog_label_status == self::CONVERSION_FINISHED
                 || $updatedrecord->rekog_label_status == self::CONVERSION_NOT_FOUND)
             && ($updatedrecord->rekog_moderation_status == self::CONVERSION_FINISHED
                 || $updatedrecord->rekog_moderation_status == self::CONVERSION_NOT_FOUND)
             && ($updatedrecord->rekog_face_status == self::CONVERSION_FINISHED
                 || $updatedrecord->rekog_face_status == self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED)
-                || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND) {
+            && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND)) {
 
                 $updatedrecord->status = self::CONVERSION_FINISHED;
                 $updatedrecord->timemodified = time();
