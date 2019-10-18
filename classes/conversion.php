@@ -320,11 +320,9 @@ class conversion {
 
     /**
      * Get the media files for delivery to the smartmedia filter.
-     * Only return playlist and download file types. Not the
-     * associated files.
      *
      * @param string $contenthash
-     * @return array
+     * @return array $mediafiles
      */
     private function get_media_files(string $contenthash) : array {
 
@@ -334,6 +332,18 @@ class conversion {
         $mediafilepath = '/' . $contenthash . '/conversions/';
         $mediafiles = $this->filter_files_by_filepath($files, $mediafilepath);
 
+        return $mediafiles;
+
+    }
+
+    /**
+     * Filter out non master playlists from
+     * media files.
+     *
+     * @param array $mediafiles
+     * @return array $mediafiles
+     */
+    private function filter_playlists(array $mediafiles) : array {
         // Next filter the file list to only include: playlists, the mp4 and mp3 download files.
         foreach ($mediafiles as $key => $mediafile) {
             $match = preg_match('/\_hls_playlist\.m3u8|_mpegdash_playlist\.mpd|\.mp4|\.mp3/', $mediafile->get_filename());
@@ -341,8 +351,8 @@ class conversion {
                 unset($mediafiles[$key]);
             }
         }
-        return $mediafiles;
 
+        return $mediafiles;
     }
 
     /**
@@ -353,7 +363,12 @@ class conversion {
      * @return string $replacedcontent Updated file content.
      */
     private function replace_urls(string $filecontent, int $id) : string {
-        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/)(0)/', $id, $filecontent);
+        $matches = array();
+        $matchresult = preg_match('/pluginfile\.php\/1\/local_smartmedia\/media\/(0)\/(.*)\/conversions\/(.*)\./', $filecontent, $matches);
+        $filename = $matches[2] . '_' . $matches[3];
+
+        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/0\/.{40}\/conversions\/)(.*)(?=\.)/', $filename, $filecontent);
+        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/)(0)/', $id, $replacedcontent);
 
         return $replacedcontent;
 
@@ -378,7 +393,7 @@ class conversion {
         // For each playlist try to get playlist.
         // If playlist doesn't exist create it.
         foreach ($mappedfiles as $key => $mappedfile) {
-            $match = preg_match('/\_hls_playlist\.m3u8|_mpegdash_playlist\.mpd/', $mappedfile->get_filename());
+            $match = preg_match('/\.m3u8|\.mpd/', $mappedfile->get_filename());
             if ($match) {
                 $playlist = $fs->get_file(1, 'local_smartmedia', 'media', $fileid,
                     $mappedfile->get_filepath(), $mappedfile->get_filename());
@@ -435,7 +450,8 @@ class conversion {
 
             $mediafiles = $this->get_media_files($file->get_contenthash());
             $updatedplaylists = $this->generate_playlists($mediafiles, $file->get_id());
-            $smartmedia['media'] = $this->map_files_to_urls($updatedplaylists, $file->get_id());
+            $filteredfiles = $this->filter_playlists($updatedplaylists);
+            $smartmedia['media'] = $this->map_files_to_urls($filteredfiles, $file->get_id());
 
             $fs = get_file_storage();
             $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);

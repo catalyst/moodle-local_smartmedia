@@ -1457,6 +1457,52 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, 'aaaaaaaaaaaaaaaaaa');
 
+        $this->assertCount(5, $result);
+
+    }
+
+    /**
+     * Test getting getting only relevant media files.
+     */
+    public function test_filter_playlists() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        // Create some test files.
+        $fs = get_file_storage();
+        $files = array();
+
+        $smartfilerecord = array(
+                'contextid' => 1,
+                'component' => 'local_smartmedia',
+                'filearea' => 'media',
+                'itemid' => 0,
+                'filepath' => '/aaaaaaaaaaaaaaaaaa/conversions/',
+                'filename' => 'contenthash_mpegdash_playlist.mpd');
+
+        // For this test it doesn't actually matter these are not real multimedia files.
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the mpeg-dash playlist.');
+
+        $smartfilerecord['filename'] = 'contenthash_hls_playlist.m3u8';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the HLS playlist.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp4';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the mp4 download video.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp3';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the audio only mp3.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.ts';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am a segment file.');
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'filter_playlists');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $files);
+
         $this->assertCount(4, $result);
 
         foreach ($result as $file) {
@@ -1464,6 +1510,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         }
 
     }
+
 
     /**
      * Test playlist generation.
@@ -1539,6 +1586,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $this->assertNotContains('media/0/13ed14cef7', $result);
         $this->assertContains('media/1391/13ed14cef7', $result);
+        $this->assertNotContains('conversions/1351620000001-500030.fmp4', $result);
+        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500030.fmp4', $result);
 
     }
 
