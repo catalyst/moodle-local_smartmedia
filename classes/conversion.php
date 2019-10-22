@@ -364,11 +364,14 @@ class conversion {
      */
     private function replace_urls(string $filecontent, int $id) : string {
         $matches = array();
-        $matchresult = preg_match('/pluginfile\.php\/1\/local_smartmedia\/media\/(0)\/(.*)\/conversions\/(.*)\./', $filecontent, $matches);
-        $filename = $matches[2] . '_' . $matches[3];
+        $matchresult = preg_match_all('/pluginfile\.php\/1\/local_smartmedia\/media\/(0)\/(.*)\/conversions\/(.*)\./', $filecontent, $matches, PREG_SET_ORDER);
 
-        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/0\/.{40}\/conversions\/)(.*)(?=\.)/', $filename, $filecontent);
-        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/)(0)/', $id, $replacedcontent);
+        foreach ($matches as $match) {
+            $filename = $match[2] . '_' . $match[3];
+            $filecontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/0\/.{40}\/conversions\/)('.$match[3].')(?=\.)/', $filename, $filecontent);
+        }
+
+        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/)(0)/', $id, $filecontent);
 
         return $replacedcontent;
 
@@ -821,11 +824,10 @@ class conversion {
      * @return resource $newfile file handle for a new file created with amended playlist data/
      */
     private function replace_playlist_urls_with_pluginfile_urls($filehandle, string $contenthash, int $id=0) {
-        global $CFG;
 
         rewind($filehandle);
         $newfile = tmpfile();
-        $pluginfilepath = $CFG->wwwroot . "/pluginfile.php/1/local_smartmedia/media/$id/$contenthash/conversions/";
+        $pluginfilepath = "pluginfile.php/1/local_smartmedia/media/$id/$contenthash/conversions/";
 
         while (!feof($filehandle)) {
             $line = fgets($filehandle);

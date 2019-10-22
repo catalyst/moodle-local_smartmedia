@@ -1102,7 +1102,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
                 if (preg_match('/' . $contenthash . '_/', $before[$i], $matches, PREG_OFFSET_CAPTURE)) {
                     // Extract the filename from the end of the matching line.
                     $filename = substr($before[$i], $matches[0][1] + strlen($matches[0][0]));
-                    $expected = $CFG->wwwroot . "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/$filename";
+                    $expected = "pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/$filename";
                     $actual = substr($after[$i], $matches[0][1], strlen($expected));
 
                     $this->assertEquals($expected, $actual);
@@ -1568,9 +1568,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     }
 
     /**
-     * Test playlist URL replacement.
+     * Test MPD playlist URL replacement.
      */
-    public function test_replace_urls() {
+    public function test_replace_urls_mpd() {
         $this->resetAfterTest(true);
 
         $filecontent = $this->fixture['mpd_playlist_fixture'];
@@ -1588,7 +1588,33 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertContains('media/1391/13ed14cef7', $result);
         $this->assertNotContains('conversions/1351620000001-500030.fmp4', $result);
         $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500030.fmp4', $result);
+        $this->assertNotContains('conversions/1351620000001-500050.fmp4', $result);
+        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500050.fmp4', $result);
+    }
 
+    /**
+     * Test HLS playlist URL replacement.
+     */
+    public function test_replace_urls_hls() {
+        $this->resetAfterTest(true);
+
+        $filecontent = $this->fixture['hls_playlist_fixture'];
+        $fileid = 1391;
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_urls');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $filecontent, $fileid);
+
+        $this->assertNotContains('media/0/13ed14cef7', $result);
+        $this->assertContains('media/1391/13ed14cef7', $result);
+        $this->assertNotContains('conversions/1351620000001-200015_v4.m3u8', $result);
+        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200015_v4.m3u8', $result);
+        $this->assertNotContains('conversions/1351620000001-200045_v4.m3u8', $result);
+        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200045_v4.m3u8', $result);
     }
 
 }
