@@ -364,11 +364,14 @@ class conversion {
      */
     private function replace_urls(string $filecontent, int $id) : string {
         $matches = array();
-        $matchresult = preg_match_all('/pluginfile\.php\/1\/local_smartmedia\/media\/(0)\/(.*)\/conversions\/(.*)\./', $filecontent, $matches, PREG_SET_ORDER);
+        preg_match_all('/pluginfile\.php\/1\/local_smartmedia\/media\/(0)\/(.*)\/conversions\/(.*)\./',
+            $filecontent, $matches, PREG_SET_ORDER);
 
         foreach ($matches as $match) {
             $filename = $match[2] . '_' . $match[3];
-            $filecontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/0\/.{40}\/conversions\/)('.$match[3].')(?=\.)/', $filename, $filecontent);
+            $filecontent = preg_replace(
+                '/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/0\/.{40}\/conversions\/)('.$match[3].')(?=\.)/',
+                $filename, $filecontent);
         }
 
         $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/)(0)/', $id, $filecontent);

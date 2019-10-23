@@ -88,12 +88,12 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
         $filepath = '/'.implode('/', $args).'/'; // Var $args contains elements of the filepath.
     }
 
-    // We need to handle playlist files and media files differently
+    // We need to handle playlist files and media files differently.
     $fileparts = pathinfo($filename);
     $fileextension = $fileparts['extension'];
 
-    if($fileextension != 'mpd' && $fileextension != 'm3u8') {
-        $itemid = 0; // there is only one source of truth for media (non playlist files).
+    if ($fileextension != 'mpd' && $fileextension != 'm3u8') {
+        $itemid = 0; // There is only one source of truth for media (non playlist files).
     }
 
     $smartfile = $fs->get_file($context->id, 'local_smartmedia', $filearea, $itemid, $filepath, $filename);
