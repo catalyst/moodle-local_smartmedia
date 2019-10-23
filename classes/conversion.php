@@ -823,6 +823,7 @@ class conversion {
      *
      * @param resource $filehandle the handle for the file to replace urls in.
      * @param string $contenthash the content hash for conversion to search for and replace.
+     * @param integer $id The id to replace in URL.
      *
      * @return resource $newfile file handle for a new file created with amended playlist data/
      */
