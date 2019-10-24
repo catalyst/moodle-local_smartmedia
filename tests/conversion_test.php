@@ -1015,6 +1015,52 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     }
 
     /**
+     * Test processing conversions for a record with no current queue messages.
+     */
+    public function test_process_conversion_no_messages() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        // Set up the AWS mock.
+        $mock = new MockHandler();
+        $mock->append(new Result($this->fixture['listobjects']));
+        foreach ($this->fixture['listobjects']['Contents'] as $object) {
+            // The fixture contains mock body data for non-binary files only.
+            if (array_key_exists('Body', $object)) {
+                $mock->append(new Result($object));
+            } else {
+                $mock->append(new Result(array()));
+            }
+        }
+
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = 'SampleVideo1mb';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $messages = array();
+
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $conversionrecord, $messages, $mock);
+
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->transcoder_status);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
+    }
+
+    /**
      * Test ability to correctly replace urls in playlist files with pluginfile urls.
      */
     public function test_replace_playlist_urls_with_pluginfile_urls() {
@@ -1056,7 +1102,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
                 if (preg_match('/' . $contenthash . '_/', $before[$i], $matches, PREG_OFFSET_CAPTURE)) {
                     // Extract the filename from the end of the matching line.
                     $filename = substr($before[$i], $matches[0][1] + strlen($matches[0][0]));
-                    $expected = $CFG->wwwroot . "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/$filename";
+                    $expected = "pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/$filename";
                     $actual = substr($after[$i], $matches[0][1], strlen($expected));
 
                     $this->assertEquals($expected, $actual);
@@ -1169,6 +1215,23 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $result = $method->invoke($conversion, $conversionrecord);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
+
+        // Try again with only transcode configured to run.
+        $conversionrecord = new \stdClass();
+        $conversionrecord->id = 508000;
+        $conversionrecord->pathnamehash = '4a1bba15ebb79e7813e642790a551bfaaf6c6066';
+        $conversionrecord->contenthash = 'SampleVideo1mb';
+        $conversionrecord->status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcoder_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->rekog_label_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->rekog_person_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1394,12 +1457,164 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, 'aaaaaaaaaaaaaaaaaa');
 
+        $this->assertCount(5, $result);
+
+    }
+
+    /**
+     * Test getting getting only relevant media files.
+     */
+    public function test_filter_playlists() {
+        $this->resetAfterTest(true);
+        global $DB;
+
+        // Create some test files.
+        $fs = get_file_storage();
+        $files = array();
+
+        $smartfilerecord = array(
+                'contextid' => 1,
+                'component' => 'local_smartmedia',
+                'filearea' => 'media',
+                'itemid' => 0,
+                'filepath' => '/aaaaaaaaaaaaaaaaaa/conversions/',
+                'filename' => 'contenthash_mpegdash_playlist.mpd');
+
+        // For this test it doesn't actually matter these are not real multimedia files.
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the mpeg-dash playlist.');
+
+        $smartfilerecord['filename'] = 'contenthash_hls_playlist.m3u8';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the HLS playlist.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp4';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the mp4 download video.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp3';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the audio only mp3.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.ts';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am a segment file.');
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'filter_playlists');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $files);
+
         $this->assertCount(4, $result);
 
         foreach ($result as $file) {
             $this->assertNotEquals('contenthash_preset-id.ts', $file->get_filename());
         }
 
+    }
+
+
+    /**
+     * Test playlist generation.
+     */
+    public function test_generate_playlists() {
+        $this->resetAfterTest(true);
+
+        // Create some test files.
+        $fs = get_file_storage();
+        $files = array();
+
+        $smartfilerecord = array(
+            'contextid' => 1,
+            'component' => 'local_smartmedia',
+            'filearea' => 'media',
+            'itemid' => 0,
+            'filepath' => '/aaaaaaaaaaaaaaaaaa/conversions/',
+            'filename' => 'contenthash_mpegdash_playlist.mpd');
+
+        // For this test it doesn't actually matter these are not real multimedia files.
+        $files[] = $fs->create_file_from_string($smartfilerecord, $this->fixture['mpd_playlist_fixture']);
+
+        $smartfilerecord['filename'] = 'contenthash_hls_playlist.m3u8';
+        $files[] = $fs->create_file_from_string($smartfilerecord, $this->fixture['hls_playlist_fixture']);
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp4';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the mp4 download video.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.mp3';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the audio only mp3.');
+
+        $smartfilerecord['filename'] = 'contenthash_preset-id.ts';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am a segment file.');
+
+        // Source file id.
+        $fileid = 1391;
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'generate_playlists');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $files, $fileid);
+
+        foreach ($result as $file) {
+            if ($file->get_filename() == 'contenthash_mpegdash_playlist.mpd') {
+                $this->assertEquals(1391, $file->get_itemid());
+            } else if ($file->get_filename() == 'contenthash_hls_playlist.m3u8') {
+                $this->assertEquals(1391, $file->get_itemid());
+            } else {
+                $this->assertEquals(0, $file->get_itemid());
+            }
+        }
+    }
+
+    /**
+     * Test MPD playlist URL replacement.
+     */
+    public function test_replace_urls_mpd() {
+        $this->resetAfterTest(true);
+
+        $filecontent = $this->fixture['mpd_playlist_fixture'];
+        $fileid = 1391;
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_urls');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $filecontent, $fileid);
+
+        $this->assertNotContains('media/0/13ed14cef7', $result);
+        $this->assertContains('media/1391/13ed14cef7', $result);
+        $this->assertNotContains('conversions/1351620000001-500030.fmp4', $result);
+        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500030.fmp4', $result);
+        $this->assertNotContains('conversions/1351620000001-500050.fmp4', $result);
+        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500050.fmp4', $result);
+    }
+
+    /**
+     * Test HLS playlist URL replacement.
+     */
+    public function test_replace_urls_hls() {
+        $this->resetAfterTest(true);
+
+        $filecontent = $this->fixture['hls_playlist_fixture'];
+        $fileid = 1391;
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_urls');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $filecontent, $fileid);
+
+        $this->assertNotContains('media/0/13ed14cef7', $result);
+        $this->assertContains('media/1391/13ed14cef7', $result);
+        $this->assertNotContains('conversions/1351620000001-200015_v4.m3u8', $result);
+        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200015_v4.m3u8', $result);
+        $this->assertNotContains('conversions/1351620000001-200045_v4.m3u8', $result);
+        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200045_v4.m3u8', $result);
     }
 
 }

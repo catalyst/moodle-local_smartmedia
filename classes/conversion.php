@@ -320,11 +320,9 @@ class conversion {
 
     /**
      * Get the media files for delivery to the smartmedia filter.
-     * Only return playlist and download file types. Not the
-     * associated files.
      *
      * @param string $contenthash
-     * @return array
+     * @return array $mediafiles
      */
     private function get_media_files(string $contenthash) : array {
 
@@ -334,6 +332,18 @@ class conversion {
         $mediafilepath = '/' . $contenthash . '/conversions/';
         $mediafiles = $this->filter_files_by_filepath($files, $mediafilepath);
 
+        return $mediafiles;
+
+    }
+
+    /**
+     * Filter out non master playlists from
+     * media files.
+     *
+     * @param array $mediafiles
+     * @return array $mediafiles
+     */
+    private function filter_playlists(array $mediafiles) : array {
         // Next filter the file list to only include: playlists, the mp4 and mp3 download files.
         foreach ($mediafiles as $key => $mediafile) {
             $match = preg_match('/\_hls_playlist\.m3u8|_mpegdash_playlist\.mpd|\.mp4|\.mp3/', $mediafile->get_filename());
@@ -341,8 +351,78 @@ class conversion {
                 unset($mediafiles[$key]);
             }
         }
-        return $mediafiles;
 
+        return $mediafiles;
+    }
+
+    /**
+     * Replace the item ids in URLs in playlist files.
+     *
+     * @param string $filecontent File content to replace URLs in.
+     * @param int $id Item id to be used in replacement.
+     * @return string $replacedcontent Updated file content.
+     */
+    private function replace_urls(string $filecontent, int $id) : string {
+        $matches = array();
+        preg_match_all('/pluginfile\.php\/1\/local_smartmedia\/media\/(0)\/(.*)\/conversions\/(.*)\./',
+            $filecontent, $matches, PREG_SET_ORDER);
+
+        foreach ($matches as $match) {
+            $filename = $match[2] . '_' . $match[3];
+            $filecontent = preg_replace(
+                '/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/0\/.{40}\/conversions\/)('.$match[3].')(?=\.)/',
+                $filename, $filecontent);
+        }
+
+        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/)(0)/', $id, $filecontent);
+
+        return $replacedcontent;
+
+    }
+
+    /**
+     * We need to make specific playlist files for each smartmedia object
+     * that relate explicitily to each source file. This means that there will
+     * end up being many playlist files per smartmedia object. Therefore we
+     * only generate these playlists when we first need them.
+     *
+     * We store the playlist after it is generated.
+     *
+     * @param array $mappedfiles
+     * @param int $fileid
+     * @return array
+     */
+    private function generate_playlists(array $mappedfiles, int $fileid) : array {
+        $playlists = array();
+        $fs = get_file_storage();
+
+        // For each playlist try to get playlist.
+        // If playlist doesn't exist create it.
+        foreach ($mappedfiles as $key => $mappedfile) {
+            $match = preg_match('/\.m3u8|\.mpd/', $mappedfile->get_filename());
+            if ($match) {
+                $playlist = $fs->get_file(1, 'local_smartmedia', 'media', $fileid,
+                    $mappedfile->get_filepath(), $mappedfile->get_filename());
+                if (!$playlist) {
+                    $filerecord = new \stdClass();
+                    $filerecord->contextid = 1;
+                    $filerecord->component = 'local_smartmedia';
+                    $filerecord->filearea = 'media';
+                    $filerecord->itemid = $fileid;
+                    $filerecord->filepath = $mappedfile->get_filepath();
+                    $filerecord->filename = $mappedfile->get_filename();
+
+                    $filecontent = $mappedfile->get_content();
+                    $updatedcontent = $this->replace_urls($filecontent, $fileid);
+                    $playlist = $fs->create_file_from_string($filerecord, $updatedcontent);
+
+                }
+
+                $mappedfiles[$key] = $playlist;
+            }
+        }
+
+        return $mappedfiles;
     }
 
     /**
@@ -375,7 +455,9 @@ class conversion {
                 $conversionstatuses->status == self::CONVERSION_FINISHED) {
 
             $mediafiles = $this->get_media_files($file->get_contenthash());
-            $smartmedia['media'] = $this->map_files_to_urls($mediafiles, $file->get_id());
+            $updatedplaylists = $this->generate_playlists($mediafiles, $file->get_id());
+            $filteredfiles = $this->filter_playlists($updatedplaylists);
+            $smartmedia['media'] = $this->map_files_to_urls($filteredfiles, $file->get_id());
 
             $fs = get_file_storage();
             $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);
@@ -741,15 +823,15 @@ class conversion {
      *
      * @param resource $filehandle the handle for the file to replace urls in.
      * @param string $contenthash the content hash for conversion to search for and replace.
+     * @param int $id The id to replace in URL.
      *
      * @return resource $newfile file handle for a new file created with amended playlist data/
      */
-    private function replace_playlist_urls_with_pluginfile_urls($filehandle, string $contenthash) {
-        global $CFG;
+    private function replace_playlist_urls_with_pluginfile_urls($filehandle, string $contenthash, int $id=0) {
 
         rewind($filehandle);
         $newfile = tmpfile();
-        $pluginfilepath = $CFG->wwwroot . "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
+        $pluginfilepath = "pluginfile.php/1/local_smartmedia/media/$id/$contenthash/conversions/";
 
         while (!feof($filehandle)) {
             $line = fgets($filehandle);
@@ -829,6 +911,11 @@ class conversion {
     private function process_conversion(\stdClass $conversionrecord, array $queuemessages, $handler=null) : \stdClass {
         global $DB;
 
+        // If there are no queue messages exit early.
+        if (empty($queuemessages)) {
+            return $conversionrecord;
+        }
+
         foreach ($queuemessages as $message) {
             if ($message->status == 'ERROR' && $message->process == 'elastic_transcoder') {
                 // If Elastic Transcoder conversion has failed then all other conversions have also failed.
@@ -885,16 +972,15 @@ class conversion {
         global $DB;
 
         // Only set the final completion status if all other processes are finished.
-        if (($updatedrecord->transcoder_status == self::CONVERSION_FINISHED
-                || $updatedrecord->transcoder_status == self::CONVERSION_NOT_FOUND )
+        if (($updatedrecord->transcoder_status == self::CONVERSION_FINISHED)
             && ($updatedrecord->rekog_label_status == self::CONVERSION_FINISHED
                 || $updatedrecord->rekog_label_status == self::CONVERSION_NOT_FOUND)
             && ($updatedrecord->rekog_moderation_status == self::CONVERSION_FINISHED
                 || $updatedrecord->rekog_moderation_status == self::CONVERSION_NOT_FOUND)
             && ($updatedrecord->rekog_face_status == self::CONVERSION_FINISHED
                 || $updatedrecord->rekog_face_status == self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED)
-                || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND) {
+            && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED
+                || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND)) {
 
                 $updatedrecord->status = self::CONVERSION_FINISHED;
                 $updatedrecord->timemodified = time();

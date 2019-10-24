@@ -935,5 +935,36 @@ EOF
                 ),
             ),
         ),
-    )
+    ),
+    'hls_playlist_fixture' => <<<'EOF'
+#EXTM3U
+#EXT-X-I-FRAME-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=61831000,CODECS="avc1.4d001f",URI="http://moodle.local/pluginfile.php/1/local_smartmedia/media/0/13ed14cef757cd7797345cb76b30c3d83caf2513/conversions/1351620000001-200015_iframe.m3u8"
+#EXT-X-I-FRAME-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=14654000,CODECS="avc1.42001e",URI="http://moodle.local/pluginfile.php/1/local_smartmedia/media/0/13ed14cef757cd7797345cb76b30c3d83caf2513/conversions/1351620000001-200045_iframe.m3u8"
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=3624000,RESOLUTION=1024x576,CODECS="avc1.4d001f"
+http://moodle.local/pluginfile.php/1/local_smartmedia/media/0/13ed14cef757cd7797345cb76b30c3d83caf2513/conversions/1351620000001-200015_v4.m3u8
+#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=917000,RESOLUTION=480x270,CODECS="avc1.42001e"
+http://moodle.local/pluginfile.php/1/local_smartmedia/media/0/13ed14cef757cd7797345cb76b30c3d83caf2513/conversions/1351620000001-200045_v4.m3u8
+EOF
+,
+    'mpd_playlist_fixture' => <<<'EOF'
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<MPD mediaPresentationDuration="PT9M56.434S" minBufferTime="PT1.500S" profiles="urn:mpeg:dash:profile:isoff-on-demand:2011" type="static" xmlns="urn:mpeg:dash:schema:mpd:2011">
+    <Period duration="PT9M56.434S">
+        <AdaptationSet segmentAlignment="true" subsegmentAlignment="true" subsegmentStartsWithSAP="1">
+            <Representation bandwidth="2324427" codecs="avc1.4d401f" frameRate="30" height="480" id="VIDEO-1" mimeType="video/mp4" startWithSAP="1" width="854">
+                <BaseURL>http://moodle.local/pluginfile.php/1/local_smartmedia/media/0/13ed14cef757cd7797345cb76b30c3d83caf2513/conversions/1351620000001-500030.fmp4</BaseURL>
+                <SegmentBase indexRange="918-4525" indexRangeExact="true">
+                    <Initialization range="0-917"/>
+                </SegmentBase>
+            </Representation>
+            <Representation bandwidth="596014" codecs="avc1.4d401e" frameRate="30" height="240" id="VIDEO-2" mimeType="video/mp4" startWithSAP="1" width="426">
+                <BaseURL>http://moodle.local/pluginfile.php/1/local_smartmedia/media/0/13ed14cef757cd7797345cb76b30c3d83caf2513/conversions/1351620000001-500050.fmp4</BaseURL>
+                <SegmentBase indexRange="915-4522" indexRangeExact="true">
+                    <Initialization range="0-914"/>
+                </SegmentBase>
+            </Representation>
+        </AdaptationSet>
+    </Period>
+</MPD>
+EOF
 );
