@@ -812,15 +812,14 @@ class conversion {
     /**
      * Replace relative urls in a media playlist with pluginfile urls so the playlist may serve files in Moodle.
      *
-     * @param resource $filehandle the handle for the file to replace urls in.
+     * @param string $filecontent the handle for the file to replace urls in.
      * @param string $contenthash the content hash for conversion to search for and replace.
-     * @param int $id The id to replace in URL.
      *
-     * @return string $updatedcontent The updated file content
+     * @return string $updatedcontent The updated file content.
      */
-    private function replace_playlist_urls_with_pluginfile_urls($filecontent, string $contenthash, int $id=0) : string {
+    private function replace_playlist_urls_with_pluginfile_urls($filecontent, string $contenthash) : string {
 
-        $pluginfilepath = "pluginfile.php/1/local_smartmedia/media/$id/$contenthash/conversions/";
+        $pluginfilepath = "pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
 
         // Replace all matching content hashes with the plugin file path for smartmedia with this content.
         $updatedcontent = preg_replace('/' . $contenthash . '_/', $pluginfilepath, $filecontent);
