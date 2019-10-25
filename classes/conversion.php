@@ -794,24 +794,15 @@ class conversion {
             $getobject = $s3client->getObject($downloadparams);
             $filecontent = $getobject->get('Body');
 
-            $tmpfile = tmpfile();
-            fwrite($tmpfile, $filecontent);
-            $tmppath = stream_get_meta_data($tmpfile)['uri'];
-
             // The playlist files (including iframe playlists) created in s3 transcoding contain
             // relative file paths to Variant Streams for adaptive bitsteaming media, these need to be amended
             // to have Moodle plugin filepaths.
             if ($this->is_file_playlist($filename)) {
-                $newfile = $this->replace_playlist_urls_with_pluginfile_urls($tmpfile, $conversionrecord->contenthash);
-                $tmppath = stream_get_meta_data($newfile)['uri'];
+                $filecontent = $this->replace_playlist_urls_with_pluginfile_urls($filecontent, $conversionrecord->contenthash);
             }
 
-            $trancodedfile = $fs->create_file_from_pathname($filerecord, $tmppath);
-            fclose($tmpfile);
-            if (isset($newfile)) {
-                fclose($newfile);
-                unset($newfile); // Make sure we aren't overriding the same resource every time.
-            }
+            $trancodedfile = $fs->create_file_from_string($filerecord, $filecontent);
+
             $transcodedfiles[] = $trancodedfile;
         }
         return $transcodedfiles;
@@ -825,21 +816,16 @@ class conversion {
      * @param string $contenthash the content hash for conversion to search for and replace.
      * @param int $id The id to replace in URL.
      *
-     * @return resource $newfile file handle for a new file created with amended playlist data/
+     * @return string $updatedcontent The updated file content
      */
-    private function replace_playlist_urls_with_pluginfile_urls($filehandle, string $contenthash, int $id=0) {
+    private function replace_playlist_urls_with_pluginfile_urls($filecontent, string $contenthash, int $id=0) : string {
 
-        rewind($filehandle);
-        $newfile = tmpfile();
         $pluginfilepath = "pluginfile.php/1/local_smartmedia/media/$id/$contenthash/conversions/";
 
-        while (!feof($filehandle)) {
-            $line = fgets($filehandle);
-            // Replace all matching content hashes with the plugin file path for smartmedia with this content.
-            $line = preg_replace('/' . $contenthash . '_/', $pluginfilepath, $line);
-            fwrite($newfile, $line);
-        }
-        return $newfile;
+        // Replace all matching content hashes with the plugin file path for smartmedia with this content.
+        $updatedcontent = preg_replace('/' . $contenthash . '_/', $pluginfilepath, $filecontent);
+
+        return $updatedcontent;
     }
 
 

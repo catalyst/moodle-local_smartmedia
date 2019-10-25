@@ -1084,15 +1084,12 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         foreach ($playlists as $playlistcontent) {
             // Get the fixture file as an array for comparision.
-            $tmpfile = tmpfile();
-            fwrite($tmpfile, $playlistcontent);
-            $tmppath = stream_get_meta_data($tmpfile)['uri'];
             $before = file($tmppath); // The file content as an array before replacement of urls.
 
             // Use reflector magic on private method to get the file with replaced urls as array for comparison.
             $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_playlist_urls_with_pluginfile_urls');
             $method->setAccessible(true); // Allow accessing of private method.
-            $result = $method->invoke($conversion, $tmpfile, $contenthash);
+            $result = $method->invoke($conversion, $playlistcontent, $contenthash);
             $tmppath = stream_get_meta_data($result)['uri'];
             $after = file($tmppath); // The file content as an array after replacement of urls.
 
