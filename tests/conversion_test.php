@@ -1083,32 +1083,13 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversion = new \local_smartmedia\conversion($transcoder);
 
         foreach ($playlists as $playlistcontent) {
-            // Get the fixture file as an array for comparision.
-            $tmpfile = tmpfile();
-            fwrite($tmpfile, $playlistcontent);
-            $tmppath = stream_get_meta_data($tmpfile)['uri'];
-            $before = file($tmppath); // The file content as an array before replacement of urls.
-
             // Use reflector magic on private method to get the file with replaced urls as array for comparison.
             $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_playlist_urls_with_pluginfile_urls');
             $method->setAccessible(true); // Allow accessing of private method.
-            $result = $method->invoke($conversion, $tmpfile, $contenthash);
-            $tmppath = stream_get_meta_data($result)['uri'];
-            $after = file($tmppath); // The file content as an array after replacement of urls.
+            $result = $method->invoke($conversion, $playlistcontent, $contenthash);
 
-            $i = 0;
-            while ($i < count($before) && $i < count($after)) {
-                // Locate the changed lines in playlist and test that they are correct.
-                if (preg_match('/' . $contenthash . '_/', $before[$i], $matches, PREG_OFFSET_CAPTURE)) {
-                    // Extract the filename from the end of the matching line.
-                    $filename = substr($before[$i], $matches[0][1] + strlen($matches[0][0]));
-                    $expected = "pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/$filename";
-                    $actual = substr($after[$i], $matches[0][1], strlen($expected));
-
-                    $this->assertEquals($expected, $actual);
-                }
-                $i++;
-            }
+            $needle = "pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
+            $this->assertContains($needle, $result);
         }
     }
 
