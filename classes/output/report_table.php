@@ -188,13 +188,16 @@ class report_table extends table_sql implements renderable {
      * @throws \coding_exception
      */
     public function col_cost($row) {
-        $cost = $this->pricingcalculator->calculate_transcode_cost($row->height, $row->duration);
-        if ($cost == 0) {
+        $cost = $this->pricingcalculator->calculate_transcode_cost($row->height, $row->duration, $row->videostreams,
+            $row->audiostreams);
+
+        // We still want to allow zero cost, so explicitly check for `null` only.
+        if ($cost === null) {
             $cost = get_string('report:nocostdata', 'local_smartmedia');
             $displaycost = $this->format_text($cost);
         } else {
             // Round the cost for better display if we aren't downloading the data.
-            if (!$this->is_downloading() && !is_null($cost)) {
+            if (!$this->is_downloading()) {
                 $cost = round($cost, 4);
             }
             $displaycost = $this->format_text('$' . $cost);

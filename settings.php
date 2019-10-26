@@ -26,57 +26,14 @@ defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
 
-    $settings = new admin_settingpage('local_smartmedia', get_string('pluginname', 'local_smartmedia'));
-    $ADMIN->add('localplugins', $settings);
+    // Plugin settings link.
+    $pluginsettings = new admin_externalpage(
+        'local_smartmedia_settings',
+        get_string('pluginname', 'local_smartmedia'),
+        new moodle_url('/local/smartmedia/index.php'));
+    $ADMIN->add('localplugins', $pluginsettings);
 
-    // AWS Settings settings.
-    $settings->add(new admin_setting_heading('awsheader',
-        get_string('settings:aws:header', 'local_smartmedia'),
-        get_string('settings:aws:header_desc', 'local_smartmedia')));
-
-    $settings->add(new admin_setting_configtext('local_smartmedia/api_key',
-        get_string('settings:aws:key', 'local_smartmedia'),
-        get_string('settings:aws:key_help', 'local_smartmedia'),
-        ''));
-
-    $settings->add(new admin_setting_configpasswordunmask('local_smartmedia/api_secret',
-        get_string('settings:aws:secret', 'local_smartmedia'),
-        get_string('settings:aws:secret_help', 'local_smartmedia'),
-        ''));
-
-    // These are the only regions that AWS Elastic Transcoder is available in.
-    $regionoptions = array(
-        'us-east-1'      => 'US East (N. Virginia)',
-        'us-west-1'      => 'US West (N. California)',
-        'us-west-2'      => 'US West (Oregon)',
-        'ap-northeast-1' => 'Asia Pacific (Tokyo)',
-        'ap-south-1'     => 'Asia Pacific (Mumbai)',
-        'ap-southeast-1' => 'Asia Pacific (Singapore)',
-        'ap-southeast-2' => 'Asia Pacific (Sydney)',
-        'eu-west-1'      => 'EU (Ireland)',
-    );
-    $settings->add(new admin_setting_configselect('local_smartmedia/api_region',
-        get_string('settings:aws:region', 'local_smartmedia'),
-        get_string('settings:aws:region_help', 'local_smartmedia'),
-        'ap-southeast-2',
-        $regionoptions));
-
-    // Processing settings.
-    $settings->add(new admin_setting_heading('processingheader',
-        get_string('settings:processing:header', 'local_smartmedia'),
-        get_string('settings:processing:header_desc', 'local_smartmedia')));
-    $settings->add(new admin_setting_configtextarea('local_smartmedia/transcodepresets',
-        get_string('settings:processing:transcodepresets', 'local_smartmedia'),
-        get_string('settings:processing:transcodepresets_desc', 'local_smartmedia'), ''));
-
-    // FFprobe settings.
-    $settings->add(new admin_setting_heading('ffprobeheader',
-        get_string('settings:ffprobe:header', 'local_smartmedia'),
-        get_string('settings:ffprobe:header_desc', 'local_smartmedia')));
-    $settings->add(new admin_setting_configexecutable('local_smartmedia/pathtoffprobe',
-        get_string('settings:ffprobe:pathtoffprobe', 'local_smartmedia'),
-        get_string('settings:ffprobe:pathtoffprobe_desc', 'local_smartmedia'), '/usr/bin/ffprobe'));
-
+    // Dashboard link.
     $ADMIN->add('reports', new admin_externalpage('local_smartmedia_report',
         get_string('pluginname', 'local_smartmedia'), "$CFG->wwwroot/local/smartmedia/report.php"));
 }

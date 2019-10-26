@@ -38,6 +38,15 @@ $tasks = array(
         'month' => '*'
     ),
     array(
+        'classname' => 'local_smartmedia\task\process_conversions',
+        'blocking' => 0,
+        'minute' => '*/15',
+        'hour' => '*',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*'
+    ),
+    array(
         'classname' => 'local_smartmedia\task\report_process',
         'blocking' => 0,
         'minute' => '45',

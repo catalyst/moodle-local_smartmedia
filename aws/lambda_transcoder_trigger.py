@@ -22,19 +22,98 @@ import botocore
 import os
 import logging
 import io
+import json
 from botocore.exceptions import ClientError
+from datetime import datetime
 
 s3_client = boto3.client('s3')
+sqs_client = boto3.client('sqs')
 et_client = boto3.client('elastictranscoder')
 logger = logging.getLogger()
 
 
-def submit_transcode_jobs(s3key, pipeline_id):
+def sqs_send_message(key, bucket, record, metadata):
+    # Get environment variables
+    sqs_url = os.environ.get('SmartmediaSqsQueue')  # SQS queue URL.
+
+    # Create JSON message to send to SQS queue.
+
+    now = datetime.now()  # Current date and time.
+
+    message_object = {
+        'siteid' : metadata['siteid'],
+        'objectkey' : key,
+        'process': 'S3',
+        'status': record['eventName'],
+        'message': record,
+        'timestamp': int(datetime.timestamp(now))
+        }
+    message_json = json.dumps(message_object)
+
+    # Send message to SQS queue, we do this from Lambda not directly from sns,
+    # as we want to add some extra information to the message.
+    sqs_client.send_message(
+        QueueUrl=sqs_url,
+        MessageBody=message_json,
+        MessageAttributes={
+            'siteid': {
+                'StringValue': metadata['siteid'],
+                'DataType': 'String'
+            },
+            'inputkey': {
+                'StringValue': key,
+                'DataType': 'String'
+            },
+        }
+    )
+
+
+def submit_transcode_jobs(s3key, pipeline_id, presets):
     """
     Submits jobs to Elastic Transcoder.
     """
 
     logger.info('Triggering transcode job...')
+
+    outputs = []
+    playlists = {} # Start as a dictionary, so we can add outputs by playlist key.
+
+    # Create a playlist for MPEG-DASH adaptive streaming if required.
+    if 'fmp4' in presets.values() :
+        fmp4playlist = {}
+        fmp4playlist['Name'] = '{0}_mpegdash_playlist'.format(s3key)
+        fmp4playlist['Format'] = 'MPEG-DASH'
+        fmp4playlist['OutputKeys'] = []
+        playlists['fmp4playlist'] = fmp4playlist
+
+    # Create a playlist for HLS adaptive streaming if required.
+    if 'ts' in presets.values() :
+        tsplaylist = {}
+        tsplaylist['Name'] = '{0}_hls_playlist'.format(s3key)
+        tsplaylist['Format'] = 'HLSv4'
+        tsplaylist['OutputKeys'] = []
+        playlists['tsplaylist'] = tsplaylist
+
+    for preset_id, container in presets.items() :
+        output = {}
+        filename = '{0}_{1}'.format(s3key, preset_id)
+        # HLS outputs will add .ts file extension automatically, so don't append container type.
+        if container == 'ts' :
+            output['Key'] = filename
+        else :
+            output['Key'] = '{0}.{1}'.format(filename, container)
+        output['PresetId'] = preset_id
+        output['ThumbnailPattern'] = ''
+
+        # Add output to appropriate playlist if the preset outputs fragmented media.
+        if container == 'fmp4' or container == 'ts' :
+            output['SegmentDuration'] = '3' # Hard code segments to 3 seconds duration.
+            if container == 'fmp4' :
+                playlists['fmp4playlist']['OutputKeys'].append(output['Key'])
+            if container == 'ts' :
+                playlists['tsplaylist']['OutputKeys'].append(filename)
+
+        outputs.append(output)
 
     response = et_client.create_job(
         PipelineId=pipeline_id,
@@ -42,27 +121,20 @@ def submit_transcode_jobs(s3key, pipeline_id):
          Input={
             'Key': s3key,
         },
-        Outputs=[
-            {
-                'Key': '{}.mp4'.format(s3key),
-                'PresetId': '1351620000001-100070',  # System preset: Facebook, SmugMug, Vimeo, YouTube
-                'ThumbnailPattern': '',
-            },
-            {
-                'Key': '{}.webm'.format(s3key),
-                'PresetId': '1351620000001-100240',  # System preset: Webm 720p
-                'ThumbnailPattern': '',
-             },
-            {
-                'Key': '{}.mp3'.format(s3key),
-                'PresetId': '1351620000001-300020',  # System preset: Audio MP3 - 192 kilobits/second
-                'ThumbnailPattern': '',
-             },
-        ]
+        Outputs=outputs,
+        Playlists=list(playlists.values()) # Convert dictionary to list.
     )
 
     logger.info(response)
 
+def get_presets(key, bucket, metadata):
+    """
+    Get applicable elastic transcoder presets from S3 metadata
+    """
+    raw_preset_data = metadata['presets']
+    decoded_presets = json.loads(raw_preset_data)
+    logger.info(decoded_presets)
+    return decoded_presets
 
 def lambda_handler(event, context):
     """
@@ -77,7 +149,7 @@ def lambda_handler(event, context):
     logging_level = os.environ.get('LoggingLevel', logging.ERROR)
     logger.setLevel(int(logging_level))
 
-    logging.info(event)
+    logger.info(event)
 
     #  Get Pipeline ID from environment variable
     pipeline_id = os.environ.get('PipelineId')
@@ -93,7 +165,20 @@ def lambda_handler(event, context):
         if key == 'permissions_check_file':
             continue
 
+        # Get input object metadata as we will need for SQS message sending.
+        input_object_headdata_object = s3_client.head_object(
+            Bucket=bucket,
+            Key=key
+            )
+
+        metadata = input_object_headdata_object['Metadata']
+
         logger.info('File uploaded: {}'.format(key))
 
-        submit_transcode_jobs(key, pipeline_id)
+        # Send message to SQS queue.
+        sqs_send_message(key, bucket, record, metadata)
+
+        presets = get_presets(key, bucket, metadata)
+
+        submit_transcode_jobs(key, pipeline_id, presets)
 

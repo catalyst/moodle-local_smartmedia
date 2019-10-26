@@ -81,7 +81,7 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
         $this->apisecret = '012345678910aBcDeFgHiJkLmNOpQrSTuVwXyZ';
 
         // Get our fixture representing a response from the AWS Elastic Transcoder API.
-        $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/aws_elastic_transcoder_fixture.php');
+        $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/pricing_calculator_fixture.php');
 
         // Build presets dependency from fixture.
         $presets = [];
@@ -97,42 +97,58 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
      */
     public function calculate_transcode_cost_provider() {
         return [
-            'High Definition input - 1 HD, 1 SD, 1 audio conversion' =>
-                ['1080', '3600', '0.0035', '0.0017', '0.0008', 0.21 + 0.102 + 0.048],
-            'Standard Definition input - 2 SD, 1 audio conversion' =>
-                ['540', '3600', '0.0035', '0.0017', '0.0008', 2 * 0.102 + 0.048],
-            'Audio input - 3 audio conversion' =>
-                ['0', '3600', '0.0035', '0.0017', '0.0008', 3 * 0.048],
-            'High Definition input: no HD pricing - 1 SD, 1 audio conversion' =>
-                ['1080', '3600', null, '0.0017', '0.0008', 0.102 + 0.048],
-            'High Definition input: no SD pricing - 1 HD, 1 audio conversion' =>
-                ['1080', '3600', '0.0035', null, '0.0008', 0.21 + 0.048],
-            'High Definition input: no audio pricing - 1 HD, 1 SD conversion' =>
-                ['1080', '3600', '0.0035', '0.0017', null, 0.21 + 0.102],
-            'Standard Definition input: no HD pricing - 2 SD, 1 audio conversion' =>
-                ['540', '3600', null, '0.0017', '0.0008', 2 * 0.102 + 0.048],
+            'High Definition input - 3 HD, 4 SD, 1 audio conversion' =>
+                ['1080', '3600', 1, 1, '0.0035', '0.0017', '0.0008', (3 * 0.0035 + 4 * 0.0017 + 1 * 0.0008) * 3600 / 60],
+            'Standard Definition input - 7 SD, 1 audio conversion' =>
+                ['540', '3600', 1, 1, '0.0035', '0.0017', '0.0008', (0 * 0.0035 + 7 * 0.0017 + 1 * 0.0008) * 3600 / 60],
+            'Audio input - 1 audio conversion' =>
+                ['0', '3600', 0, 1, '0.0035', '0.0017', '0.0008', (0 * 0.0035 + 0 * 0.0017 + 1 * 0.0008) * 3600 / 60],
+            'HD Video input only - 3 HD, 4 SD conversion' =>
+                ['1080', '3600', 1, 0, '0.0035', '0.0017', '0.0008', (3 * 0.0035 + 4 * 0.0017 + 0 * 0.0008) * 3600 / 60],
+            'SD Video input only - 7 SD conversion' =>
+                ['540', '3600', 1, 0, '0.0035', '0.0017', '0.0008', (0 * 0.0035 + 7 * 0.0017 + 0 * 0.0008) * 3600 / 60],
+            'High Definition input: no HD pricing - 4 SD, 1 audio conversion' =>
+                ['1080', '3600', 1, 1, null, '0.0017', '0.0008', (0 * 0.0035 + 4 * 0.0017 + 1 * 0.0008) * 3600 / 60],
+            'High Definition input: no SD pricing - 3 HD, 1 audio conversion' =>
+                ['1080', '3600', 1, 1, '0.0035', null, '0.0008', (3 * 0.0035 + 0 * 0.0017 + 1 * 0.0008) * 3600 / 60],
+            'High Definition input: no audio pricing - 3 HD, 4 SD conversion' =>
+                ['1080', '3600', 1, 1, '0.0035', '0.0017', null, (3 * 0.0035 + 4 * 0.0017 + 0 * 0.0008) * 3600 / 60],
+            'Standard Definition input: no HD pricing - 7 SD, 1 audio conversion' =>
+                ['540', '3600', 1, 1, null, '0.0017', '0.0008', (0 * 0.0035 + 7 * 0.0017 + 1 * 0.0008) * 3600 / 60],
             'Standard Definition input: no SD pricing - 1 audio conversion' =>
-                ['540', '3600', '0.0035', null, '0.0008', 0.048],
-            'Standard Definition input: no audio pricing - 2 SD conversion' =>
-                ['540', '3600', '0.0035', '0.0017', null, 2 * 0.102],
-            'Audio input: no HD pricing - 3 audio conversion' =>
-                ['0', '3600', null, '0.0017', '0.0008', 3 * 0.048],
-            'Audio input: no SD pricing - 3 audio conversion' =>
-                ['0', '3600', '0.0035', null, '0.0008', 3 * 0.048],
+                ['540', '3600', 1, 1, '0.0035', null, '0.0008', (0 * 0.0035 + 0 * 0.0017 + 1 * 0.0008) * 3600 / 60],
+            'Standard Definition input: no audio pricing - 7 SD conversion' =>
+                ['540', '3600', 1, 1, '0.0035', '0.0017', null, (0 * 0.0035 + 7 * 0.0017 + 0 * 0.0008) * 3600 / 60],
+            'Audio input: no HD pricing - 1 audio conversion' =>
+                ['0', '3600', 0, 1, null, '0.0017', '0.0008', (0 * 0.0035 + 0 * 0.0017 + 1 * 0.0008) * 3600 / 60],
+            'Audio input: no SD pricing - 1 audio conversion' =>
+                ['0', '3600', 0, 1, '0.0035', null, '0.0008', (0 * 0.0035 + 0 * 0.0017 + 1 * 0.0008) * 3600 / 60],
             'Audio input: no audio pricing - no conversion' =>
-                ['0', '3600', '0.0035', '0.0017', null, 0],
+                ['0', '3600', 0, 1, '0.0035', '0.0017', null, 0],
+            'HD Video only: no HD pricing - 4 SD conversion' =>
+                ['1080', '3600', 1, 0, null, '0.0017', '0.0008', (0 * 0.0035 + 4 * 0.0017 + 0 * 0.0008) * 3600 / 60],
+            'HD Video only input: no SD pricing - 3 HD conversion' =>
+                ['1080', '3600', 1, 0, '0.0035', null, '0.0008', (3 * 0.0035 + 0 * 0.0017 + 0 * 0.0008) * 3600 / 60],
+            'HD Video only input: no audio pricing - 3 HD, 4 SD conversion' =>
+                ['1080', '3600', 1, 0, '0.0035', '0.0017', null, (3 * 0.0035 + 4 * 0.0017 + 0 * 0.0008) * 3600 / 60],
+            'SD Video only: no HD pricing - 7 SD conversion' =>
+                ['1080', '3600', 1, 0, null, '0.0017', '0.0008', (0 * 0.0035 + 4 * 0.0017 + 0 * 0.0008) * 3600 / 60],
+            'SD Video only input: no SD pricing - no conversion' =>
+                ['0', '3600', 1, 0, '0.0035', null, '0.0008', 0],
+            'SD Video only input: no audio pricing - 7 SD conversion' =>
+                ['0', '3600', 1, 0, '0.0035', '0.0017', null, 0],
             'High Definition input: no duration - zero cost' =>
-                ['1080', '0', '0.0035', '0.0017', '0.0008', 0],
+                ['1080', '0', 1, 1, '0.0035', '0.0017', '0.0008', 0],
             'Standard Definition input: no duration - zero cost' =>
-                ['540', '0', '0.0035', '0.0017', '0.0008', 0],
+                ['540', '0', 1, 1, '0.0035', '0.0017', '0.0008', 0],
             'Audio calculation input: no duration - zero cost' =>
-                ['0', '0', '0.0035', '0.0017', '0.0008', 0],
+                ['0', '0', 0, 1, '0.0035', '0.0017', '0.0008', 0],
             'High Definition input: pricing is zero - zero cost' =>
-                ['1080', '3600', '0', '0', '0', 0],
+                ['1080', '3600', 1, 1, '0', '0', '0', 0],
             'Standard Definition input: pricing is zero - zero cost' =>
-                ['540', '3600', '0', '0', '0', 0],
+                ['540', '3600', 1, 1, '0', '0', '0', 0],
             'Audio calculation input: pricing is zero - zero cost' =>
-                ['0', '3600', '0', '0', '0', 0],
+                ['0', '3600', 0, 1, '0', '0', '0', 0],
         ];
     }
 
@@ -141,6 +157,8 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
      *
      * @param int $height the height of the resolution to test.
      * @param int|float $duration duration in seconds.
+     * @param int $videostreams count of video streams file has.
+     * @param int $audiostreams count of audio streams file has.
      * @param float|null $hdpricing cost per minute for hd transcoding, null if pricing wasn't set.
      * @param float|null $sdpricing cost per minute for sd transcoding, null if pricing wasn't set.
      * @param float|null $audiopricing cost per minute for audio transcoding, null if pricing wasn't set.
@@ -148,7 +166,8 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
      *
      * @dataProvider calculate_transcode_cost_provider
      */
-    public function test_calculate_transcode_cost($height, $duration, $hdpricing, $sdpricing, $audiopricing, $expected) {
+    public function test_calculate_transcode_cost($height, $duration, $videostreams, $audiostreams, $hdpricing,
+                                                  $sdpricing, $audiopricing, $expected) {
 
         // Setup the location pricing for dependency injection.
         $locationpricing = new location_transcode_pricing('ap-southeast-2');
@@ -163,9 +182,24 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
         }
 
         $pricingcalculator = new pricing_calculator($locationpricing, $this->presets);
-        $actual = $pricingcalculator->calculate_transcode_cost($height, $duration);
+        $actual = $pricingcalculator->calculate_transcode_cost($height, $duration, $videostreams, $audiostreams);
 
         $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Test that calculate transcode costs will null if preset ids aren't in admin settings.
+     */
+    public function test_calculate_transcode_cost_no_presets() {
+
+        // Setup the location pricing for dependency injection.
+        $locationpricing = new location_transcode_pricing('ap-southeast-2');
+
+        // Instantiate the class with no presets.
+        $pricingcalculator = new pricing_calculator($locationpricing);
+        $actual = $pricingcalculator->calculate_transcode_cost(rand(0, 1080), rand(0, 3600));
+
+        $this->assertNull($actual);
     }
 
 }

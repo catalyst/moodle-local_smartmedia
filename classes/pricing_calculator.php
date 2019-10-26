@@ -58,7 +58,7 @@ class pricing_calculator {
      * @param location_transcode_pricing $locationpricing object containing pricing information for region.
      * @param array $presets array of aws_ets_preset objects containing preset transcode output settings.
      */
-    public function __construct(location_transcode_pricing $locationpricing, array $presets) {
+    public function __construct(location_transcode_pricing $locationpricing, array $presets = []) {
         $this->locationpricing = $locationpricing;
         $this->region = $locationpricing->get_region();
         $this->presets = $presets;
@@ -95,33 +95,52 @@ class pricing_calculator {
     }
 
     /**
+     * Check that this price calculator has presets to calculate pricing from.
+     *
+     * @return bool
+     */
+    public function has_presets() : bool {
+        $result = false;
+        if (!empty($this->presets)) {
+            $result = true;
+        }
+        return $result;
+    }
+
+    /**
      * Calculate the transcode cost across all presets for media of a set height and duration.
      *
      * @param int $height the height in pixels of the input media being transcoded.
      * @param float $duration the duration in seconds of the input media being transcoded.
+     * @param int $videostreams the count of video streams the input media has.
+     * @param int $audiostreams the count of audio streams the input media has.
      *
-     * @return float $cost the total cost in US Dollars to perform all preset transcodes.
+     * @return float|null $cost the total cost in US Dollars to perform all preset transcodes.
      */
-    public function calculate_transcode_cost(int $height, float $duration) : float {
-        $cost = 0;
+    public function calculate_transcode_cost(int $height, float $duration, int $videostreams = 1, int $audiostreams = 1) {
 
-        foreach ($this->presets as $preset) {
-            // All video media can be transcoded by standard definition presets.
-            if ($preset->is_output_standard_definition() && $preset->is_input_video($height)) {
-                $cost += $this->locationpricing->calculate_standard_definition_cost($duration);
-            } else if ($preset->is_output_high_definition()) {
-                // Only high definition video can be transcoded by high definition presets.
-                if ($preset->is_input_high_definition($height)) {
-                    $cost += $this->locationpricing->calculate_high_definition_cost($duration);
-                } else if ($preset->is_input_video($height)) {
+        if ($this->has_presets()) {
+            $cost = 0;
+
+            foreach ($this->presets as $preset) {
+                // All video media can be transcoded by standard definition presets providing it has at least one video stream.
+                if ($preset->is_output_standard_definition() && $preset->is_input_video($height) && !empty($videostreams)) {
                     $cost += $this->locationpricing->calculate_standard_definition_cost($duration);
-                } else {
+                } else if ($preset->is_output_high_definition() && !empty($videostreams)) {
+                    // Only high definition video can be transcoded by high definition presets.
+                    if ($preset->is_input_high_definition($height)) {
+                        $cost += $this->locationpricing->calculate_high_definition_cost($duration);
+                    } else if ($preset->is_input_video($height)) {
+                        $cost += $this->locationpricing->calculate_standard_definition_cost($duration);
+                    }
+                } else if ($preset->is_output_audio() && !empty($audiostreams)) {
+                    // All media can be trancoded to audio, providing it has at least one audio stream.
                     $cost += $this->locationpricing->calculate_audio_cost($duration);
                 }
-            } else {
-                // All media can be trancoded to audio.
-                $cost += $this->locationpricing->calculate_audio_cost($duration);
             }
+        } else {
+            // If there are no presets, or no audio or video streams, no transcoding could be conducted.
+            $cost = null;
         }
         return $cost;
     }

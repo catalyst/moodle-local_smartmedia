@@ -90,6 +90,11 @@ Resources:
           - elastictranscoder:CreateJob
           - elastictranscoder:ReadJob
           - elastictranscoder:ReadPipeline
+          - elastictranscoder:ReadPreset
+          Resource: '*'
+        - Effect: Allow
+          Action: 
+          - sqs:SendMessage
           Resource: '*'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
@@ -180,6 +185,10 @@ Resources:
         -   Effect: Allow
             Action: iam:PassRole
             Resource: '*'
+        -   Effect: Allow
+            Action: 
+            - sqs:SendMessage
+            Resource: '*'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
       Roles:
         - !Ref LambdaAiRole
@@ -243,19 +252,11 @@ Resources:
           Resource: !GetAtt SqsQueue.Arn
           Condition:
             ArnEquals:
-              aws:SourceArn: !Ref SnsTopicConversion
-        - Sid: '2'
-          Effect: Allow
-          Principal: '*'
-          Action: sqs:SendMessage
-          Resource: !GetAtt SqsQueue.Arn
-          Condition:
-            ArnEquals:
-              aws:SourceArn: !Ref SnsTopicComplete
+              aws:SourceArn: !GetAtt LambdaAiFunction.Arn
       Queues:
         - !Ref SqsQueue
 # Lambda permissions.
-# Theses are specific permissions used t.o allow services and resources
+# Theses are specific permissions used to allow services and resources
 # To invoke Lambda functions.
   LambdaAiPermission:
     Type: AWS::Lambda::Permission
@@ -263,7 +264,7 @@ Resources:
       Action: 'lambda:InvokeFunction'
       FunctionName: !Ref LambdaAiFunction
       Principal: sns.amazonaws.com
-      SourceArn: !Ref SnsTopicComplete
+      SourceArn: !Ref SnsTopicConversion
   LambdaRekognitionCompletePermission:
     Type: AWS::Lambda::Permission
     Properties:
@@ -295,6 +296,9 @@ Resources:
       Code:
         S3Bucket: !Ref ResourceBucket
         S3Key: !Ref LambdaTranscodeTriggerArchiveKey
+      Environment:
+        Variables:
+          SmartmediaSqsQueue: !Ref SqsQueue
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_trigger'] ]
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
@@ -311,8 +315,10 @@ Resources:
       Environment:
         Variables:
           OutputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
+          InputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'input'] ]
           SnsTopicRekognitionCompleteArn: !Ref SnsTopicRekognitionComplete
           RekognitionCompleteRoleArn: !GetAtt RekognitionCompleteRole.Arn
+          SmartmediaSqsQueue: !Ref SqsQueue
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_ai'] ]
       Handler: lambda_ai_trigger.lambda_handler
       MemorySize: 128
@@ -326,6 +332,10 @@ Resources:
       Code:
         S3Bucket: !Ref ResourceBucket
         S3Key: !Ref LambdaRekognitionCompleteArchiveKey
+      Environment:
+        Variables:
+          InputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'input'] ]
+          SmartmediaSqsQueue: !Ref SqsQueue
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'rekognition_complete'] ]
       Handler: lambda_rekognition_complete.lambda_handler
       MemorySize: 128
@@ -362,18 +372,6 @@ Resources:
       TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicConversion'] ]
       Subscription :
         -
-          Endpoint: !GetAtt SqsQueue.Arn
-          Protocol: 'sqs'
-  SnsTopicComplete:
-    Type: AWS::SNS::Topic
-    Properties:
-      DisplayName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicComplete'] ]
-      TopicName: !Join [ '-', [!Ref 'AWS::StackName', 'SmartmediaSnsTopicComplete'] ]
-      Subscription :
-        -
-          Endpoint: !GetAtt SqsQueue.Arn
-          Protocol: 'sqs'
-        -
           Endpoint: !GetAtt LambdaAiFunction.Arn
           Protocol: 'lambda'
   SnsTopicRekognitionComplete:
@@ -399,7 +397,7 @@ Resources:
       InputBucket: !Ref InputS3Bucket
       OutputBucket: !Ref OutputS3Bucket
       Notifications:
-        Completed: !Ref SnsTopicComplete
+        Completed: !Ref SnsTopicConversion
         Error: !Ref SnsTopicConversion
         Progressing: !Ref SnsTopicConversion
         Warning: !Ref SnsTopicConversion
@@ -469,6 +467,11 @@ Resources:
               - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
             - Effect: Allow
               Action:
+              - sqs:ReceiveMessage
+              - sqs:DeleteMessage
+              Resource: !GetAtt SqsQueue.Arn
+            - Effect: Allow
+              Action:
               - pricing:*
               Resource:
               - '*'
@@ -509,3 +512,6 @@ Outputs:
   SnsTopicRekognitionCompleteArn:
     Description: Rekognition complete SNS topic ARN
     Value: !Ref SnsTopicRekognitionComplete
+  SmartmediaSqsQueue:
+    Description: SQS queue url
+    Value: !Ref SqsQueue

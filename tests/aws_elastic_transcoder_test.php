@@ -31,6 +31,7 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 use Aws\MockHandler;
 use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Result;
+use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
 use local_smartmedia\aws_ets_preset;
 
@@ -99,7 +100,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
      *
      * @return array the api stub and expected result from calling get_pricing_client method on stub.
      */
-    public function create_mock_elastic_transcoder_client(array $fixtures) {
+    public function create_mock_elastic_transcoder_client(array $fixtures = []) {
         // Inject our results fixture into the API dependency as a mock using a handler.
         $mockhandler = new MockHandler();
         $mockresults = [];
@@ -109,7 +110,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
             $mockhandler->append($mockresult);
         }
 
-        // Create the mock response Pricing Client.
+        // Create the mock response Elastic Transcoder Client.
         $mock = new ElasticTranscoderClient([
             'region' => $this->region,
             'version' => $this->version,
@@ -120,16 +121,19 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
     }
 
     /**
-     * Test that we can get presets as aws_ets_preset instances.
+     * Test that we can get presets as aws_ets_preset instances when valid
+     * preset ids are set in admin settings.
      */
-    public function test_get_presets() {
+    public function test_get_presets_set() {
+        set_config('quality_low', 1, 'local_smartmedia');
+        set_config('quality_high', 1, 'local_smartmedia');
 
         // Mock the elastic transcoder client so it returns fixture data presets.
         list($mock, $mockresults) = $this->create_mock_elastic_transcoder_client($this->fixture['readPreset']);
 
         // Instantiate the class, injecting our mock.
-        $pricingclient = new aws_elastic_transcoder($mock);
-        $actual = $pricingclient->get_presets($this->presets);
+        $transcoder = new aws_elastic_transcoder($mock);
+        $actual = $transcoder->get_presets();
 
         // Get the expected results from the fixture to compare.
         $expected = [];
@@ -141,4 +145,54 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
         $this->assertEquals($expected, $actual);
     }
 
+    /**
+     * When presets are not set we should get empty array.
+     */
+    public function test_get_presets_not_set() {
+
+        // Mock the elastic transcoder client so it returns fixture data presets.
+        list($mock, $mockresults) = $this->create_mock_elastic_transcoder_client();
+
+        // Instantiate the class, injecting our mock.
+        $transcoder = new aws_elastic_transcoder($mock);
+        // Get presets for empty string in admin settings.
+        $actual = $transcoder->get_presets();
+        $expected = $mockresults;
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Test that we can get preset ids based on settings.
+     */
+    public function test_get_preset_ids() {
+
+        // Set up our transcoder instance.
+        set_config('api_region', $this->region, 'local_smartmedia');
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+
+        // First test should be empty as no config set.
+        $presetids = $transcoder->get_preset_ids();
+        $this->assertEmpty($presetids);
+
+        set_config('quality_low', 1, 'local_smartmedia');
+        set_config('quality_high', 1, 'local_smartmedia');
+        $presetids = $transcoder->get_preset_ids();
+        $this->assertCount(4, $presetids);
+        $this->assertContains('1351620000001-200015', $presetids);
+        $this->assertContains('1351620000001-500030', $presetids);
+        $this->assertContains('1351620000001-200045', $presetids);
+        $this->assertContains('1351620000001-500050', $presetids);
+        $this->assertNotContains('1351620000001-200035', $presetids);
+        $this->assertNotContains('1351620000001-500040', $presetids);
+
+        set_config('quality_medium', 1, 'local_smartmedia');
+        $presetids = $transcoder->get_preset_ids();
+        $this->assertCount(6, $presetids);
+        $this->assertContains('1351620000001-200015', $presetids);
+        $this->assertContains('1351620000001-500030', $presetids);
+        $this->assertContains('1351620000001-200045', $presetids);
+        $this->assertContains('1351620000001-500050', $presetids);
+    }
 }

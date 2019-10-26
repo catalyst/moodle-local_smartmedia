@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * This command line script will provision the Smart media environment in AWS.
+ * This command line script will provision the Smartmedia environment in AWS.
  *
  * @package     local_smartmedia
- * @copyright   2018 Matt Porritt <mattp@catalyst-au.net>
+ * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -48,7 +48,7 @@ if ($unrecognized) {
 }
 
 if ($options['help'] || !$options['keyid'] || !$options['secret'] || !$options['region']) {
-    $help = "Command line Librelmbda provision.
+    $help = "Command line Smartmedia provision.
 This command line script will provision the Smart Media environment in AWS.
 
 Options:
@@ -56,7 +56,6 @@ Options:
 --secret=STRING           AWS API Secret Access Key.
 --region=STRING           The AWS region to create the environment in.
                           e.g. ap-southeast-2
-                          If this isn't provided the a random prefix will be generated.
 --set-config              Will update the plugin configuration with the resources
                           created by this script.
 
@@ -175,14 +174,9 @@ if ($createstackresponse->code != 0 ) {
 $envvararray = array(
     array(
         'function' => $createstackresponse->outputs['TranscodeLambdaArn'],
-        'values' => array('PipelineId' => $createstackresponse->outputs['TranscodePipelineId'])
-    ),
-    array(
-        'function' => $createstackresponse->outputs['RekognitionCompleteLambdaArn'],
         'values' => array(
-            'SnsTopicRekognitionComplete' => $createstackresponse->outputs['SnsTopicRekognitionCompleteArn'],
-            'OutputBucket' => $createstackresponse->outputs['OutputBucket']
-        )
+            'PipelineId' => $createstackresponse->outputs['TranscodePipelineId'],
+            'SmartmediaSqsQueue' => $createstackresponse->outputs['SmartmediaSqsQueue'])
     )
 );
 
@@ -210,5 +204,6 @@ echo get_string(
     $createstackresponse->outputs['SmartMediaS3UserSecretKey']) . PHP_EOL;
 echo get_string('provision:inputbucket', 'local_smartmedia', $createstackresponse->outputs['InputBucket']) . PHP_EOL;
 echo get_string('provision:outputbucket', 'local_smartmedia', $createstackresponse->outputs['OutputBucket']) . PHP_EOL;
+echo get_string('provision:sqsqueue', 'local_smartmedia', $createstackresponse->outputs['SmartmediaSqsQueue']) . PHP_EOL;
 
 exit(0); // 0 means success.

@@ -53,7 +53,7 @@ $transcoder = new \local_smartmedia\aws_elastic_transcoder($api->create_elastic_
 // Get the location pricing for the AWS region set.
 $locationpricing = $pricingclient->get_location_pricing(get_config('local_smartmedia', 'api_region'));
 // Get the Elastic Transcoder presets which have been set.
-$presets = $transcoder->get_presets(get_config('local_smartmedia', 'transcodepresets'));
+$presets = $transcoder->get_presets();
 
 $pricingcalculator = new \local_smartmedia\pricing_calculator($locationpricing, $presets);
 

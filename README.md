@@ -6,14 +6,14 @@ Smart media aims to enhance Moodle's processing and delivery of multimedia while
 
 Smart media leverages cloud services provided through Amazon Web Services (AWS) in order to conduct video transcoding into required formats and provide additional analytics functionality for multimedia, initially support has not be provided for other cloud service providers.
 
-## Installation ##
+## Plugin Installation ##
 
 1. Install dependency plugin local/aws. See [local/aws](##local/aws)
 2. Install dependency binary FFmpeg on your Moodle server. See [FFmpeg](##FFmpeg)
 3. Clone the plugin git repo into your Moodle codebase root `git clone git@github.com:catalyst/moodle-local_smartmedia.git local/smartmedia`
 4. Update plugin settings. See [Settings](##Settings)
 
-## local/aws
+### local/aws
 
 The local/aws plugin is a dependency for local/smartmedia, and provides the AWS PHP SDK that is required in order for Moodle to utilise AWS cloud services.
 
@@ -43,12 +43,105 @@ For Windows based or any other servers follow the instructions and link at <http
 
 You can get more info about FFmpeg at <https://ffmpeg.org/>
 
-## Settings
+## Plugin Settings
 
 Once the local/smartmedia plugin is installed, double check the installation location of `ffprobe` and ensure that you set this in Moodle settings under `Site Administration > Plugins > Local plugins > Smart Media` for the *FFProbe binary path* field.
 ```bash
 whereis ffprobe # default /usr/bin/ffprobe
 ```
+
+## AWS Stack Setup
+The following steps will setup the Amazon Web Services (AWS) infrastructure. The AWS infrastructure is required to do the actual processing of multimedia files. While setting up the AWS infrastructure is largely automated by scripts included in this plugin, a working knowledge of AWS is highly recommended.
+
+For more information on how the submitted files are processed in AWS please refer to the topic: [Conversion Architecture](#conversion-architecture)
+
+This step should be completed once the plugin has been installed into your Moodle instance and the other Moodle setup tasks have been completed.
+
+**Note:** Full support on setting up an AWS account and API access keys for AWS stack infrastructure provisioning is beyond the scope of this guide.
+
+To setup the AWS conversion stack infrastructure:
+
+1. Create an AWS account, see: `https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/` for information on how to do this.
+2. Create an AWS API user with administrator access and generate a API Key ID and a API Secret Key, see: `https://docs.aws.amazon.com/IAM/latest/UserGuide/id_users_create.html` for information on how to do this.
+3. Change to your Moodle instance application directory. e.g. `cd /var/www/moodle`
+4. Run the provisioning script below, replacing `<keyid>` and `<secretkey>` With the AWS API Key ID and AWS API Secret Key that you obtained in step 2. <br/> Replace `<region>` with the AWS region you wish to set up your AWS stack, e.g. `ap-southeast-2`. <br/> The command to execute is:
+
+```console
+sudo -u www-data php local/smartmedia/cli/provision.php \
+--keyid=<keyid> \
+--secret=<secretkey> \
+--region=<region> \
+--set-config
+```
+**Note:** the user may be different to www-data on your system.
+
+The `--set-config` option will automatically set the plugin settings in Moodle based on the results returned by the provisioning script.
+
+The script will return output similar to, the following:
+
+```console
+    
+== Creating resource S3 Bucket ==
+Created resource bucket, at location http://smr1565939869-resource.s3.amazonaws.com/
+
+== Uploading Lambda function archives to resource S3 bucket ==
+Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_ai_trigger.zip
+
+Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_rekognition_complete.zip
+
+Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_resource_transcoder.zip
+
+Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_transcoder_trigger.zip
+
+Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_transcribe_complete.zip
+
+== Provisioning the Lambda function to provide a custom cloudformation resource provider ==
+Stack status: CREATE_IN_PROGRESS
+Stack status: CREATE_COMPLETE
+Cloudformation custom resource stack created. Stack ID is: arn:aws:cloudformation:ap-southeast-2:693620471840:stack/smr1565939869/f5f297c0-bff5-11e9-86c0-0290a6e588aa
+
+Lambda Resource ARN: arn:aws:lambda:ap-southeast-2:693620471840:function:smr1565939869_transcoder_resource
+== Provisioning the smart media stack resources ==
+Stack status: CREATE_IN_PROGRESS
+Stack status: CREATE_COMPLETE
+Cloudformation stack created. Stack ID is: arn:aws:cloudformation:ap-southeast-2:693620471840:stack/smt1565939869/1a1e1570-bff6-11e9-b220-02a73bda2f36
+
+Updating Lambda transcode funciton enivronment variables.
+Environment variables updated
+
+Updating Lambda transcode funciton enivronment variables.
+Environment variables updated
+
+== Provisioning the smart media stack resources ==
+Smart media S3 user access key: AKIA2C8YAPAQEWV347IT
+Smart media S3 user secret key: uBdLPiBwHj+ANmYP+bpzNx5zCEqjpktjFON/NsAG
+Input bucket: smt1565939869-input
+Output bucket: smt1565939869-output
+
+```
+
+## Testing Smartmedia Conversion
+The following sections outline testing of the Smartmedia plugin.
+
+### Conversion test script
+Once the AWS architecture has been setup using the provisioning script, it can be tested from the command line.
+
+The following test command runs a basic conversion in AWS and returns the result status. To run the script:
+
+1. Change to your Moodle instance application directory. e.g. `cd /var/www/moodle`
+2. Run the following command, replacing `<keyid>` and `<secretkey>` With the AWS API Key ID and AWS API Secret Key that you obtained in the AWS Stack Setup. <br/> Replace `<region>` with the AWS region from the  AWS stack set, e.g. `ap-southeast-2`. <br/> Replace `<inputbucket>` and `<outputbucket>` with the buckets from the setup. <br/> Finally enter the path to the file wish to process.:
+
+```console
+sudo -u www-data php local/smartmedia/cli/test.php \
+--keyid=<keyid> \
+--secret=<secretkey> \
+--region=<region> \
+--input-bucket=<inputbucket> \
+--output-bucket=<outputbucket> \
+--file='/var/www/moodle/local/smartmedia/tests/fixtures/SampleVideo1mb.mp4'
+```
+
+**Note:** the user may be different to www-data on your system.
 
 ## Additional Information
 The following sections provide an overview of some additional topics for this plugin and it's associated AWS architecture.
