@@ -281,9 +281,9 @@ class conversion {
      * This requires some horrible reverse engineering.
      *
      * @param \moodle_url $href Plugin file url to extract from.
-     * @return \stored_file $file The Moodle file object.
+     * @return \stored_file || bool $file The Moodle file object or false if file not found.
      */
-    private function get_file_from_url(\moodle_url $href) : \stored_file {
+    private function get_file_from_url(\moodle_url $href) {
         // Extract the elements we need from the Moodle URL.
         $argumentsstring = $href->get_path(true);
         $rawarguments = explode('/', $argumentsstring);
@@ -439,8 +439,13 @@ class conversion {
     public function get_smart_media(\moodle_url $href, bool $triggerconversion = false) : array {
         $smartmedia = array();
 
-        // Split URL up into components.
+        // Get the file record from the Moodle URL.
         $file = $this->get_file_from_url($href);
+
+        if (!$file) {
+            // If URL doesn't correspond to a real file in Moodle return early.
+            return $smartmedia;
+        }
 
         // Query conversion table for status.
         $conversionstatuses = $this->get_conversion_statuses($file);

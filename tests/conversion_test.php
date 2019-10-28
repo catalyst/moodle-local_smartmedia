@@ -126,6 +126,25 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     }
 
     /**
+     * Test get smart media method for no media.
+     */
+    public function test_get_smart_media_nomedia() {
+        global $CFG;
+        $this->resetAfterTest(true);
+
+        $linkhref = 'http://moodle.local/pluginfile.php/1461/mod_label/intro/SampleVideo1mb.mp4';
+        $moodleurl = new \moodle_url($linkhref);
+
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+
+        $smartmedia = $conversion->get_smart_media($moodleurl);
+
+        $this->assertEmpty($smartmedia);
+    }
+
+    /**
      * Test getting smart media.
      */
     public function test_get_smart_media() {
