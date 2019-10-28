@@ -177,7 +177,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             'itemid' => 0,
             'filepath' => '/' . $initialfile->get_contenthash() . '/conversions/',
             'filename' => $presetid . '_myfile1.mp4');
-        $convertedmediafile = $fs->create_file_from_string($convertedmediarecord, 'the first test file');
+        $fs->create_file_from_string($convertedmediarecord, 'the first test file');
 
         // Mock a metadata file received from s3.
         $converteddatarecord = array(
@@ -187,7 +187,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             'itemid' => 0,
             'filepath' => '/' . $initialfile->get_contenthash() . '/metadata/',
             'filename' => 'Labels.json');
-        $converteddatafile = $fs->create_file_from_string($converteddatarecord, 'label data');
+        $fs->create_file_from_string($converteddatarecord, 'label data');
 
         // Add a successful conversion status for this file.
         $conversionrecord = new \stdClass();
@@ -576,7 +576,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $metadatarecord1->height = 1080;
         $metadatarecord1->metadata = '{}';
 
-        $id1 = $DB->insert_record('local_smartmedia_data', $metadatarecord1);
+        $DB->insert_record('local_smartmedia_data', $metadatarecord1);
 
         $metadatarecord2 = new \stdClass();
         $metadatarecord2->contenthash = 'fakecontenthash2';
@@ -590,7 +590,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $metadatarecord2->height = 1080;
         $metadatarecord2->metadata = '{}';
 
-        $id2 = $DB->insert_record('local_smartmedia_data', $metadatarecord2);
+        $DB->insert_record('local_smartmedia_data', $metadatarecord2);
 
         $metadatarecord3 = new \stdClass();
         $metadatarecord3->contenthash = 'fakecontenthash3';
@@ -604,7 +604,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $metadatarecord3->height = 0;
         $metadatarecord3->metadata = '{}';
 
-        $id3 = $DB->insert_record('local_smartmedia_data', $metadatarecord3);
+        $DB->insert_record('local_smartmedia_data', $metadatarecord3);
 
         $transcoder = new aws_elastic_transcoder($mock);
         $conversion = new \local_smartmedia\conversion($transcoder);
@@ -693,7 +693,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_get_conversion_settings() {
         $this->resetAfterTest(true);
-        global $DB;
 
         set_config('quality_low', 1, 'local_smartmedia');
 
@@ -942,7 +941,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_process_conversion_process_fail() {
         $this->resetAfterTest(true);
-        global $DB;
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
@@ -984,7 +982,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_process_conversion_transcode() {
         $this->resetAfterTest(true);
-        global $DB;
 
         // Set up the AWS mock.
         $mock = new MockHandler();
@@ -1038,7 +1035,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_process_conversion_no_messages() {
         $this->resetAfterTest(true);
-        global $DB;
 
         // Set up the AWS mock.
         $mock = new MockHandler();
@@ -1117,7 +1113,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_process_conversion_process() {
         $this->resetAfterTest(true);
-        global $DB;
 
         // Set up the AWS mock.
         $mock = new MockHandler();
@@ -1163,7 +1158,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_update_completion_status() {
         $this->resetAfterTest(true);
-        global $DB;
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
@@ -1337,7 +1331,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
-        $recordid = $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+        $DB->insert_record('local_smartmedia_conv', $conversionrecord);
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
@@ -1421,7 +1415,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_get_media_files() {
         $this->resetAfterTest(true);
-        global $DB;
 
         // Create some test files.
         $fs = get_file_storage();
@@ -1466,7 +1459,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_filter_playlists() {
         $this->resetAfterTest(true);
-        global $DB;
 
         // Create some test files.
         $fs = get_file_storage();

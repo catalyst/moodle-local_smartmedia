@@ -26,7 +26,6 @@ namespace local_smartmedia;
 defined('MOODLE_INTERNAL') || die();
 
 use Aws\S3\Exception\S3Exception;
-use Aws\MockHandler;
 use moodle_url;
 
 /**
@@ -393,7 +392,6 @@ class conversion {
      * @return array
      */
     private function generate_playlists(array $mappedfiles, int $fileid) : array {
-        $playlists = array();
         $fs = get_file_storage();
 
         // For each playlist try to get playlist.
@@ -609,7 +607,7 @@ class conversion {
         );
 
         try {
-            $result = $s3client->putObject($uploadparams);
+            $s3client->putObject($uploadparams);
             $status = self::CONVERSION_IN_PROGRESS;
         } catch (S3Exception $e) {
             $status = self::CONVERSION_ERROR;
@@ -811,7 +809,6 @@ class conversion {
             $transcodedfiles[] = $trancodedfile;
         }
         return $transcodedfiles;
-        // TODO: Also remove files from AWS.
     }
 
     /**
@@ -851,6 +848,39 @@ class conversion {
     }
 
     /**
+     * Delete processed files from the AWS S3 input and output buckets.
+     *
+     * @param string $key The key of the file in the AWS S3 buckets.
+     * @param \Aws\MockHandler|null $handler Optional handler.
+     */
+    private function cleanup_aws_files(string $key, $handler=null) : void {
+        $awss3 = new \local_smartmedia\aws_s3();
+        $s3client = $awss3->create_client($handler);
+
+        // Delete original file from input bucket.
+        try {
+            $s3client->deleteObject([
+                'Bucket' => $this->config->s3_input_bucket,
+                'Key' => $key,
+            ]);
+        } catch (S3Exception $e) {
+          debugging('local_smartmedia: Failed to delete object with key: ' . $key . ' from input bucket.');
+        }
+
+        // Delete all converted files from output bucket.
+        try {
+            $s3client->deleteObject([
+                'Bucket' => $this->config->s3_output_bucket,
+                'Key' => $key,
+            ]);
+
+        } catch (S3Exception $e) {
+            debugging('local_smartmedia: Failed to delete objects with key: ' . $key . ' from output bucket.');
+        }
+
+    }
+
+    /**
      * Get the file from AWS for a given conversion process.
      *
      * @param \stdClass $conversionrecord The conversion record from the database.
@@ -886,8 +916,6 @@ class conversion {
 
         $fs->create_file_from_pathname($filerecord, $tmppath);
         fclose($tmpfile);
-
-        // TODO: Also remove files from AWS.
     }
 
     /**
@@ -975,11 +1003,12 @@ class conversion {
                 $updatedrecord->status = self::CONVERSION_FINISHED;
                 $updatedrecord->timemodified = time();
                 $updatedrecord->timecompleted = time();
-                // Update the database with the modified conversion record.
 
+                // Update the database with the modified conversion record.
                 $DB->update_record('local_smartmedia_conv', $updatedrecord);
 
-                // TODO: Also delete file from AWS.
+                // Delete the related files from AWS.
+                $this->cleanup_aws_files($updatedrecord->contenthash);
         }
 
         return $updatedrecord;
@@ -991,8 +1020,6 @@ class conversion {
      * @return array $results The results of the processing.
      */
     public function update_pending_conversions() : array {
-        global $DB;
-
         $results = array();
         $conversionrecords = $this->get_conversion_records(self::CONVERSION_IN_PROGRESS); // Get pending conversion records.
 
