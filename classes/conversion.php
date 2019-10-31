@@ -859,7 +859,7 @@ class conversion {
 
         // Delete original file from input bucket.
         try {
-            $s3client->deleteObject([
+           $result = $s3client->deleteObject([
                 'Bucket' => $this->config->s3_input_bucket,
                 'Key' => $key,
             ]);
@@ -869,10 +869,11 @@ class conversion {
 
         // Delete all converted files from output bucket.
         try {
-            $s3client->deleteObject([
+            $result = $s3client->deleteObject([
                 'Bucket' => $this->config->s3_output_bucket,
-                'Key' => $key,
+                'Key' => $key . '/',
             ]);
+            error_log(print_r($result, true));
 
         } catch (S3Exception $e) {
             debugging('local_smartmedia: Failed to delete objects with key: ' . $key . ' from output bucket.');
@@ -984,9 +985,10 @@ class conversion {
      *
      *
      * @param \stdClass $updatedrecord The record to check the completion status for.
+     * @param \Aws\MockHandler|null $handler Optional handler.
      * @return \stdClass $updatedrecord The updated completion record.
      */
-    private function update_completion_status(\stdClass $updatedrecord) : \stdClass {
+    private function update_completion_status(\stdClass $updatedrecord, $handler=null) : \stdClass {
         global $DB;
 
         // Only set the final completion status if all other processes are finished.
@@ -1008,7 +1010,7 @@ class conversion {
                 $DB->update_record('local_smartmedia_conv', $updatedrecord);
 
                 // Delete the related files from AWS.
-                $this->cleanup_aws_files($updatedrecord->contenthash);
+                $this->cleanup_aws_files($updatedrecord->contenthash, $handler);
         }
 
         return $updatedrecord;

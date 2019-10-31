@@ -1159,6 +1159,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     public function test_update_completion_status() {
         $this->resetAfterTest(true);
 
+        $mockhandler = new MockHandler();
+
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $conversion = new \local_smartmedia\conversion($transcoder);
@@ -1178,7 +1180,11 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
-        $result = $method->invoke($conversion, $conversionrecord);
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+        $result = $method->invoke($conversion, $conversionrecord, $mockhandler);
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->status);
 
         // Try again with some conversions configured to not run.
@@ -1195,7 +1201,11 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
-        $result = $method->invoke($conversion, $conversionrecord);
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+        $result = $method->invoke($conversion, $conversionrecord, $mockhandler);
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->status);
 
         // Try again with some conversions configured to not run.
@@ -1212,7 +1222,11 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
-        $result = $method->invoke($conversion, $conversionrecord);
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+        $result = $method->invoke($conversion, $conversionrecord, $mockhandler);
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
 
         // Try again with only transcode configured to run.
@@ -1229,7 +1243,11 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
-        $result = $method->invoke($conversion, $conversionrecord);
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+        $result = $method->invoke($conversion, $conversionrecord, $mockhandler);
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
 
     }
@@ -1607,6 +1625,35 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200015_v4.m3u8', $result);
         $this->assertNotContains('conversions/1351620000001-200045_v4.m3u8', $result);
         $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200045_v4.m3u8', $result);
+    }
+
+    /**
+     * Test cleaning up source files in AWS.
+     */
+    public function test_cleanup_aws_files() {
+        $this->resetAfterTest(true);
+
+        $mockhandler = new MockHandler();
+
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+
+
+        $filecontent = $this->fixture['hls_playlist_fixture'];
+        $filehash = '13ed14cef757cd7797345cb76b30c3d83caf2513';
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'cleanup_aws_files');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $result = $method->invoke($conversion, $filehash, $mockhandler);
+
+
     }
 
 }
