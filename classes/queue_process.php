@@ -111,7 +111,7 @@ class queue_process {
             'MessageAttributeNames' => array('All'),
             'QueueUrl' => $this->config->sqs_queue_url,
             'VisibilityTimeout' => 60,
-            'WaitTimeSeconds' => 5, // To quick and we miss messages, to long and it's slow.
+            'WaitTimeSeconds' => 10, // To quick and we miss messages, to long and it's slow.
         );
 
         while (count($messages) < self::MAX_MESSAGES) {
