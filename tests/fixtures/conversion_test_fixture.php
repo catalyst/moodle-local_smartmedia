@@ -967,4 +967,170 @@ EOF
     </Period>
 </MPD>
 EOF
+,
+    'list_object_fixture' => array (
+            'IsTruncated' => false,
+            'Marker' => '',
+            'Contents' =>
+            array (
+                0 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200015.ts',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 06:00:07.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"6304bde53e26a990de46e5f32fdfd9e4-30"',
+                    'Size' => 152357832,
+                    'StorageClass' => 'STANDARD',
+                ),
+                1 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200015_iframe.m3u8',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 06:00:07.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"0527f78ad12fbb7a432b057ef748b546"',
+                    'Size' => 22272,
+                    'StorageClass' => 'STANDARD',
+                ),
+                2 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200015_v4.m3u8',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 06:00:07.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"fccb48099daf60810b9656078223f9cb"',
+                    'Size' => 22106,
+                    'StorageClass' => 'STANDARD',
+                ),
+                3 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200045.ts',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 05:59:05.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"2f1a6c4cb5aca2091ca16bd5c0fc2d9d-8"',
+                    'Size' => 39797720,
+                    'StorageClass' => 'STANDARD',
+                ),
+                4 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200045_iframe.m3u8',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 05:59:05.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"621f6ef34106b01b2adfde18b683a9b1"',
+                    'Size' => 22014,
+                    'StorageClass' => 'STANDARD',
+                ),
+                5 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200045_v4.m3u8',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 05:59:05.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"dc9d6f905c879e81382e3b52b414ad58"',
+                    'Size' => 21972,
+                    'StorageClass' => 'STANDARD',
+                ),
+                6 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-500030.fmp4',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 05:59:30.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"18f83f0470d00a4dc147f9e528f2acbe-34"',
+                    'Size' => 173364464,
+                    'StorageClass' => 'STANDARD',
+                ),
+                7 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-500050.fmp4',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 05:58:53.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"56474db1f378253d7366ced488d079bf-9"',
+                    'Size' => 44246294,
+                    'StorageClass' => 'STANDARD',
+                ),
+                8 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_hls_playlist.m3u8',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 06:00:10.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"b85a5b40a3a7213d291a681ce607a8e2"',
+                    'Size' => 644,
+                    'StorageClass' => 'STANDARD',
+                ),
+                9 =>
+                array (
+                    'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/8f3d12e28ecb231852436d5c905d2a3e6ee8e119_mpegdash_playlist.mpd',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 06:00:10.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"3713d3a07d9c0fc8abadaaf700a0bc5a"',
+                    'Size' => 1315,
+                    'StorageClass' => 'STANDARD',
+                ),
+            ),
+            'Name' => 'smt1566767930-output',
+            'Prefix' => '',
+            'MaxKeys' => 1000,
+            'EncodingType' => 'url',
+            '@metadata' =>
+            array (
+                'statusCode' => 200,
+                'effectiveUri' => 'https://smt1566767930-output.s3.ap-southeast-2.amazonaws.com/?encoding-type=url',
+                'headers' =>
+                array (
+                    'x-amz-id-2' => 'h6hZsXGa7LQKpnwtKNouecZk8xQ4q3r+eCd6lGZYa5bK+ybEmCbxbMPW8InqZPlMLN17QeqReOc=',
+                    'x-amz-request-id' => '3AA57C7437D3A143',
+                    'date' => 'Sat, 02 Nov 2019 06:06:12 GMT',
+                    'x-amz-bucket-region' => 'ap-southeast-2',
+                    'content-type' => 'application/xml',
+                    'transfer-encoding' => 'chunked',
+                    'server' => 'AmazonS3',
+                ),
+                'transferStats' =>
+                array (
+                    'http' =>
+                    array (
+                        0 =>
+                        array (
+                        ),
+                    ),
+                ),
+            ),
+        )
 );

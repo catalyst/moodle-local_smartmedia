@@ -852,14 +852,16 @@ class conversion {
      *
      * @param string $key The key of the file in the AWS S3 buckets.
      * @param \Aws\MockHandler|null $handler Optional handler.
+     * @return array $keys The keys (paths) of the deleted objects.
      */
-    private function cleanup_aws_files(string $key, $handler=null) : void {
+    private function cleanup_aws_files(string $key, $handler=null) : array {
         $awss3 = new \local_smartmedia\aws_s3();
         $s3client = $awss3->create_client($handler);
+        $keys = array();
 
         // Delete original file from input bucket.
         try {
-           $result = $s3client->deleteObject([
+           $s3client->deleteObject([
                 'Bucket' => $this->config->s3_input_bucket,
                 'Key' => $key,
             ]);
@@ -868,17 +870,36 @@ class conversion {
         }
 
         // Delete all converted files from output bucket.
-        try {
-            $result = $s3client->deleteObject([
-                'Bucket' => $this->config->s3_output_bucket,
-                'Key' => $key . '/',
-            ]);
-            error_log(print_r($result, true));
+        // This is a bit convoluted as you can't delete objects
+        // by prefix.
+        // TODO: Make this work for more than 1000 objects.
 
-        } catch (S3Exception $e) {
-            debugging('local_smartmedia: Failed to delete objects with key: ' . $key . ' from output bucket.');
+        // Get the keys.
+        $objectlist = $s3client->listObjects([
+            'Bucket' => $this->config->s3_output_bucket
+        ]);
+
+        if(!empty($objectlist['Contents'])) {
+            foreach ($objectlist['Contents'] as $object) {
+                $keys[] = array('Key' => $object['Key']);
+            }
         }
 
+        // Delete the objects.
+        if(!empty($keys)) {
+            try {
+                $s3client->deleteObjects([
+                    'Bucket' => $this->config->s3_output_bucket,
+                    'Delete' => [
+                        'Objects' => $keys
+                    ]
+                ]);
+            } catch (S3Exception $e) {
+                debugging('local_smartmedia: Failed to delete objects with key: ' . $key . ' from output bucket.');
+            }
+        }
+
+        return $keys;
     }
 
     /**

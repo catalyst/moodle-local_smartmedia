@@ -1184,6 +1184,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $mockhandler->append($mockresult);
         $mockresult = new Result(array());
         $mockhandler->append($mockresult);
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
         $result = $method->invoke($conversion, $conversionrecord, $mockhandler);
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->status);
 
@@ -1204,6 +1206,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $mockresult = new Result(array());
         $mockhandler->append($mockresult);
         $mockresult = new Result(array());
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
         $mockhandler->append($mockresult);
         $result = $method->invoke($conversion, $conversionrecord, $mockhandler);
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->status);
@@ -1225,6 +1229,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $mockresult = new Result(array());
         $mockhandler->append($mockresult);
         $mockresult = new Result(array());
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
         $mockhandler->append($mockresult);
         $result = $method->invoke($conversion, $conversionrecord, $mockhandler);
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
@@ -1243,6 +1249,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
+        $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
         $mockresult = new Result(array());
         $mockhandler->append($mockresult);
         $mockresult = new Result(array());
@@ -1635,15 +1643,19 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $mockhandler = new MockHandler();
 
+        // Result from deleting object from input bucket.
         $mockresult = new Result(array());
+        $mockhandler->append($mockresult);
+
+        // List objects result.
+        $listobjects = $this->fixture['list_object_fixture'];
+        $mockresult = new Result($listobjects);
         $mockhandler->append($mockresult);
 
         $mockresult = new Result(array());
         $mockhandler->append($mockresult);
 
-
-        $filecontent = $this->fixture['hls_playlist_fixture'];
-        $filehash = '13ed14cef757cd7797345cb76b30c3d83caf2513';
+        $filehash = '8f3d12e28ecb231852436d5c905d2a3e6ee8e119';
 
         // Set up the method to test.
         $api = new aws_api();
@@ -1653,7 +1665,50 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $filehash, $mockhandler);
 
+        $expected = array (
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200015.ts',
+            ),
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200015_iframe.m3u8',
+            ),
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200015_v4.m3u8',
+            ),
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200045.ts',
+            ),
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200045_iframe.m3u8',
+            ),
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200045_v4.m3u8',
+            ),
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-500030.fmp4',
+            ),
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-500050.fmp4',
+            ),
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_hls_playlist.m3u8',
+            ),
+            array (
+                'Key' => '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/'
+                . '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_mpegdash_playlist.mpd',
+            ),
+        );
 
+        $this->assertEquals($expected, $result);
     }
 
 }
