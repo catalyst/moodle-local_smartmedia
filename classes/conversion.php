@@ -861,12 +861,12 @@ class conversion {
 
         // Delete original file from input bucket.
         try {
-           $s3client->deleteObject([
+            $s3client->deleteObject([
                 'Bucket' => $this->config->s3_input_bucket,
                 'Key' => $key,
             ]);
         } catch (S3Exception $e) {
-          debugging('local_smartmedia: Failed to delete object with key: ' . $key . ' from input bucket.');
+            debugging('local_smartmedia: Failed to delete object with key: ' . $key . ' from input bucket.');
         }
 
         // Delete all converted files from output bucket.
@@ -879,14 +879,14 @@ class conversion {
             'Bucket' => $this->config->s3_output_bucket
         ]);
 
-        if(!empty($objectlist['Contents'])) {
+        if (!empty($objectlist['Contents'])) {
             foreach ($objectlist['Contents'] as $object) {
                 $keys[] = array('Key' => $object['Key']);
             }
         }
 
         // Delete the objects.
-        if(!empty($keys)) {
+        if (!empty($keys)) {
             try {
                 $s3client->deleteObjects([
                     'Bucket' => $this->config->s3_output_bucket,
