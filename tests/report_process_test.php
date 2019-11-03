@@ -50,8 +50,8 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'update_report_data');
         $method->setAccessible(true); // Allow accessing of private method.
-        $proxy = $method->invoke($task, $name, $value); // Get result of invoked method.
-        $proxy = $method->invoke($task, $name, $value); // Get result of invoked method.
+        $method->invoke($task, $name, $value); // Get result of invoked method.
+        $method->invoke($task, $name, $value); // Get result of invoked method.
 
         $record = $DB->get_record('local_smartmedia_reports', array('name' => $name));
 

@@ -28,7 +28,6 @@ namespace local_smartmedia\output;
 defined('MOODLE_INTERNAL') || die;
 
 use local_smartmedia\pricing_calculator;
-use moodle_url;
 use table_sql;
 use renderable;
 
@@ -78,14 +77,16 @@ class report_table extends table_sql implements renderable {
         $this->show_download_buttons_at(array(TABLE_P_BOTTOM));
         $this->is_downloading($download, 'smartmedia-report');
         $this->define_baseurl($baseurl);
-        $this->define_columns(array('videostreams', 'format', 'height', 'duration', 'size', 'cost'));
+        $this->define_columns(array('videostreams', 'format', 'height', 'duration', 'size', 'cost', 'status', 'files'));
         $this->define_headers(array(
             get_string('report:type', 'local_smartmedia'),
             get_string('report:format', 'local_smartmedia'),
             get_string('report:resolution', 'local_smartmedia'),
             get_string('report:duration', 'local_smartmedia'),
             get_string('report:size', 'local_smartmedia'),
-            get_string('report:transcodecost', 'local_smartmedia')
+            get_string('report:transcodecost', 'local_smartmedia'),
+            get_string('report:status', 'local_smartmedia'),
+            get_string('report:files', 'local_smartmedia')
         ));
         // Setup pagination.
         $this->currpage = $page;
@@ -204,6 +205,31 @@ class report_table extends table_sql implements renderable {
         }
         return $displaycost;
     }
+
+    /**
+     * Get content for size column.
+     * Size displayed in Megabytes (Mb).
+     *
+     * @param \stdClass $row
+     *
+     * @return string html used to display the column field.
+     */
+    public function col_status($row) {
+        return $this->format_text('status');
+    }
+
+    /**
+     * Get content for size column.
+     * Size displayed in Megabytes (Mb).
+     *
+     * @param \stdClass $row
+     *
+     * @return string html used to display the column field.
+     */
+    public function col_files($row) {
+        return $this->format_text('files');
+    }
+
 
 }
 

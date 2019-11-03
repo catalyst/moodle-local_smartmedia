@@ -229,6 +229,9 @@ class report_process extends scheduled_task {
         $transcodedfiles = $this->get_transcoded_files(); // Get count of transcoded multimedia files.
         $this->update_report_data('transcodedfiles', $transcodedfiles);
 
+        mtrace('local_smartmedia: Processing data for overview report');
+
+
     }
 
 }
