@@ -104,7 +104,6 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $mockpricing = $this->createMock(\local_smartmedia\aws_ets_pricing_client::class);
         $mockpricing->method('get_location_pricing')->willReturn($locationpricing);
 
-
         // Get our fixture representing a response from the AWS Elastic Transcoder API.
         $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/pricing_calculator_fixture.php');
 
@@ -278,7 +277,6 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         $mockpricing = $this->createMock(\local_smartmedia\aws_ets_pricing_client::class);
         $mockpricing->method('get_location_pricing')->willReturn($locationpricing);
-
 
         // Get our fixture representing a response from the AWS Elastic Transcoder API.
         $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/pricing_calculator_fixture.php');

@@ -253,13 +253,13 @@ class report_process extends scheduled_task {
         return $cost;
     }
 
-   /**
-    * Convert the smartmedia conversion processing code
-    * to a human readable value.
-    *
-    * @param int $code The status code.
-    * @return string The human readable value.
-    */
+    /**
+     * Convert the smartmedia conversion processing code
+     * to a human readable value.
+     *
+     * @param int $code The status code.
+     * @return string The human readable value.
+     */
     private function get_file_status(int $code) : string {
         if ($code == 200) {
             $status = 'Finished';
@@ -283,8 +283,7 @@ class report_process extends scheduled_task {
      */
     private function get_file_count(string $contenthash) : int {
         global $DB;
-
-        $count = $DB->count_records('files',array('contenthash' => $contenthash));
+        $count = $DB->count_records('files', array('contenthash' => $contenthash));
 
         return $count;
     }

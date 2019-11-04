@@ -43,32 +43,30 @@ class report_table extends table_sql implements renderable {
 
     /**
      * The required fields from the DB for this report_table.
+     *
+     * @var string
      */
-    const FIELDS = 'id, duration, videostreams, audiostreams, width, height, size, metadata';
+    const FIELDS = 'id, type, format, resolution, duration, filesize, cost, status, files';
 
     /**
      * The default WHERE clause to exclude records without at least one video or audio stream.
+     *
+     * @var string
      */
-    const DEFAULT_WHERE = '(videostreams > 0) OR (audiostreams > 0)';
-
-    /**
-     * @var \local_smartmedia\pricing_calculator instance for calculating transcode costs.
-     */
-    private $pricingcalculator;
+    const DEFAULT_WHERE = 'duration > 0';
 
     /**
      * report_table constructor.
      *
      * @param string $uniqueid Unique id of table.
      * @param string $baseurl the base url to render this report on.
-     * @param \local_smartmedia\pricing_calculator $pricingcalculator the pricing calculator for determining transcode costs.
      * @param int $page the page number for pagination.
      * @param int $perpage amount of records per page for pagination.
      * @param string $download dataformat type. One of csv, xhtml, ods, etc
      *
      * @throws \coding_exception
      */
-    public function __construct(string $uniqueid, string $baseurl, pricing_calculator $pricingcalculator, int $page = 0,
+    public function __construct(string $uniqueid, string $baseurl, int $page = 0,
                                 int $perpage = 50, string $download = '') {
         parent::__construct($uniqueid);
 
@@ -77,7 +75,7 @@ class report_table extends table_sql implements renderable {
         $this->show_download_buttons_at(array(TABLE_P_BOTTOM));
         $this->is_downloading($download, 'smartmedia-report');
         $this->define_baseurl($baseurl);
-        $this->define_columns(array('videostreams', 'format', 'height', 'duration', 'size', 'cost', 'status', 'files'));
+        $this->define_columns(array('type', 'format', 'resolution', 'duration', 'filesize', 'cost', 'status', 'files'));
         $this->define_headers(array(
             get_string('report:type', 'local_smartmedia'),
             get_string('report:format', 'local_smartmedia'),
@@ -91,11 +89,8 @@ class report_table extends table_sql implements renderable {
         // Setup pagination.
         $this->currpage = $page;
         $this->pagesize = $perpage;
-        $this->pricingcalculator = $pricingcalculator;
         $this->sortable(true);
-        $this->no_sorting('format');
-        $this->no_sorting('cost');
-        $this->set_sql(self::FIELDS, '{local_smartmedia_data}', self::DEFAULT_WHERE);
+        $this->set_sql(self::FIELDS, '{local_smartmedia_report_over}', self::DEFAULT_WHERE);
 
     }
 
@@ -110,18 +105,8 @@ class report_table extends table_sql implements renderable {
      *
      * @throws \moodle_exception
      */
-    public function col_videostreams($row) {
-        if (empty($row->videostreams)) {
-            if (!empty($row->audiostreams)) {
-                $format = get_string('report:typeaudio', 'local_smartmedia');
-            } else {
-                // We should never get here due to the WHERE clause excluding rows with no video or audio data.
-                throw new \coding_exception('No audio or video stream in {local_smartmedia_data} row id#' . $row->id);
-            }
-        } else {
-            $format = get_string('report:typevideo', 'local_smartmedia');
-        }
-        return $this->format_text($format);
+    public function col_type($row) {
+        return $this->format_text($row->type);
     }
 
     /**
@@ -133,8 +118,7 @@ class report_table extends table_sql implements renderable {
      * @return string html used to display the type field.
      */
     public function col_format($row) {
-        $metadata = json_decode($row->metadata);
-        return $this->format_text($metadata->formatname);
+        return $this->format_text($row->format);
     }
 
     /**
@@ -145,9 +129,8 @@ class report_table extends table_sql implements renderable {
      *
      * @return string html used to display the column field.
      */
-    public function col_height($row) {
-        $resolution = $row->width . ' X ' . $row->height;
-        return $this->format_text($resolution);
+    public function col_resolution($row) {
+        return $this->format_text($row->resolution);
     }
 
     /**
@@ -170,12 +153,8 @@ class report_table extends table_sql implements renderable {
      *
      * @return string html used to display the column field.
      */
-    public function col_size($row) {
-        $sizeinmb = $row->size / 1000000;
-        if (!$this->is_downloading()) {
-            $sizeinmb = round($sizeinmb, 2);
-        }
-        return $this->format_text($sizeinmb);
+    public function col_filesize($row) {
+        return $this->format_text($row->filesize);
     }
 
     /**
@@ -189,21 +168,7 @@ class report_table extends table_sql implements renderable {
      * @throws \coding_exception
      */
     public function col_cost($row) {
-        $cost = $this->pricingcalculator->calculate_transcode_cost($row->height, $row->duration, $row->videostreams,
-            $row->audiostreams);
-
-        // We still want to allow zero cost, so explicitly check for `null` only.
-        if ($cost === null) {
-            $cost = get_string('report:nocostdata', 'local_smartmedia');
-            $displaycost = $this->format_text($cost);
-        } else {
-            // Round the cost for better display if we aren't downloading the data.
-            if (!$this->is_downloading()) {
-                $cost = round($cost, 4);
-            }
-            $displaycost = $this->format_text('$' . $cost);
-        }
-        return $displaycost;
+        return $this->format_text($row->cost);
     }
 
     /**
@@ -215,7 +180,7 @@ class report_table extends table_sql implements renderable {
      * @return string html used to display the column field.
      */
     public function col_status($row) {
-        return $this->format_text('status');
+        return $this->format_text($row->status);
     }
 
     /**
@@ -227,9 +192,7 @@ class report_table extends table_sql implements renderable {
      * @return string html used to display the column field.
      */
     public function col_files($row) {
-        return $this->format_text('files');
+        return $this->format_text($row->files);
     }
-
-
 }
 
