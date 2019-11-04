@@ -51,6 +51,7 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
         $table->add_field('filesize', XMLDB_TYPE_NUMBER, '10, 3', null, XMLDB_NOTNULL, null, null);
         $table->add_field('cost', XMLDB_TYPE_NUMBER, '10, 3', null, XMLDB_NOTNULL, null, '0');
         $table->add_field('status', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('files', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
 
         // Adding keys to table local_smartmedia_report_over.
         $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);

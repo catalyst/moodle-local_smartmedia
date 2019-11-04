@@ -108,6 +108,7 @@
         <FIELD NAME="filesize" TYPE="number" LENGTH="10" NOTNULL="true" SEQUENCE="false" DECIMALS="3" COMMENT="Size of the file in MB"/>
         <FIELD NAME="cost" TYPE="number" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" DECIMALS="3" COMMENT="The transcode cost for the file with the given settings"/>
         <FIELD NAME="status" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="The transcoding status for the file"/>
+        <FIELD NAME="files" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="number of file records relating to this file"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
