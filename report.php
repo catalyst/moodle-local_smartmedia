@@ -28,7 +28,6 @@ require_once($CFG->libdir . '/tablelib.php');
 $page = optional_param('page', 0, PARAM_INT);
 $download = optional_param('download', '', PARAM_RAW);
 $perpage = optional_param('perpage', 50, PARAM_INT);
-$pricinglocation = optional_param('pricinglocation', '', PARAM_RAW);
 $baseurl = $CFG->wwwroot . "/local/smartmedia/report.php";
 
 // Calls require_login and performs permissions checks for admin pages.

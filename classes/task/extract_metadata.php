@@ -273,7 +273,6 @@ class extract_metadata extends scheduled_task {
         global $DB;
         mtrace('local_smartmedia: Processing media file metadata');
 
-        $startfileid = $this->get_start_id(); // Get highest file ID from the metadata table.
         $filehashes = $this->get_files_to_process();  // Select a stack of files.
         $processresults = $this->process_files($filehashes); // Process the metadata for the selected files.
 

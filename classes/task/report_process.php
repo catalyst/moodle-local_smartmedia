@@ -206,6 +206,139 @@ class report_process extends scheduled_task {
     }
 
     /**
+     * Get the file type.
+     *
+     * @param \stdClass $record  Record from metadata table for file.
+     * @throws \coding_exception
+     * @return string $format File format.
+     */
+    private function get_file_type(\stdClass $record) : string {
+        if (empty($record->videostreams)) {
+            if (!empty($record->audiostreams)) {
+                $format = get_string('report:typeaudio', 'local_smartmedia');
+            } else {
+                // We should never get here due to the WHERE clause excluding rows with no video or audio data.
+                throw new \coding_exception(
+                    'No audio or video stream in {local_smartmedia_data} contenthash' . $record->contenthash);
+            }
+        } else {
+            $format = get_string('report:typevideo', 'local_smartmedia');
+        }
+
+        return $format;
+    }
+
+    /**
+     * Get the cost to transcode a file with currently configured settings.
+     *
+     * @param \local_smartmedia\aws_ets_pricing_client $pricingclient
+     * @param \local_smartmedia\aws_elastic_transcoder $transcoder
+     * @param \stdClass $record Record from metadata table for file.
+     * @return float $cost The calculated transcoding cost.
+     */
+    private function get_file_cost(
+        \local_smartmedia\aws_ets_pricing_client $pricingclient,
+        \local_smartmedia\aws_elastic_transcoder $transcoder,  \stdClass $record) : float {
+
+        // Get the location pricing for the AWS region set.
+        $locationpricing = $pricingclient->get_location_pricing(get_config('local_smartmedia', 'api_region'));
+        // Get the Elastic Transcoder presets which have been set.
+        $presets = $transcoder->get_presets();
+
+        $pricingcalculator = new \local_smartmedia\pricing_calculator($locationpricing, $presets);
+
+        $cost = $pricingcalculator->calculate_transcode_cost(
+            $record->height, $record->duration, $record->videostreams, $record->audiostreams);
+
+        return $cost;
+    }
+
+    /**
+     * Convert the smartmedia conversion processing code
+     * to a human readable value.
+     *
+     * @param int $code The status code.
+     * @return string The human readable value.
+     */
+    private function get_file_status(int $code) : string {
+        if ($code == 200) {
+            $status = 'Finished';
+        } else if ($code == 201) {
+            $status = 'In Progress';
+        } else if ($code == 202) {
+            $status = 'In Progress';
+        } else {
+            $status = 'Error';
+        }
+
+        return $status;
+    }
+
+    /**
+     * Get count of files that have the same contenthash
+     * from the files table.
+     *
+     * @param string $contenthash THe contenthash to match.
+     * @return int $count The count of file instances.
+     */
+    private function get_file_count(string $contenthash) : int {
+        global $DB;
+        $count = $DB->count_records('files', array('contenthash' => $contenthash));
+
+        return $count;
+    }
+
+    /**
+     * Populate the report overview table.
+     *
+     * @param \local_smartmedia\aws_ets_pricing_client $pricingclient
+     * @param \local_smartmedia\aws_elastic_transcoder $transcoder
+     */
+    private function process_overview_report(\local_smartmedia\aws_ets_pricing_client $pricingclient,
+        \local_smartmedia\aws_elastic_transcoder $transcoder) : void {
+        global $DB;
+        $reportrecords = array();
+
+        // Get metadata and conversion data from DB.
+        $sql = 'SELECT d.*, c.status
+                  FROM {local_smartmedia_data} d
+                  JOIN {local_smartmedia_conv} c ON c.contenthash = d.contenthash;';
+
+        $rs = $DB->get_recordset_sql($sql);
+        foreach ($rs as $record) { // Itterate through records.
+            $metadata = json_decode($record->metadata);
+
+            // Manipulate values to store.
+            $reportrecord = new \stdClass();
+            $reportrecord->contenthash = $record->contenthash;
+            $reportrecord->type = $this->get_file_type($record);
+            $reportrecord->format = $metadata->formatname;
+            $reportrecord->resolution = $record->width . ' X ' . $record->height;;
+            $reportrecord->duration = round($record->duration, 3);
+            $reportrecord->filesize = round(($record->size / 1000000), 3);
+            $reportrecord->cost = round($this->get_file_cost($pricingclient, $transcoder, $record), 3);
+            $reportrecord->status = $this->get_file_status($record->status);
+            $reportrecord->files = $this->get_file_count($record->contenthash);
+
+            $reportrecords[] = $reportrecord;
+        }
+        $rs->close();
+
+        // Store values in array before manipulating report table in DB in a transaction.
+        try {
+            $transaction = $DB->start_delegated_transaction();
+
+            $DB->delete_records('local_smartmedia_report_over');
+            $DB->insert_records('local_smartmedia_report_over', $reportrecords);
+
+            $transaction->allow_commit();
+
+        } catch (\Exception $e) {
+            $transaction->rollback($e);
+        }
+    }
+
+    /**
      * Do the job.
      * Throw exceptions on errors (the job will be retried).
      */
@@ -229,6 +362,12 @@ class report_process extends scheduled_task {
         $transcodedfiles = $this->get_transcoded_files(); // Get count of transcoded multimedia files.
         $this->update_report_data('transcodedfiles', $transcodedfiles);
 
+        mtrace('local_smartmedia: Processing data for overview report');
+        // Build the dependencies.
+        $api = new \local_smartmedia\aws_api();
+        $pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->create_pricing_client());
+        $transcoder = new \local_smartmedia\aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->process_overview_report($pricingclient, $transcoder);
     }
 
 }

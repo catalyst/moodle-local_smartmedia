@@ -44,7 +44,6 @@ class renderer extends plugin_renderer_base {
      * Render the html for the report table.
      *
      * @param string $baseurl the base url to render the table on.
-     * @param \local_smartmedia\pricing_calculator $pricingcalculator the pricing calculator for transcode cost calculation.
      * @param int $page the page number for pagination.
      * @param int $perpage amount of records per page for pagination.
      * @param string $download dataformat type. One of csv, xhtml, ods, etc
@@ -53,10 +52,8 @@ class renderer extends plugin_renderer_base {
      * @throws \coding_exception
      * @throws \moodle_exception
      */
-    private function render_report_table(string $baseurl, pricing_calculator $pricingcalculator, int $page = 0,
-                                         int $perpage = 50, string $download = '') {
-
-        $renderable = new report_table('local_smartmedia', $baseurl, $pricingcalculator, $perpage, $page, $download);
+    private function render_report_table(string $baseurl, int $page = 0, int $perpage = 50, string $download = '') {
+        $renderable = new report_table('local_smartmedia', $baseurl, $perpage, $page, $download);
         ob_start();
         $renderable->out($renderable->pagesize, true);
         $output = ob_get_contents();
@@ -101,7 +98,7 @@ class renderer extends plugin_renderer_base {
         $region = get_config('local_smartmedia', 'api_region');
 
         // Get the table output first to prevent output being buffered before download.
-        $tablehtml = $this->render_report_table($baseurl, $pricingcalculator, $page, $perpage, $download);
+        $tablehtml = $this->render_report_table($baseurl, $page, $perpage, $download);
 
         $html = '';
         $html .= $this->header();
