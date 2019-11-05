@@ -175,7 +175,7 @@ class queue_process {
             $transaction = $DB->start_delegated_transaction();
             $DB->insert_records('local_smartmedia_queue_msgs', $messagerecords);
             $transaction->allow_commit();
-        } catch (\dml_write_exception $e) {
+        } catch (\Throwable $e) {
             $multiinsert = false;
         }
 
@@ -187,7 +187,7 @@ class queue_process {
             // First we rollback the multi-insert transaction.
             try {
                 $transaction->rollback($e);
-            } catch (\dml_write_exception $e) {
+            } catch (\Throwable $e) {
                 // If error is anything else but a duplicate insert, this is unexected,
                 // so re-throw the error.
                 if (!strpos($e->getMessage(), 'locasmarqueumsgs_mes_uix')) {
@@ -201,7 +201,7 @@ class queue_process {
                 try {
                     $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord);
 
-                } catch (\dml_write_exception $e) {
+                } catch (\Throwable $e) {
                     // If error is anything else but a duplicate insert, this is unexected,
                     // so re-throw the error.
                     if (!strpos($e->getMessage(), 'locasmarqueumsgs_mes_uix')) {
