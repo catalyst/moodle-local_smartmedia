@@ -1081,7 +1081,7 @@ class conversion {
                   FROM {local_smartmedia_data} lsd
              LEFT JOIN {local_smartmedia_conv} lsc ON lsd.contenthash = lsc.contenthash
              LEFT JOIN {files} f ON lsd.contenthash = f.contenthash
-                 WHERE lsc.contenthash IS NULL AND f.timecreated > ?" ;
+                 WHERE lsc.contenthash IS NULL AND f.timecreated > ?";
         $pathnamehashes = $DB->get_records_sql($sql, array($convertfrom), 0, $limit);
 
         return $pathnamehashes;
