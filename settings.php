@@ -35,5 +35,5 @@ if ($hassiteconfig) {
 
     // Dashboard link.
     $ADMIN->add('reports', new admin_externalpage('local_smartmedia_report',
-        get_string('pluginname', 'local_smartmedia'), "$CFG->wwwroot/local/smartmedia/report.php"));
+        get_string('dashboard:heading', 'local_smartmedia'), "$CFG->wwwroot/local/smartmedia/dashboard.php"));
 }

@@ -28,13 +28,13 @@ require_once($CFG->libdir . '/tablelib.php');
 $page = optional_param('page', 0, PARAM_INT);
 $download = optional_param('download', '', PARAM_RAW);
 $perpage = optional_param('perpage', 50, PARAM_INT);
-$baseurl = $CFG->wwwroot . "/local/smartmedia/report.php";
+$baseurl = $CFG->wwwroot . "/local/smartmedia/dashboard.php";
 
 // Calls require_login and performs permissions checks for admin pages.
 admin_externalpage_setup('local_smartmedia_report', '', null, '',
     array('pagelayout' => 'report'));
 
-$title = get_string('pluginname', 'local_smartmedia');
+$title = get_string('dashboard:heading', 'local_smartmedia');
 $url = new moodle_url($baseurl);
 
 $PAGE->set_url($url);
