@@ -204,7 +204,7 @@ class index_form extends \moodleform {
 
         $mform->addElement('date_selector', 'convertfrom',get_string ('settings:processing:convertfrom', 'local_smartmedia'));
         $mform->addHelpButton('convertfrom', 'settings:processing:convertfrom', 'local_smartmedia');
-        $convertfrom = isset($config->convertfrom) ? $config->convertfrom : (time() - 86400);
+        $convertfrom = isset($config->convertfrom) ? $config->convertfrom : date('U',strtotime(date('Y-01-01')));
         $mform->setDefault('convertfrom', $convertfrom);
 
         // Enrichment settings.
