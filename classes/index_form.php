@@ -49,6 +49,8 @@ class index_form extends \moodleform {
         $mform->addElement('header', 'awsheader',
             get_string('settings:aws:header', 'local_smartmedia'),
             get_string('settings:aws:header_desc', 'local_smartmedia'));
+        $mform->addElement('static', 'aws_description', get_string('settings:description', 'local_smartmedia'),
+            get_string('settings:aws:description', 'local_smartmedia'));
 
         // These are the only regions that AWS Elastic Transcoder is available in.
         $regionoptions = array(
@@ -120,58 +122,65 @@ class index_form extends \moodleform {
             $mform->setDefault('sqs_queue_url', '');
         }
 
-        // Processing settings.
-        $mform->addElement('header', 'processingheader', get_string('settings:processing:header', 'local_smartmedia'));
+        // Output settings.
+        $mform->addElement('header', 'outputheader', get_string('settings:output:header', 'local_smartmedia'));
+        $mform->addElement('static', 'output_description', get_string('settings:description', 'local_smartmedia'),
+            get_string('settings:output:description', 'local_smartmedia'));
 
         $mform->addElement(
             'advcheckbox',
             'quality_low',
-            get_string ('settings:processing:quality_low', 'local_smartmedia'),
+            get_string ('settings:output:quality_low', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('quality_low', PARAM_INT);
-        $mform->addHelpButton('quality_low', 'settings:processing:quality_low', 'local_smartmedia');
+        $mform->addHelpButton('quality_low', 'settings:output:quality_low', 'local_smartmedia');
         $qualitylow = isset($config->quality_low) ? $config->quality_low : 1;
         $mform->setDefault('quality_low', $qualitylow);
 
         $mform->addElement(
             'advcheckbox',
             'quality_medium',
-            get_string ('settings:processing:quality_medium', 'local_smartmedia'),
+            get_string ('settings:output:quality_medium', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('quality_medium', PARAM_INT);
-        $mform->addHelpButton('quality_medium', 'settings:processing:quality_medium', 'local_smartmedia');
+        $mform->addHelpButton('quality_medium', 'settings:output:quality_medium', 'local_smartmedia');
         $qualitymedium = isset($config->quality_medium) ? $config->quality_medium : 0;
         $mform->setDefault('quality_medium', $qualitymedium);
 
         $mform->addElement(
             'advcheckbox',
             'quality_high',
-            get_string ('settings:processing:quality_high', 'local_smartmedia'),
+            get_string ('settings:output:quality_high', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('quality_high', PARAM_INT);
-        $mform->addHelpButton('quality_high', 'settings:processing:quality_high', 'local_smartmedia');
+        $mform->addHelpButton('quality_high', 'settings:output:quality_high', 'local_smartmedia');
         $qualityhigh = isset($config->quality_high) ? $config->quality_high : 1;
         $mform->setDefault('quality_high', $qualityhigh);
 
         $mform->addElement(
             'advcheckbox',
             'audio_output',
-            get_string ('settings:processing:audio_output', 'local_smartmedia'),
+            get_string ('settings:output:audio_output', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('audio_output', PARAM_INT);
-        $mform->addHelpButton('audio_output', 'settings:processing:audio_output', 'local_smartmedia');
+        $mform->addHelpButton('audio_output', 'settings:output:audio_output', 'local_smartmedia');
         $audiooutput = isset($config->audio_output) ? $config->audio_output : 1;
         $mform->setDefault('audio_output', $audiooutput);
 
         $mform->addElement(
             'advcheckbox',
             'download_files',
-            get_string ('settings:processing:download_files', 'local_smartmedia'),
+            get_string ('settings:output:download_files', 'local_smartmedia'),
             get_string('enable'), array(), array(0, 1));
         $mform->setType('download_files', PARAM_INT);
-        $mform->addHelpButton('download_files', 'settings:processing:download_files', 'local_smartmedia');
+        $mform->addHelpButton('download_files', 'settings:output:download_files', 'local_smartmedia');
         $downloadfiles = isset($config->download_files) ? $config->download_files : 1;
         $mform->setDefault('download_files', $downloadfiles);
+
+        // Processing settings.
+        $mform->addElement('header', 'processingheader', get_string('settings:processing:header', 'local_smartmedia'));
+        $mform->addElement('static', 'processing_description', get_string('settings:description', 'local_smartmedia'),
+            get_string('settings:processing:description', 'local_smartmedia'));
 
         $mform->addElement(
             'advcheckbox',
@@ -180,11 +189,28 @@ class index_form extends \moodleform {
             get_string('enable'), array(), array(0, 1));
         $mform->setType('proactiveconversion', PARAM_INT);
         $mform->addHelpButton('proactiveconversion', 'settings:processing:proactiveconversion', 'local_smartmedia');
-        $proactiveconversion = isset($config->proactiveconversion) ? $config->proactiveconversion : 1;
+        $proactiveconversion = isset($config->proactiveconversion) ? $config->proactiveconversion : 0;
         $mform->setDefault('proactiveconversion', $proactiveconversion);
 
-        // Processing settings.
+        $mform->addElement(
+            'advcheckbox',
+            'viewconversion',
+            get_string ('settings:processing:viewconversion', 'local_smartmedia'),
+            get_string('enable'), array(), array(0, 1));
+        $mform->setType('viewconversion', PARAM_INT);
+        $mform->addHelpButton('viewconversion', 'settings:processing:viewconversion', 'local_smartmedia');
+        $viewconversion = isset($config->viewconversion) ? $config->viewconversion : 1;
+        $mform->setDefault('viewconversion', $viewconversion);
+
+        $mform->addElement('date_selector', 'convertfrom',get_string ('settings:processing:convertfrom', 'local_smartmedia'));
+        $mform->addHelpButton('convertfrom', 'settings:processing:convertfrom', 'local_smartmedia');
+        $convertfrom = isset($config->convertfrom) ? $config->convertfrom : (time() - 86400);
+        $mform->setDefault('convertfrom', $convertfrom);
+
+        // Enrichment settings.
         $mform->addElement('header', 'enrichmentheader', get_string('settings:enrichment:header', 'local_smartmedia'));
+        $mform->addElement('static', 'enrichment_description', get_string('settings:description', 'local_smartmedia'),
+            get_string('settings:enrichment:description', 'local_smartmedia'));
 
         $mform->addElement(
             'advcheckbox',
@@ -271,6 +297,8 @@ class index_form extends \moodleform {
 
         // FFprobe settings.
         $mform->addElement('header', 'ffprobeheader', get_string('settings:ffprobe:header', 'local_smartmedia'));
+        $mform->addElement('static', 'ffrprobe_description', get_string('settings:description', 'local_smartmedia'),
+            get_string('settings:ffprobe:description', 'local_smartmedia'));
 
         $mform->addElement('text', 'pathtoffprobe',  get_string ('settings:ffprobe:pathtoffprobe', 'local_smartmedia'));
         $mform->setType('pathtoffprobe', PARAM_PATH);
