@@ -149,6 +149,7 @@ class queue_process {
     private function store_messages(array $messages) : void {
         global $DB;
         $messagerecords = array();
+        $messagehashes = array();
 
         foreach ($messages as $message) {
             $messagebody = json_decode($message['Body']);
@@ -162,56 +163,23 @@ class queue_process {
             $record->senttime = $messagebody->timestamp;
             $record->timecreated = time();
 
-            $messagerecords[] = $record;
+            $messagerecords[md5($messagejson)] = $record;
+            $messagehashes[] = md5($messagejson);
         }
 
         // Because AWS SQS can deliver the same message more than once,
-        // there is a chance we might try to insert the same message into
+        // we need to make sure we dont inset them into
         // the database more than once.
-        // So try to insert all records in bulk and if that explodes,
-        // process the records one at a time.
-        $multiinsert = true;
-        try {
-            $transaction = $DB->start_delegated_transaction();
-            $DB->insert_records('local_smartmedia_queue_msgs', $messagerecords);
-            $transaction->allow_commit();
-        } catch (\Exception $e) {
-            $multiinsert = false;
-        }
+        // So check the DB and only add records that aren't already there.
+        $transaction = $DB->start_delegated_transaction();
 
-        // Retry inserting messages one at a time.
-        // Less efficent than the bulk insert but we can
-        // filter out the duplicate.
-        if (!$multiinsert) {
+        list($insql, $inparams) = $DB->get_in_or_equal($messagehashes);
+        $sql = "SELECT messagehash FROM {local_smartmedia_queue_msgs} WHERE messagehash $insql";
+        $existingmessages = $DB->get_records_sql($sql, $inparams);
+        $recordstoinsert = array_diff_key($messagerecords, $existingmessages);
+        $DB->insert_records('local_smartmedia_queue_msgs', $recordstoinsert);
 
-            // First we rollback the multi-insert transaction.
-            try {
-                $transaction->rollback($e);
-            } catch (\Exception $e) {
-                // If error is anything else but a duplicate insert, this is unexected,
-                // so re-throw the error.
-                if (!strpos($e->getMessage(), 'locasmarqueumsgs_mes_uix')) {
-                    throw $e;
-                }
-
-            }
-
-            // Next process messages one at a time.
-            foreach ($messagerecords as $messagerecord) {
-                try {
-                    $DB->insert_record('local_smartmedia_queue_msgs', $messagerecord);
-
-                } catch (\Exception $e) {
-                    // If error is anything else but a duplicate insert, this is unexected,
-                    // so re-throw the error.
-                    if (!strpos($e->getMessage(), 'locasmarqueumsgs_mes_uix')) {
-                        throw $e;
-                    }
-                }
-
-            }
-        }
-
+        $transaction->allow_commit();
     }
 
     /**

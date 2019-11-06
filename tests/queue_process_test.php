@@ -108,6 +108,9 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\queue_process', 'store_messages');
         $method->setAccessible(true); // Allow accessing of private method.
+
+        // Invoke twice to make sure records conflict.
+        $method->invoke($queueprocess, $messages);
         $method->invoke($queueprocess, $messages);
 
         $result = $DB->get_records('local_smartmedia_queue_msgs');
