@@ -109,6 +109,9 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\queue_process', 'store_messages');
         $method->setAccessible(true); // Allow accessing of private method.
 
+        // Invoke with empty array to check initial conditions.
+        $method->invoke($queueprocess, array());
+
         // Invoke twice to make sure records conflict.
         $method->invoke($queueprocess, $messages);
         $method->invoke($queueprocess, $messages);

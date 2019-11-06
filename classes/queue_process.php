@@ -151,6 +151,11 @@ class queue_process {
         $messagerecords = array();
         $messagehashes = array();
 
+        if (empty($messages)) {
+            // Return early if no messages.
+            return;
+        }
+
         foreach ($messages as $message) {
             $messagebody = json_decode($message['Body']);
             $messagejson = json_encode($messagebody->message);
