@@ -436,6 +436,7 @@ class conversion {
      */
     public function get_smart_media(\moodle_url $href, bool $triggerconversion = false) : array {
         $smartmedia = array();
+        $viewconversion = (bool)get_config('local_smartmedia', 'viewconversion');
 
         // Get the file record from the Moodle URL.
         $file = $this->get_file_from_url($href);
@@ -450,6 +451,9 @@ class conversion {
 
         // If no record in table and trigger conversion is true add record.
         if ($triggerconversion && $conversionstatuses->status == self::CONVERSION_NOT_FOUND) {
+            $this->create_conversion($file);
+        } else if ($conversionstatuses->status == self::CONVERSION_NOT_FOUND && $viewconversion) {
+            // If no record in table and convert on view is set add record.
             $this->create_conversion($file);
         }
 
@@ -1070,13 +1074,15 @@ class conversion {
      */
     private function get_pathnamehashes() : array {
         global $DB;
+        $convertfrom = (int)get_config('local_smartmedia', 'convertfrom');
 
         $limit = self::MAX_FILES;
         $sql = "SELECT lsd.id, lsd.pathnamehash
                   FROM {local_smartmedia_data} lsd
              LEFT JOIN {local_smartmedia_conv} lsc ON lsd.contenthash = lsc.contenthash
-                 WHERE lsc.contenthash IS NULL";
-        $pathnamehashes = $DB->get_records_sql($sql, null, 0, $limit);
+             LEFT JOIN {files} f ON lsd.contenthash = f.contenthash
+                 WHERE lsc.contenthash IS NULL AND f.timecreated > ?";
+        $pathnamehashes = $DB->get_records_sql($sql, array($convertfrom), 0, $limit);
 
         return $pathnamehashes;
 
