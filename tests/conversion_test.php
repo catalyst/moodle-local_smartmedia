@@ -1786,4 +1786,28 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertEquals($expected, $result);
     }
 
+    /**
+     * Test string starts with helper function.
+     */
+    public function test_string_starts_with() {
+        $this->resetAfterTest(true);
+
+        $goodneedle = '8f3d12e28ecb231852436d5c905d2a3e6ee8e119';
+        $badneedle = '8f3d12e28ecb232252436d5c905d2a3e6ee8e119';
+        $haystack = '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/';
+
+        // Set up the method to test.
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'string_starts_with');
+        $method->setAccessible(true); // Allow accessing of private method.
+        $trueresult = $method->invoke($conversion, $haystack, $goodneedle);
+        $falseresult = $method->invoke($conversion, $haystack, $badneedle);
+
+        $this->assertTrue($trueresult);
+        $this->assertFalse($falseresult);
+
+    }
+
 }

@@ -1103,6 +1103,19 @@ EOF
                     'Size' => 1315,
                     'StorageClass' => 'STANDARD',
                 ),
+                10 =>
+                array (
+                    'Key' => '8f3d12e28ecb232252436d5c905d2a3e6ee8e119/conversions8f3d12e28ecb232252436d5c905d2a3e6ee8e119_mpegdash_playlist.mpd',
+                    'LastModified' =>
+                    Aws\Api\DateTimeResult::__set_state(array(
+                        'date' => '2019-11-02 06:00:10.000000',
+                        'timezone_type' => 2,
+                        'timezone' => 'Z',
+                    )),
+                    'ETag' => '"3713d3a07d9c0fc8abadaaf700a0bc5a"',
+                    'Size' => 1315,
+                    'StorageClass' => 'STANDARD',
+                ),
             ),
             'Name' => 'smt1566767930-output',
             'Prefix' => '',

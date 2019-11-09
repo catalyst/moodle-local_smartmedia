@@ -53,6 +53,7 @@ class extract_metadata extends scheduled_task {
         'audio/x-mpegurl',
         'audio/x-ms-wma',
         'audio/x-pn-realaudio-plugin',
+        'audio/x-matroska',
         'video/mp4',
         'video/mpeg',
         'video/ogg',
@@ -63,6 +64,9 @@ class extract_metadata extends scheduled_task {
         'video/x-ms-asf',
         'video/x-ms-wm',
         'video/x-ms-wmv',
+        'video/x-matroska',
+        'video/x-matroska-3d',
+        'video/x-sgi-movie',
     );
 
     /**

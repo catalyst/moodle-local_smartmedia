@@ -130,6 +130,26 @@ class conversion {
     }
 
     /**
+     * Helper function to determin if our haystack string
+     * starts with our needle string.
+     *
+     * @param string $haystack The string to search.
+     * @param string $needle The value to check with.
+     * @return bool $startswith True if haystack starts with needle.
+     */
+    private function string_starts_with(string $haystack, string $needle) : bool {
+        $startswith = false;
+        $length = strlen($needle);
+
+        if (substr($haystack, 0, $length) === $needle) {
+            $startswith = true;
+        }
+
+        return $startswith;
+    }
+
+
+    /**
      * Given a conversion id create records for each configured transcoding preset id,
      * ready to be stored in the Moodle database.
      *
@@ -885,7 +905,9 @@ class conversion {
 
         if (!empty($objectlist['Contents'])) {
             foreach ($objectlist['Contents'] as $object) {
-                $keys[] = array('Key' => $object['Key']);
+                if ($this->string_starts_with($object['Key'], $key)) { // Check if list key starts with the given has.
+                    $keys[] = array('Key' => $object['Key']);
+                }
             }
         }
 
