@@ -1099,7 +1099,7 @@ class conversion {
         $convertfrom = (int)get_config('local_smartmedia', 'convertfrom');
 
         $limit = self::MAX_FILES;
-        $sql = "SELECT lsd.id, lsd.pathnamehash
+        $sql = "SELECT DISTINCT (lsd.pathnamehash)
                   FROM {local_smartmedia_data} lsd
              LEFT JOIN {local_smartmedia_conv} lsc ON lsd.contenthash = lsc.contenthash
              LEFT JOIN {files} f ON lsd.contenthash = f.contenthash

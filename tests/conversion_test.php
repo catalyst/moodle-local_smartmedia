@@ -1312,7 +1312,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $metadatarecord1->height = 1080;
         $metadatarecord1->metadata = '{}';
 
-        $id1 = $DB->insert_record('local_smartmedia_data', $metadatarecord1);
+        $DB->insert_record('local_smartmedia_data', $metadatarecord1);
 
         $metadatarecord2 = new \stdClass();
         $metadatarecord2->contenthash = $file2->get_contenthash();
@@ -1326,7 +1326,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $metadatarecord2->height = 1080;
         $metadatarecord2->metadata = '{}';
 
-        $id2 = $DB->insert_record('local_smartmedia_data', $metadatarecord2);
+        $DB->insert_record('local_smartmedia_data', $metadatarecord2);
 
         $metadatarecord3 = new \stdClass();
         $metadatarecord3->contenthash = $file3->get_contenthash();
@@ -1340,7 +1340,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $metadatarecord3->height = 1080;
         $metadatarecord3->metadata = '{}';
 
-        $id3 = $DB->insert_record('local_smartmedia_data', $metadatarecord3);
+        $DB->insert_record('local_smartmedia_data', $metadatarecord3);
 
         $conversionrecord = new \stdClass();
         $conversionrecord->contenthash = $file3->get_contenthash();;
@@ -1367,9 +1367,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $result = $method->invoke($conversion);
 
         $this->assertCount(2, $result);
-        $this->assertArrayHasKey($id1, $result);
-        $this->assertArrayHasKey($id2, $result);
-        $this->assertArrayNotHasKey($id3, $result);
+        $this->assertArrayHasKey($file1->get_pathnamehash(), $result);
+        $this->assertArrayHasKey($file2->get_pathnamehash(), $result);
+        $this->assertArrayNotHasKey($file3->get_pathnamehash(), $result);
 
     }
 
@@ -1420,7 +1420,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $metadatarecord1->height = 1080;
         $metadatarecord1->metadata = '{}';
 
-        $id1 = $DB->insert_record('local_smartmedia_data', $metadatarecord1);
+        $DB->insert_record('local_smartmedia_data', $metadatarecord1);
 
         $metadatarecord2 = new \stdClass();
         $metadatarecord2->contenthash = $file2->get_contenthash();
@@ -1434,7 +1434,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $metadatarecord2->height = 1080;
         $metadatarecord2->metadata = '{}';
 
-        $id2 = $DB->insert_record('local_smartmedia_data', $metadatarecord2);
+        $DB->insert_record('local_smartmedia_data', $metadatarecord2);
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
@@ -1444,8 +1444,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $result = $method->invoke($conversion);
 
         $this->assertCount(1, $result);
-        $this->assertArrayHasKey($id1, $result);
-        $this->assertArrayNotHasKey($id2, $result);
+        $this->assertArrayHasKey($file1->get_pathnamehash(), $result);
+        $this->assertArrayNotHasKey($file2->get_pathnamehash(), $result);
 
     }
     /**
