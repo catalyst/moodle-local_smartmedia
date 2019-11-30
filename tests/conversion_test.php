@@ -1810,4 +1810,67 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
     }
 
+    /**
+     * Test will convert.
+     */
+    public function test_will_convert() {
+        global $DB, $CFG;
+
+        $this->resetAfterTest(true);
+
+        // Setup for testing.
+        $fs = new file_storage();
+
+        // Mock the initial file record from which conversions were made.
+        $initialfilerecord = array (
+            'contextid' => 31,
+            'component' => 'mod_forum',
+            'filearea' => 'attachment',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'myfile1.mp4');
+        $initialfile = $fs->create_file_from_string($initialfilerecord, 'the first test file');
+        $contenthash = $initialfile->get_contenthash();
+
+        // Add a successful conversion status for this file.
+        $conversionrecord = new \stdClass();
+        $conversionrecord->pathnamehash = $contenthash;
+        $conversionrecord->contenthash = $contenthash;
+        $conversionrecord->status = 201;
+        $conversionrecord->transcribe_status = 201;
+        $conversionrecord->rekog_label_status = 201;
+        $conversionrecord->rekog_moderation_status = 201;
+        $conversionrecord->rekog_face_status = 201;
+        $conversionrecord->rekog_person_status = 201;
+        $conversionrecord->detect_sentiment_status = 201;
+        $conversionrecord->detect_phrases_status = 201;
+        $conversionrecord->detect_entities_status = 201;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+
+        $href = moodle_url::make_pluginfile_url(
+            $initialfilerecord['contextid'], $initialfilerecord['component'], $initialfilerecord['filearea'],
+            $initialfilerecord['itemid'], $initialfilerecord['filepath'], $initialfilerecord['filename']);
+
+        $api = new aws_api();
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $conversion = new \local_smartmedia\conversion($transcoder);
+
+        $willconvert = $conversion->will_convert($href);
+
+        // No settings and no conversion record
+        $this->assertEquals($conversion::CONVERSION_NOT_FOUND, $willconvert);
+
+        // No conversion record but settings say it is eligble for conversion.
+        set_config('proactiveconversion', 1, 'local_smartmedia');
+        $willconvert = $conversion->will_convert($href);
+        $this->assertEquals($conversion::CONVERSION_ACCEPTED, $willconvert);
+
+        // Existing conversion record, so in progress.
+        $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+        $willconvert = $conversion->will_convert($href);
+        $this->assertEquals($conversion::CONVERSION_IN_PROGRESS, $willconvert);
+
+    }
+
 }
