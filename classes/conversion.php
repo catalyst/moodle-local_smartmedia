@@ -1128,4 +1128,39 @@ class conversion {
         return $pathnamehashes;
     }
 
+    /**
+     * Check if a given Moodle URL will be converted to smartmedia.
+     *
+     * @param \moodle_url $href The Moodle URL to check.
+     * @return int The status of the check.
+     */
+    public function will_convert(\moodle_url $href) : int {
+        // Get the file record from the Moodle URL.
+        $file = $this->get_file_from_url($href);
+
+        if (!$file) {
+            // If URL doesn't correspond to a real file in Moodle return early.
+            return self::CONVERSION_ERROR;
+        }
+
+        // Check for an existing conversion record.
+        $statuses = $this->get_conversion_statuses($file);
+        if ($statuses->status != self::CONVERSION_NOT_FOUND) {
+            return $statuses->status;
+        }
+
+        // Check conversions are enabled (view and background)
+        // file is newer than from config.
+        $background = get_config('local_smartmedia', 'proactiveconversion');
+        $view = get_config('local_smartmedia', 'viewconversion');
+        $convertfrom = (int)get_config('local_smartmedia', 'convertfrom');
+
+        if (($background || $view) && ($file->get_timecreated() > $convertfrom)) {
+            return self::CONVERSION_ACCEPTED;
+        }
+
+        return self::CONVERSION_NOT_FOUND;
+
+    }
+
 }
