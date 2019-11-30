@@ -135,6 +135,7 @@ class extract_metadata extends scheduled_task {
         $startid = $this->get_start_id();
         $limit = self::MAX_FILES;
         $params = array(
+            'local_smartmedia',
             $startid,
         );
 
@@ -143,6 +144,7 @@ class extract_metadata extends scheduled_task {
              LEFT JOIN {local_smartmedia_data} lsd ON f.contenthash = lsd.contenthash
                  WHERE mimetype IN ($mimetypes)
                        AND lsd.contenthash IS NULL
+                       AND f.component <> ?
                        AND f.id > ?";
         $filehashes = $DB->get_records_sql($sql, $params, 0, $limit);
 
