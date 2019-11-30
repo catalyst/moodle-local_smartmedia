@@ -118,10 +118,19 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
             'filepath' => '/',
             'filename' => 'video3.mp4');
 
+        $filerecord4 = array(
+            'contextid' => 1461,
+            'component' => 'local_smartmedia',
+            'filearea' => 'media',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'video4.mp4');
+
         // For this test it doesn't actually matter these are not real multimedia files.
         $file1 = $fs->create_file_from_string($filerecord1, 'I am the first video.');
         $file2 = $fs->create_file_from_string($filerecord2, 'I am the second video.');
         $file3 = $fs->create_file_from_string($filerecord3, 'I am the third video.');
+        $file4 = $fs->create_file_from_string($filerecord4, 'I am some already converted media.');
 
         // Create an existing file metadata record.
         $metadatarecord = new \stdClass();
@@ -148,6 +157,7 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
         $this->assertArrayNotHasKey($file1->get_id(), $proxy);
         $this->assertArrayHasKey($file2->get_id(), $proxy);
         $this->assertArrayHasKey($file3->get_id(), $proxy);
+        $this->assertArrayNotHasKey($file4->get_id(), $proxy);
 
     }
 
