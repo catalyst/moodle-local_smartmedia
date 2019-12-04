@@ -381,6 +381,7 @@ class conversion {
      * Get the media files for delivery to the smartmedia filter.
      *
      * @param string $contenthash
+     * @param int $filter
      * @return array $mediafiles
      */
     private function get_media_files(string $contenthash, int $filter=self::FILTER_PLAYLIST) : array {
@@ -488,10 +489,6 @@ class conversion {
         }
 
         return $mappedfiles;
-    }
-
-    public function get_download_media() : string {
-
     }
 
     /**
