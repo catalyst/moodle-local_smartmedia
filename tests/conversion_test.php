@@ -176,7 +176,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             'filearea' => 'media',
             'itemid' => 0,
             'filepath' => '/' . $initialfile->get_contenthash() . '/conversions/',
-            'filename' => $presetid . '_myfile1.mp4');
+            'filename' => $presetid . '_hls_playlist.m3u8');
         $fs->create_file_from_string($convertedmediarecord, 'the first test file');
 
         // Mock a metadata file received from s3.
@@ -219,7 +219,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         // Check that the smart media urls match the passed in mock data and `id` parameter matches initial moodle file id.
         $expectedmediaurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/media/" . $initialfile->get_id()
-            . "/$contenthash/conversions/$presetid" . "_myfile1.mp4";
+            . "/$contenthash/conversions/$presetid" . "_hls_playlist.m3u8";
         $mediaurl = reset($smartmedia['media']);
 
         $expecteddataurl = "$CFG->wwwroot/pluginfile.php/1/local_smartmedia/metadata/" . $initialfile->get_id()
@@ -1551,7 +1551,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, 'aaaaaaaaaaaaaaaaaa');
 
-        $this->assertCount(5, $result);
+        // We should only get 2 results here as non playlist filter files shouls have been filtered.
+        $this->assertCount(2, $result);
 
     }
 

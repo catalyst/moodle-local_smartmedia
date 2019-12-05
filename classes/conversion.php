@@ -107,6 +107,16 @@ class conversion {
     );
 
     /**
+     *
+     */
+    private const FILTER_PLAYLIST = 1;
+
+    /**
+     *
+     */
+    private const FILTER_DOWNLOAD = 2;
+
+    /**
      * @var mixed hash-like object of settings for local_smartmedia.
      */
     private $config;
@@ -338,18 +348,56 @@ class conversion {
     }
 
     /**
+     * Helper function to filter array of smartmedia files
+     * to playlists only.
+     *
+     * @param \stored_file $mediafile The file object to check.
+     * @return bool
+     */
+    private function filter_file_playlist(\stored_file $mediafile) : bool {
+        if ($mediafile->get_mimetype() == 'application/dash+xml' || $mediafile->get_mimetype() == 'application/x-mpegURL') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Helper function to filter array of smartmedia files
+     * to downloads only.
+     *
+     * @param \stored_file $mediafile The file object to check.
+     * @return bool
+     */
+    private function filter_file_download(\stored_file $mediafile) : bool {
+        if ($mediafile->get_mimetype() == 'video/mp4' || $mediafile->get_mimetype() == 'audio/mp3') {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
      * Get the media files for delivery to the smartmedia filter.
      *
      * @param string $contenthash
+     * @param int $filter
      * @return array $mediafiles
      */
-    private function get_media_files(string $contenthash) : array {
+    private function get_media_files(string $contenthash, int $filter=self::FILTER_PLAYLIST) : array {
 
         // Get all media files for this source file.
         $fs = get_file_storage();
         $files = $fs->get_area_files(1, 'local_smartmedia', 'media', 0);
         $mediafilepath = '/' . $contenthash . '/conversions/';
         $mediafiles = $this->filter_files_by_filepath($files, $mediafilepath);
+
+        if ($filter == self::FILTER_PLAYLIST) {
+            $mediafiles = array_filter($mediafiles, array($this, 'filter_file_playlist'));
+
+        } else if ($filter == self::FILTER_DOWNLOAD) {
+            $mediafiles = array_filter($mediafiles, array($this, 'filter_file_download'));
+        }
 
         return $mediafiles;
 
@@ -508,7 +556,7 @@ class conversion {
      *
      * @return array $filteredfiles of \stored_file objects in the $filepath.
      */
-    private function filter_files_by_filepath($files, $filepath) {
+    private function filter_files_by_filepath($files, $filepath) : array {
 
         $filteredfiles = [];
 
