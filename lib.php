@@ -63,6 +63,12 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
         return false;
     }
 
+    // Due to the way VideoJS handles slash (/) arguments in URLs
+    // we may need to clean up the provided args that are passed
+    // back to Moodle from the VideoJS AJAX call.
+    $utility = new \local_smartmedia\utility();
+    $args = $utility->update_args($args);
+
     $itemid = $args[0];
 
     // Make sure the user is logged in and has access to the module.
