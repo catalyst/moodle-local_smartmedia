@@ -529,11 +529,17 @@ class conversion {
         if ($conversionstatuses->status == self::CONVERSION_IN_PROGRESS ||
                 $conversionstatuses->status == self::CONVERSION_FINISHED) {
 
+            // Get media files.
             $mediafiles = $this->get_media_files($file->get_contenthash());
             $updatedplaylists = $this->generate_playlists($mediafiles, $file->get_id());
             $filteredfiles = $this->filter_playlists($updatedplaylists);
             $smartmedia['media'] = $this->map_files_to_urls($filteredfiles, $file->get_id());
 
+            // Get download files.
+            $datafiles = $this->get_media_files($file->get_contenthash(), self::FILTER_DOWNLOAD);
+            $smartmedia['download'] = $this->map_files_to_urls($datafiles, $file->get_id());
+
+            // Get data files.
             $fs = get_file_storage();
             $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);
             $datafilepath = '/' . $file->get_contenthash() . '/metadata/';
