@@ -65,6 +65,8 @@ class report_process extends scheduled_task {
         'video/x-ms-asf',
         'video/x-ms-wm',
         'video/x-ms-wmv',
+        'video/x-matroska',
+        'video/MP2T'
     );
 
     /**
@@ -85,8 +87,13 @@ class report_process extends scheduled_task {
     private function get_all_file_count() : int {
         global $DB;
 
-        $select = 'component <> ?';  // Don't count files added by smartmedia itself.
-        $params = array('local_smartmedia');
+        $select = 'filearea <> :filearea AND filename <> :filename AND component = :component';
+        $params = array(
+            'filearea' => 'draft',
+            'filename' => '.',
+            'component' => 'local_smartmedia'  // Don't count files added by smartmedia itself.
+        );
+
         $result = $DB->count_records_select('files', $select, $params);
 
         return $result;
@@ -283,7 +290,15 @@ class report_process extends scheduled_task {
      */
     private function get_file_count(string $contenthash) : int {
         global $DB;
-        $count = $DB->count_records('files', array('contenthash' => $contenthash));
+
+        $select = 'filearea <> :filearea AND filename <> :filename AND contenthash = :contenthash';
+        $params = array(
+            'filearea' => 'draft',
+            'filename' => '.',
+            'contenthash' => $contenthash
+        );
+
+        $count = $DB->count_records_select('files', $select, $params);
 
         return $count;
     }
