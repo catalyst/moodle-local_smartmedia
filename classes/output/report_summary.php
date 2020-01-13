@@ -285,7 +285,7 @@ class report_summary implements renderable, templatable {
 
         $total = $this->calculate_total_cost();
         if (!empty($total)) {
-            $context->total = '$' . number_format($total, 4);
+            $context->total = '$' . number_format($total, 2);
         } else {
             $context->total = get_string('report:nocostdata', 'local_smartmedia');
         }

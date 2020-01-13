@@ -168,7 +168,7 @@ class report_table extends table_sql implements renderable {
      * @throws \coding_exception
      */
     public function col_cost($row) {
-        return $this->format_text($row->cost);
+        return $this->format_text('$' . number_format($row->cost, 2));
     }
 
     /**
