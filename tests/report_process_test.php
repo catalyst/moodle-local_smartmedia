@@ -90,16 +90,16 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         // Create an existing file metadata record.
         $record = new \stdClass();
         $record->contenthash = '8f3d12e28ecb231852436d5c905d2a3e6ee8e119';
-        $record->duration = 3.123456;
+        $record->duration = 599;
         $record->videostreams = 1;
         $record->audiostreams = 1;
         $record->height = 1080;
 
         // Setup pricing mock for test.
         $locationpricing = new \local_smartmedia\location_transcode_pricing('ap-southeast-2');
-        $locationpricing->set_hd_pricing(3);
-        $locationpricing->set_sd_pricing(2);
-        $locationpricing->set_audio_pricing(1);
+        $locationpricing->set_hd_pricing(0.034);
+        $locationpricing->set_sd_pricing(0.017);
+        $locationpricing->set_audio_pricing(0.00522);
 
         $mockpricing = $this->createMock(\local_smartmedia\aws_ets_pricing_client::class);
         $mockpricing->method('get_location_pricing')->willReturn($locationpricing);
@@ -122,7 +122,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($task, $mockpricing, $mocktranscoder, $record); // Get result of invoked method.
 
-        $this->assertEquals('0.937', round($result, 3));
+        $this->assertEquals('1.752', round($result, 3));
     }
 
     /**
@@ -243,7 +243,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $metadatarecord = new \stdClass();
         $metadatarecord->contenthash = $contenthash;
         $metadatarecord->pathnamehash = $pathnamehash;
-        $metadatarecord->duration = 3.123456;
+        $metadatarecord->duration = 599;
         $metadatarecord->bitrate = 1000;
         $metadatarecord->size = 3900000;
         $metadatarecord->videostreams = 1;
@@ -271,9 +271,9 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         // Setup pricing mock for test.
         $locationpricing = new \local_smartmedia\location_transcode_pricing('ap-southeast-2');
-        $locationpricing->set_hd_pricing(3);
-        $locationpricing->set_sd_pricing(2);
-        $locationpricing->set_audio_pricing(1);
+        $locationpricing->set_hd_pricing(0.034);
+        $locationpricing->set_sd_pricing(0.017);
+        $locationpricing->set_audio_pricing(0.00522);
 
         $mockpricing = $this->createMock(\local_smartmedia\aws_ets_pricing_client::class);
         $mockpricing->method('get_location_pricing')->willReturn($locationpricing);
@@ -304,9 +304,9 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $this->assertEquals('Video', $record->type);
         $this->assertEquals('avi', $record->format);
         $this->assertEquals('1920 X 1080', $record->resolution);
-        $this->assertEquals('3.123', $record->duration);
+        $this->assertEquals('599.000', $record->duration);
         $this->assertEquals('3.900', $record->filesize);
-        $this->assertEquals('0.937', $record->cost);
+        $this->assertEquals('1.752', $record->cost);
         $this->assertEquals('Finished', $record->status);
         $this->assertEquals(3, $record->files);
 

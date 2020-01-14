@@ -122,20 +122,25 @@ class pricing_calculator {
         if ($this->has_presets()) {
             $cost = 0;
 
+            // From https://aws.amazon.com/elastictranscoder/pricing/
+            // each output file is billed in whole minute increments
+            // where each partial minute is rounded up to the next full minute
+            $durationminutes = ceil($duration / 60);
+
             foreach ($this->presets as $preset) {
                 // All video media can be transcoded by standard definition presets providing it has at least one video stream.
                 if ($preset->is_output_standard_definition() && $preset->is_input_video($height) && !empty($videostreams)) {
-                    $cost += $this->locationpricing->calculate_standard_definition_cost($duration);
+                    $cost += $this->locationpricing->calculate_standard_definition_cost($durationminutes);
                 } else if ($preset->is_output_high_definition() && !empty($videostreams)) {
                     // Only high definition video can be transcoded by high definition presets.
                     if ($preset->is_input_high_definition($height)) {
-                        $cost += $this->locationpricing->calculate_high_definition_cost($duration);
+                        $cost += $this->locationpricing->calculate_high_definition_cost($durationminutes);
                     } else if ($preset->is_input_video($height)) {
-                        $cost += $this->locationpricing->calculate_standard_definition_cost($duration);
+                        $cost += $this->locationpricing->calculate_standard_definition_cost($durationminutes);
                     }
                 } else if ($preset->is_output_audio() && !empty($audiostreams)) {
                     // All media can be trancoded to audio, providing it has at least one audio stream.
-                    $cost += $this->locationpricing->calculate_audio_cost($duration);
+                    $cost += $this->locationpricing->calculate_audio_cost($durationminutes);
                 }
             }
         } else {

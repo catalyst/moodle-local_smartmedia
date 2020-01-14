@@ -110,14 +110,14 @@ class location_transcode_pricing {
     /**
      * Calculate the cost for transcoding high definition media.
      *
-     * @param float $duration in seconds of the media.
+     * @param float $duration in minutes of the media.
      *
      * @return float|null $result the total cost in US dollars, null if cost couldn't be calculated
      */
     public function calculate_high_definition_cost(float $duration) {
         $result = null;
         if ($this->has_valid_high_definition_pricing()) {
-            $result = $duration / 60 * $this->hdpricing;
+            $result = $duration * $this->hdpricing;
         }
         return $result;
     }
@@ -125,14 +125,14 @@ class location_transcode_pricing {
     /**
      * Calculate the cost for transcoding standard definition media.
      *
-     * @param float $duration in seconds of the media.
+     * @param float $duration in minutes of the media.
      *
      * @return float|null $result the total cost in US dollars, null if cost couldn't be calculated
      */
     public function calculate_standard_definition_cost(float $duration) {
         $result = null;
         if ($this->has_valid_standard_definition_pricing()) {
-            $result = $duration / 60 * $this->sdpricing;
+            $result = $duration * $this->sdpricing;
         }
         return $result;
     }
@@ -140,14 +140,14 @@ class location_transcode_pricing {
     /**
      * Calculate the cost for transcoding standard definition media.
      *
-     * @param float $duration in seconds of the media.
+     * @param float $duration in minutes of the media.
      *
      * @return float|null $result the total cost in US dollars, null if cost couldn't be calculated
      */
     public function calculate_audio_cost(float $duration) {
         $result = null;
         if ($this->has_valid_audio_pricing()) {
-            $result = $duration / 60 * $this->audiopricing;
+            $result = $duration  * $this->audiopricing;
         }
         return $result;
     }
