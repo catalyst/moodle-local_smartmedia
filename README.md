@@ -4,33 +4,64 @@
 
 Smart media aims to enhance Moodle's processing and delivery of multimedia while simplifying the process of managing multimedia for teachers and students.
 
-Smart media leverages cloud services provided through Amazon Web Services (AWS) in order to conduct video transcoding into required formats and provide additional analytics functionality for multimedia, initially support has not be provided for other cloud service providers.
+The smart media plugins in Moodle aim to solve the following two user stories:
+
+> As a teacher I have a video that works on my local device and I want to make that video available to my students in a suitable format, by adding it to any rich text area in Moodle. Without the need for me to do any other operations on the video apart from uploading to Moodle.
+
+> As a student I want to be able to view any video on my chosen device; added to a rich text area in Moodle by a teacher. Regardless of the environment I’m accessing the video or my bandwidth limitations.
+
+Smart media leverages cloud services provided through Amazon Web Services (AWS) in order to conduct video transcoding into required formats and provide additional analytics functionality for multimedia.
+
+The following sections outline how to install the required smart media plugins in Moodle. For advanced setup and plugin usage once the plugins have been installed please see the [project wiki](https://github.com/catalyst/moodle-local_smartmedia/wiki).
+
+## Supported Moodle Versions
+This plugin currently supports Moodle:
+
+* 3.9
+
+**Note:** The high version of Moodle required is due to internal Moodle API's that this plugin depends on where only introduced in Moodle 3.9. If you want to use smart media in earlier Moodle versions please contact [Catalyst IT](https://www.catalyst-au.net/) for commercial support.
 
 ## Plugin Installation ##
+There are several dependencies required and steps to complete in order to setup smart media in your Moodle instance.
 
-1. Install dependency plugin local/aws. See [local/aws](##local/aws)
-2. Install dependency binary FFmpeg on your Moodle server. See [FFmpeg](##FFmpeg)
-3. Clone the plugin git repo into your Moodle codebase root `git clone git@github.com:catalyst/moodle-local_smartmedia.git local/smartmedia`
-4. Update plugin settings. See [Settings](##Settings)
+**Note:** These instructions assume knowledge of Git, Moodle plugin functionality and that you have access to the infrastructure that runs your Moodle instance.
 
-### local/aws
+1. Install dependency plugin local_aws. See [local_aws](#local_aws)
+2. Clone the *local_smartmedia* plugin git repo into your Moodle codebase root `git clone git@github.com:catalyst/moodle-local_smartmedia.git local/smartmedia`
+3. Install dependency plugin filter_smartmedia. See [filter_smartmedia](#filter_smartmedia)
+4. Install dependency binary FFmpeg on your Moodle server. See [FFmpeg](#ffmpeg)
+5. Setup the AWS Stack. See [AWS Stack Setup](#aws-stack-setup)
+6. Update plugin settings. See [Plugin Settings](#plugin-settings)
 
-The local/aws plugin is a dependency for local/smartmedia, and provides the AWS PHP SDK that is required in order for Moodle to utilise AWS cloud services.
+### local_aws
+
+The local_aws plugin is a dependency for local_smartmedia, it provides the AWS PHP SDK that is required in order for Moodle to utilise AWS cloud services.
 
 You can download this from the Moodle plugin library at <https://moodle.org/plugins/local_aws>
 
-Most simply, you can install this by cloning the git repo into your Moodle codebase:
+You can install this by cloning the git repo into your Moodle codebase:
 ```bash
 git clone https://github.com/catalyst/moodle-local_aws local/aws
 ```
 
 More detailed information is available at <https://github.com/catalyst/moodle-local_aws> in the README
 
-## FFmpeg
+### filter_smartmedia
 
-FFmpeg is an open source multimedia framework and provides the multimedia stream analyser `ffprobe`, facilitating the collection of metadata for multimedia. 
+The filter_smartmedia plugin is a dependency for local_smartmedia, it provides rendering of converted smart media assets in the Moodle UI.
 
-This metadata is utilised to present reports on what media is actually in your Moodle instance.
+You can install this by cloning the git repo into your Moodle codebase:
+```bash
+git clone https://github.com/catalyst/moodle-filter_smartmedia filter/smartmedia
+```
+
+More detailed information is available at <https://github.com/catalyst/moodle-filter_smartmedia> in the README
+
+### FFmpeg
+
+FFmpeg is an open source multimedia framework and provides the multimedia stream analyser `ffprobe`, facilitating the collection of metadata for multimedia.
+
+This metadata is utilised to identify which files in your Moodle instance to convert and to present reports on what media is actually in your Moodle instance.
 
 FFmpeg is a requirement for running the local/smartmedia scheduled tasks.
 
@@ -43,19 +74,10 @@ For Windows based or any other servers follow the instructions and link at <http
 
 You can get more info about FFmpeg at <https://ffmpeg.org/>
 
-## Plugin Settings
-
-Once the local/smartmedia plugin is installed, double check the installation location of `ffprobe` and ensure that you set this in Moodle settings under `Site Administration > Plugins > Local plugins > Smart Media` for the *FFProbe binary path* field.
-```bash
-whereis ffprobe # default /usr/bin/ffprobe
-```
-
-## AWS Stack Setup
+### AWS Stack Setup
 The following steps will setup the Amazon Web Services (AWS) infrastructure. The AWS infrastructure is required to do the actual processing of multimedia files. While setting up the AWS infrastructure is largely automated by scripts included in this plugin, a working knowledge of AWS is highly recommended.
 
 For more information on how the submitted files are processed in AWS please refer to the topic: [Conversion Architecture](#conversion-architecture)
-
-This step should be completed once the plugin has been installed into your Moodle instance and the other Moodle setup tasks have been completed.
 
 **Note:** Full support on setting up an AWS account and API access keys for AWS stack infrastructure provisioning is beyond the scope of this guide.
 
@@ -71,11 +93,8 @@ sudo -u www-data php local/smartmedia/cli/provision.php \
 --keyid=<keyid> \
 --secret=<secretkey> \
 --region=<region> \
---set-config
 ```
 **Note:** the user may be different to www-data on your system.
-
-The `--set-config` option will automatically set the plugin settings in Moodle based on the results returned by the provisioning script.
 
 The script will return output similar to, the following:
 
@@ -120,8 +139,25 @@ Output bucket: smt1565939869-output
 
 ```
 
+Record the ouput from the resources section of the script information.
+
+### Plugin Settings
+
+Once the dependency plugins are installed, the local/smartmedia plugin is installed, ffmpeg is installed and the AWS stack has been setup; it is now time to configure Moodle.
+
+To do this:
+
+1. Log into the Moodle UI as a site administrator
+2. Navigate to `Site Administration > Plugins > Local plugins > Smart Media`.
+3. Set all required fields. All of these with the exception of the FFProbe path will be gained from the output of the AWS stack provision script.
+4. All other settings can be left as their defaults
+5. Click `save changes`.
+6. Navigate to `Site Administration > Plugins > Filters > Manage Filters`.
+7. Enable the `Smart media` filter
+8. Move the `Smart media` filter to be higher in priority (before) the `Multimedia` fitler in the list of filters.
+
 ## Testing Smartmedia Conversion
-The following sections outline testing of the Smartmedia plugin.
+The following sections outline testing of the Smartmedia plugin from the CLI. Testing from the CLI is a good debugging technique, that verifies that the AWS architecture is setup correctly. It does not depend on Moodle or the configured plugin settings.
 
 ### Conversion test script
 Once the AWS architecture has been setup using the provisioning script, it can be tested from the command line.
@@ -145,6 +181,8 @@ sudo -u www-data php local/smartmedia/cli/test.php \
 
 ## Additional Information
 The following sections provide an overview of some additional topics for this plugin and it's associated AWS architecture.
+
+For advanced setup and plugin usage once the plugins have been installed please see the [project wiki](https://github.com/catalyst/moodle-local_smartmedia/wiki).
 
 ### Conversion Architecture
 The below image shows the high level architecture the plugin provisioning process sets up in AWS.
