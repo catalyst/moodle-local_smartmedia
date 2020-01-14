@@ -141,7 +141,13 @@ class report_table extends table_sql implements renderable {
      * @return string html used to display the column field.
      */
     public function col_duration($row) {
-        return $this->format_text($row->duration);
+        $rawduration = $row->duration;
+
+        $hours = floor($rawduration / 3600);
+        $minutes = str_pad(floor(($rawduration / 60) % 60), 2, '0', STR_PAD_LEFT);
+        $seconds = str_pad($rawduration % 60, 2, '0', STR_PAD_LEFT);
+
+        return $this->format_text("$hours:$minutes:$seconds");
     }
 
     /**
