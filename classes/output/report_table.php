@@ -27,7 +27,6 @@ namespace local_smartmedia\output;
 
 defined('MOODLE_INTERNAL') || die;
 
-use local_smartmedia\pricing_calculator;
 use table_sql;
 use renderable;
 

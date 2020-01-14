@@ -37,7 +37,7 @@ class extract_metadata extends scheduled_task {
     /**
      * Max files to get from Moodle files table per processing run.
      */
-    private const MAX_FILES = 1000;
+    private const MAX_FILES = 5000;
 
     /**
      * Metadata extraction is supported for the following mime types.
@@ -66,6 +66,7 @@ class extract_metadata extends scheduled_task {
         'video/x-ms-wmv',
         'video/x-matroska',
         'video/x-matroska-3d',
+        'video/MP2T'.
         'video/x-sgi-movie',
     );
 
@@ -96,25 +97,6 @@ class extract_metadata extends scheduled_task {
     }
 
     /**
-     * Get the max id from the smartmedia data table,
-     * used to determine the start point for the next
-     * metadata processing scan.
-     *
-     * @return int $startid The id from the smartmedia data table.
-     */
-    private function get_start_id() : int {
-
-        $startfileid = get_config('local_smartmedia', 'startfileid');
-
-        if (!$startfileid) {
-            $startfileid = 0;
-            set_config('startfileid', 0, 'local_smartmedia');
-        }
-
-        return $startfileid;
-    }
-
-    /**
      * Get the pathnamehash and contenthash of the files we want
      * to extract metadata from.
      *
@@ -128,15 +110,15 @@ class extract_metadata extends scheduled_task {
         // moodle file table, where id is greater than startfileid and contenthash isn't in
         // the local_smart_media table. Limit the results to MAX_FILES.
 
-        // We are not using a recordset here as we are getting a limit number of records,
+        // We are not using a recordset here as we are getting a limited number of records,
         // a small number of fields and processing the results can take time so we don't
         // want to hold a transaction open for a long period.
         $mimetypes = $this->get_supported_mime_types(true);
-        $startid = $this->get_start_id();
         $limit = self::MAX_FILES;
         $params = array(
             'local_smartmedia',
-            $startid,
+            'draft',
+            '.',
         );
 
         $sql = "SELECT f.id, f.pathnamehash, f.contenthash
@@ -145,7 +127,8 @@ class extract_metadata extends scheduled_task {
                  WHERE mimetype IN ($mimetypes)
                        AND lsd.contenthash IS NULL
                        AND f.component <> ?
-                       AND f.id > ?";
+                       AND filearea <> ?
+                       AND filename <> ?";
         $filehashes = $DB->get_records_sql($sql, $params, 0, $limit);
 
         return $filehashes;
@@ -276,7 +259,6 @@ class extract_metadata extends scheduled_task {
      * Throw exceptions on errors (the job will be retried).
      */
     public function execute() {
-        global $DB;
         mtrace('local_smartmedia: Processing media file metadata');
 
         $filehashes = $this->get_files_to_process();  // Select a stack of files.
@@ -295,13 +277,6 @@ class extract_metadata extends scheduled_task {
         if (!empty($toremove)) {
             mtrace('local_smartmedia: Count of metadata records to remove: ' . count($toremove));
             $this->remove_metadata_records($toremove);
-        }
-
-        // Update the start ID ready for next processing run.
-        if (!empty($filehashes)) {
-            $endresult = array_pop($filehashes);
-            $endid = $endresult->id;
-            set_config('startfileid', $endid, 'local_smartmedia');
         }
 
     }

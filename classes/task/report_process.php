@@ -49,6 +49,7 @@ class report_process extends scheduled_task {
         'audio/x-mpegurl',
         'audio/x-ms-wma',
         'audio/x-pn-realaudio-plugin',
+        'audio/x-matroska',
     );
 
     /**
@@ -66,7 +67,9 @@ class report_process extends scheduled_task {
         'video/x-ms-wm',
         'video/x-ms-wmv',
         'video/x-matroska',
-        'video/MP2T'
+        'video/x-matroska-3d',
+        'video/MP2T'.
+        'video/x-sgi-movie',
     );
 
     /**
@@ -89,8 +92,8 @@ class report_process extends scheduled_task {
 
         $select = 'filearea <> :filearea AND filename <> :filename AND component = :component';
         $params = array(
-            'filearea' => 'draft',
-            'filename' => '.',
+            'filearea' => 'draft', // Don't get draft files.
+            'filename' => '.', // Don't get directories.
             'component' => 'local_smartmedia'  // Don't count files added by smartmedia itself.
         );
 
@@ -110,8 +113,11 @@ class report_process extends scheduled_task {
         global $DB;
 
         list($insql, $inparams) = $DB->get_in_or_equal(self::AUDIO_MIME_TYPES);
-        $select = "mimetype $insql AND component <> ?";  // Don't count files added by smartmedia itself.
-        $inparams[] = 'local_smartmedia';
+        $select = "mimetype $insql AND component <> ? AND filearea <> ? AND filename <> ?";
+        $inparams[] = 'local_smartmedia'; // Don't count files added by smartmedia itself.
+        $inparams[] = 'draft'; // Don't get draft files.
+        $inparams[] = '.';
+
         $result = $DB->count_records_select('files', $select, $inparams);
 
         return $result;
@@ -127,8 +133,10 @@ class report_process extends scheduled_task {
         global $DB;
 
         list($insql, $inparams) = $DB->get_in_or_equal(self::VIDEO_MIME_TYPES);
-        $select = "mimetype $insql AND component <> ?";  // Don't count files added by smartmedia itself.
-        $inparams[] = 'local_smartmedia';
+        $select = "mimetype $insql AND component <> ? AND filearea <> ? AND filename <> ?";
+        $inparams[] = 'local_smartmedia';  // Don't count files added by smartmedia itself.
+        $inparams[] = 'draft'; // Don't get draft files.
+        $inparams[] = '.';
         $result = $DB->count_records_select('files', $select, $inparams);
 
         return $result;
@@ -146,7 +154,14 @@ class report_process extends scheduled_task {
         $mimetypes = array_merge(self::AUDIO_MIME_TYPES, self::VIDEO_MIME_TYPES);
         list($insql, $inparams) = $DB->get_in_or_equal($mimetypes);
         $inparams[] = 'local_smartmedia';
-        $sql = "SELECT COUNT(DISTINCT contenthash) AS count from {files} WHERE mimetype $insql AND component <> ?";
+        $inparams[] = 'draft'; // Don't get draft files.
+        $inparams[] = '.';
+        $sql = "SELECT COUNT(DISTINCT contenthash) AS count
+                  FROM {files}
+                 WHERE mimetype $insql
+                       AND component <> ?
+                       AND filearea <> ?
+                       AND filename <> ?";
         $result = $DB->count_records_sql($sql, $inparams);
 
         return $result;

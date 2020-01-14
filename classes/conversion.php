@@ -729,8 +729,6 @@ class conversion {
      * @return array $results The results of the processing.
      */
     public function process_conversions() : array {
-        global $DB;
-
         $results = array();
         $fs = get_file_storage();
         $conversionrecords = $this->get_conversion_records(self::CONVERSION_ACCEPTED); // Get not yet started conversion records.
