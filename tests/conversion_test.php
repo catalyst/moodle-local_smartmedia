@@ -1859,7 +1859,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         $willconvert = $conversion->will_convert($href);
 
-        // No settings and no conversion record
+        // No settings and no conversion record.
         $this->assertEquals($conversion::CONVERSION_NOT_FOUND, $willconvert);
 
         // No conversion record but settings say it is eligble for conversion.

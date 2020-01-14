@@ -49,26 +49,6 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
     }
 
     /**
-     * Test getting start file id.
-     */
-    public function test_get_start_id() {
-        $task = new \local_smartmedia\task\extract_metadata();
-
-        // We're testing a private method, so we need to setup reflector magic.
-        $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'get_start_id');
-        $method->setAccessible(true); // Allow accessing of private method.
-        $proxy = $method->invoke($task); // Get result of invoked method.
-
-        // Initial result should be zero as there are no records yet.
-        $this->assertEquals(0, $proxy);
-
-        set_config('startfileid', 1, 'local_smartmedia');
-        $proxy = $method->invoke($task); // Get result of invoked method.
-
-        $this->assertEquals(1, $proxy);
-    }
-
-    /**
      * Test getting supported mime types.
      */
     public function test_get_supported_mime_types() {
