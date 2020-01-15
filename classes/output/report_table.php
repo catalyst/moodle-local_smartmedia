@@ -85,6 +85,9 @@ class report_table extends table_sql implements renderable {
             get_string('report:status', 'local_smartmedia'),
             get_string('report:files', 'local_smartmedia')
         ));
+        $this->column_class('duration', 'mdl-right');
+        $this->column_class('filesize', 'mdl-right');
+        $this->column_class('cost', 'mdl-right');
         // Setup pagination.
         $this->currpage = $page;
         $this->pagesize = $perpage;
@@ -159,7 +162,16 @@ class report_table extends table_sql implements renderable {
      * @return string html used to display the column field.
      */
     public function col_filesize($row) {
-        return $this->format_text($row->filesize);
+        $bytes = $row->filesize;
+        $units = array('B', 'KB', 'MB', 'GB', 'TB');
+
+        $bytes = max($bytes, 0);
+        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
+        $pow = min($pow, count($units) - 1);
+        $bytes /= pow(1024, $pow);
+
+
+        return $this->format_text(round($bytes, 2) . ' ' . $units[$pow]);
     }
 
     /**

@@ -345,7 +345,7 @@ class report_process extends scheduled_task {
             $reportrecord->format = $metadata->formatname;
             $reportrecord->resolution = $record->width . ' X ' . $record->height;;
             $reportrecord->duration = round($record->duration, 3);
-            $reportrecord->filesize = round(($record->size / 1000000), 3);
+            $reportrecord->filesize = $record->size;
             $reportrecord->cost = round($this->get_file_cost($pricingclient, $transcoder, $record), 3);
             $reportrecord->status = $this->get_file_status($record->status);
             $reportrecord->files = $this->get_file_count($record->contenthash);

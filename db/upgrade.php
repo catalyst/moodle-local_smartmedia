@@ -36,36 +36,17 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
-    if ($oldversion < 2019110300) {
+    if ($oldversion < 2020011503) {
 
-        // Define table local_smartmedia_report_over to be created.
+        // Changing type of field filesize on table local_smartmedia_report_over to int.
         $table = new xmldb_table('local_smartmedia_report_over');
+        $field = new xmldb_field('filesize', XMLDB_TYPE_INTEGER, '20', null, XMLDB_NOTNULL, null, null, 'duration');
 
-        // Adding fields to table local_smartmedia_report_over.
-        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
-        $table->add_field('contenthash', XMLDB_TYPE_CHAR, '40', null, null, null, null);
-        $table->add_field('type', XMLDB_TYPE_CHAR, '10', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('format', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('resolution', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('duration', XMLDB_TYPE_NUMBER, '10, 3', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('filesize', XMLDB_TYPE_NUMBER, '10, 3', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('cost', XMLDB_TYPE_NUMBER, '10, 3', null, XMLDB_NOTNULL, null, '0');
-        $table->add_field('status', XMLDB_TYPE_CHAR, '100', null, XMLDB_NOTNULL, null, null);
-        $table->add_field('files', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
-
-        // Adding keys to table local_smartmedia_report_over.
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
-
-        // Adding indexes to table local_smartmedia_report_over.
-        $table->add_index('contenthash', XMLDB_INDEX_UNIQUE, ['contenthash']);
-
-        // Conditionally launch create table for local_smartmedia_report_over.
-        if (!$dbman->table_exists($table)) {
-            $dbman->create_table($table);
-        }
+        // Launch change of type for field filesize.
+        $dbman->change_field_type($table, $field);
 
         // Smartmedia savepoint reached.
-        upgrade_plugin_savepoint(true, 2019110300, 'local', 'smartmedia');
+        upgrade_plugin_savepoint(true, 2020011503, 'local', 'smartmedia');
     }
     return true;
 }
