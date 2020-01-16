@@ -45,7 +45,7 @@ class report_table extends table_sql implements renderable {
      *
      * @var string
      */
-    const FIELDS = 'id, type, format, resolution, duration, filesize, cost, status, files';
+    const FIELDS = 'id, type, format, resolution, duration, filesize, cost, status, files, timecreated, timecompleted';
 
     /**
      * The default WHERE clause to exclude records without at least one video or audio stream.
@@ -74,7 +74,19 @@ class report_table extends table_sql implements renderable {
         $this->show_download_buttons_at(array(TABLE_P_BOTTOM));
         $this->is_downloading($download, 'smartmedia-report');
         $this->define_baseurl($baseurl);
-        $this->define_columns(array('type', 'format', 'resolution', 'duration', 'filesize', 'cost', 'status', 'files'));
+        $this->define_columns(
+            array(
+                'type',
+                'format',
+                'resolution',
+                'duration',
+                'filesize',
+                'cost',
+                'status',
+                'files',
+                'timecreated',
+                'timecompleted'
+            ));
         $this->define_headers(array(
             get_string('report:type', 'local_smartmedia'),
             get_string('report:format', 'local_smartmedia'),
@@ -83,7 +95,9 @@ class report_table extends table_sql implements renderable {
             get_string('report:size', 'local_smartmedia'),
             get_string('report:transcodecost', 'local_smartmedia'),
             get_string('report:status', 'local_smartmedia'),
-            get_string('report:files', 'local_smartmedia')
+            get_string('report:files', 'local_smartmedia'),
+            get_string('report:created', 'local_smartmedia'),
+            get_string('report:completed', 'local_smartmedia'),
         ));
         $this->column_class('duration', 'mdl-right');
         $this->column_class('filesize', 'mdl-right');
@@ -188,8 +202,8 @@ class report_table extends table_sql implements renderable {
     }
 
     /**
-     * Get content for size column.
-     * Size displayed in Megabytes (Mb).
+     * Get content for status column.
+     * Displays the status of the smartmedia conversion.
      *
      * @param \stdClass $row
      *
@@ -200,8 +214,8 @@ class report_table extends table_sql implements renderable {
     }
 
     /**
-     * Get content for size column.
-     * Size displayed in Megabytes (Mb).
+     * Get content for files column.
+     * Displays how many Moodle file records relate to the conversion.
      *
      * @param \stdClass $row
      *
@@ -209,6 +223,36 @@ class report_table extends table_sql implements renderable {
      */
     public function col_files($row) {
         return $this->format_text($row->files);
+    }
+
+    /**
+     * Get content for created column.
+     * Displays when the conversion was started
+     *
+     * @param \stdClass $row
+     *
+     * @return string html used to display the column field.
+     */
+    public function col_timecreated($row) {
+        $date = userdate($row->timecreated, get_string('strftimedatefullshort', 'langconfig'));
+        return $this->format_text($date);
+    }
+
+    /**
+     * Get content for completed column.
+     * Displays when the conversion finished.
+     * @param \stdClass $row
+     *
+     * @return string html used to display the column field.
+     */
+    public function col_timecompleted($row) {
+        if ($row->timecompleted == 0) {
+            $date = '-';
+        } else {
+            $date = userdate($row->timecompleted, get_string('strftimedatefullshort', 'langconfig'));
+        }
+
+        return $this->format_text($date);
     }
 }
 

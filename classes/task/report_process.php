@@ -330,7 +330,7 @@ class report_process extends scheduled_task {
         $reportrecords = array();
 
         // Get metadata and conversion data from DB.
-        $sql = 'SELECT d.*, c.status
+        $sql = 'SELECT d.*, c.status, c.timecreated, c.timecompleted
                   FROM {local_smartmedia_data} d
                   JOIN {local_smartmedia_conv} c ON c.contenthash = d.contenthash;';
 
@@ -349,6 +349,8 @@ class report_process extends scheduled_task {
             $reportrecord->cost = round($this->get_file_cost($pricingclient, $transcoder, $record), 3);
             $reportrecord->status = $this->get_file_status($record->status);
             $reportrecord->files = $this->get_file_count($record->contenthash);
+            $reportrecord->timecreated = $record->timecreated;
+            $reportrecord->timecompleted = $record->timecompleted;
 
             $reportrecords[] = $reportrecord;
         }

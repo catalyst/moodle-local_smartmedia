@@ -48,5 +48,27 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
         // Smartmedia savepoint reached.
         upgrade_plugin_savepoint(true, 2020011503, 'local', 'smartmedia');
     }
+
+    if ($oldversion < 2020011504) {
+
+        // Define field timecreated to be added to local_smartmedia_report_over.
+        $table = new xmldb_table('local_smartmedia_report_over');
+        $field = new xmldb_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0, 'files');
+
+        // Conditionally launch add field timecreated.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        $field = new xmldb_field('timecompleted', XMLDB_TYPE_INTEGER, '10', null, null, null, 0, 'timecreated');
+
+        // Conditionally launch add field timecompleted.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Smartmedia savepoint reached.
+        upgrade_plugin_savepoint(true, 2020011504, 'local', 'smartmedia');
+    }
     return true;
 }
