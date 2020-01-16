@@ -170,7 +170,6 @@ class report_table extends table_sql implements renderable {
         $pow = min($pow, count($units) - 1);
         $bytes /= pow(1024, $pow);
 
-
         return $this->format_text(round($bytes, 2) . ' ' . $units[$pow]);
     }
 

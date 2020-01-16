@@ -124,7 +124,7 @@ class pricing_calculator {
 
             // From https://aws.amazon.com/elastictranscoder/pricing/
             // each output file is billed in whole minute increments
-            // where each partial minute is rounded up to the next full minute
+            // where each partial minute is rounded up to the next full minute.
             $durationminutes = ceil($duration / 60);
 
             foreach ($this->presets as $preset) {

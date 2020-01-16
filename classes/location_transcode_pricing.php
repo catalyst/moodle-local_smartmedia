@@ -147,7 +147,7 @@ class location_transcode_pricing {
     public function calculate_audio_cost(float $duration) {
         $result = null;
         if ($this->has_valid_audio_pricing()) {
-            $result = $duration  * $this->audiopricing;
+            $result = $duration * $this->audiopricing;
         }
         return $result;
     }

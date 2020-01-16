@@ -48,8 +48,8 @@ class local_smartmedia_location_transcode_pricing_testcase extends advanced_test
     public function calculate_cost_provider() {
         return [
             'No pricing set: null' => [null, 7200, null],
-            'Valid pricing string: correct float answer' => ['0.035', '7200', 4.2],
-            'Valid pricing float/int: correct float answer' => [0.035, 7200, 4.2]
+            'Valid pricing string: correct float answer' => ['0.035', '7200', 252],
+            'Valid pricing float/int: correct float answer' => [0.035, 7200, 252]
         ];
     }
 
