@@ -90,7 +90,7 @@ class report_process extends scheduled_task {
     private function get_all_file_count() : int {
         global $DB;
 
-        $select = 'filearea <> :filearea AND filename <> :filename AND component = :component';
+        $select = 'filearea <> :filearea AND filename <> :filename AND component <> :component';
         $params = array(
             'filearea' => 'draft', // Don't get draft files.
             'filename' => '.', // Don't get directories.
