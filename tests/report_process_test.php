@@ -305,7 +305,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $this->assertEquals('avi', $record->format);
         $this->assertEquals('1920 X 1080', $record->resolution);
         $this->assertEquals('599.000', $record->duration);
-        $this->assertEquals('3.900', $record->filesize);
+        $this->assertEquals('3900000', $record->filesize);
         $this->assertEquals('1.752', $record->cost);
         $this->assertEquals('Finished', $record->status);
         $this->assertEquals(3, $record->files);
