@@ -161,9 +161,11 @@ class aws_elastic_transcoder {
      * @return array $presets array of aws_ets_preset objects.
      * @throws \moodle_exception
      */
-    public function get_presets() : array {
+    public function get_presets(array $presetids=array()) : array {
         $presets = [];
-        $presetids = $this->get_preset_ids();
+        if (empty($presetids)) {
+            $presetids = $this->get_preset_ids();
+        }
 
         if (!empty($presetids)) {
 

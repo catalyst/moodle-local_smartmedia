@@ -251,6 +251,22 @@ class report_process extends scheduled_task {
     }
 
     /**
+     * Get the presets used for a given conversion.
+     *
+     * @param int $convid The conversion id to get the presets for.
+     * @return array $presetids The preset ids for the conversion.
+     */
+    private function get_conversion_presets(int $convid) : array {
+        global $DB;
+
+        $select = 'convid = ?';
+        $params = array($convid);
+        $presetids = $DB->get_fieldset_select('local_smartmedia_presets', 'preset', $select, $params);
+
+        return $presetids;
+    }
+
+    /**
      * Get the cost to transcode a file with currently configured settings.
      *
      * @param \local_smartmedia\aws_ets_pricing_client $pricingclient
@@ -264,8 +280,12 @@ class report_process extends scheduled_task {
 
         // Get the location pricing for the AWS region set.
         $locationpricing = $pricingclient->get_location_pricing(get_config('local_smartmedia', 'api_region'));
+
+        // Get the preset ids for this conversion.
+        $presetids = $this->get_conversion_presets($record->id);
+
         // Get the Elastic Transcoder presets which have been set.
-        $presets = $transcoder->get_presets();
+        $presets = $transcoder->get_presets($presetids);
 
         $pricingcalculator = new \local_smartmedia\pricing_calculator($locationpricing, $presets);
 
@@ -330,7 +350,7 @@ class report_process extends scheduled_task {
         $reportrecords = array();
 
         // Get metadata and conversion data from DB.
-        $sql = 'SELECT d.*, c.status, c.timecreated, c.timecompleted
+        $sql = 'SELECT d.*, c.status, c.timecreated, c.timecompleted, c.id
                   FROM {local_smartmedia_data} d
                   JOIN {local_smartmedia_conv} c ON c.contenthash = d.contenthash;';
 
