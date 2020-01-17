@@ -391,6 +391,64 @@ class report_process extends scheduled_task {
     }
 
     /**
+     * Get the total cost for all converted media.
+     *
+     * @return float
+     */
+    private function get_total_converted_cost() : float {
+        global $DB;
+
+        $sql = 'select sum(cost) from {local_smartmedia_report_over}';
+        $cost = $DB->get_field_sql($sql);
+
+        return $cost;
+    }
+
+    /**
+     * Calculate the total cost of transcoding all not converted media items.
+     *
+     * @return float|int|null $total cost for all transcoding across all presets, null if total cannot be calculated.
+     *
+     * @throws \dml_exception
+     */
+    private function calculate_total_conversion_cost(\local_smartmedia\aws_ets_pricing_client $pricingclient,
+        \local_smartmedia\aws_elastic_transcoder $transcoder) : float {
+        global $DB;
+
+        // Get the location pricing for the AWS region set.
+        $pricingclient = $pricingclient->get_location_pricing(get_config('local_smartmedia', 'api_region'));
+        // Get the Elastic Transcoder presets which have been set.
+        $presets = $transcoder->get_presets();
+
+        // Get the pricing calculator
+        $pricingcalculator = new \local_smartmedia\pricing_calculator($pricingclient, $presets);
+
+        if (!$pricingcalculator->has_presets()) {
+            $total = null;
+        } else {
+            // Get the duration of media type content (in seconds), zero if there is no media of type.
+            $highdefinition = $DB->get_record_select('local_smartmedia_data', 'height >= ? AND videostreams > 0',
+                [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
+            $standarddefinition = $DB->get_record_select('local_smartmedia_data',
+                '(height < ?) AND (height > 0) AND videostreams > 0',
+                [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
+            $audio = $DB->get_record_select('local_smartmedia_data',
+                '((height = 0) OR (height IS NULL)) AND audiostreams > 0',
+                null, 'COALESCE(SUM(duration), 0) as duration');
+
+            $totalhdcost = $pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,
+                $highdefinition->duration);
+            $totalsdcost = $pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_SD_HEIGHT,
+                $standarddefinition->duration);
+            $totalaudiocost = $pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_AUDIO_HEIGHT,
+                $audio->duration);
+            $total = $totalhdcost + $totalsdcost + $totalaudiocost;
+        }
+
+        return $total;
+    }
+
+    /**
      * Do the job.
      * Throw exceptions on errors (the job will be retried).
      */
@@ -420,6 +478,14 @@ class report_process extends scheduled_task {
         $pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->create_pricing_client());
         $transcoder = new \local_smartmedia\aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $this->process_overview_report($pricingclient, $transcoder);
+
+        mtrace('local_smartmedia: Calculating total cost of converted media.');
+        $convertedcost = $this->get_total_converted_cost();
+        $this->update_report_data('convertedcost', $convertedcost);
+
+        mtrace('local_smartmedia: Calculating cost to convert media.');
+
+
     }
 
 }

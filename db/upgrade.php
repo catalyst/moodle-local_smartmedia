@@ -70,5 +70,27 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
         // Smartmedia savepoint reached.
         upgrade_plugin_savepoint(true, 2020011504, 'local', 'smartmedia');
     }
+
+    if ($oldversion < 2020011700) {
+
+        // Define field timecreated to be added to local_smartmedia_data.
+        $table = new xmldb_table('local_smartmedia_data');
+        $field = new xmldb_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'metadata');
+
+        // Conditionally launch add field timecreated.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Add the missing timestamps for files that already have metadata records.
+        $sql = 'UPDATE {local_smartmedia_data} lsd
+                   SET timecreated = f.timecreated
+                  FROM {files} f
+                 WHERE f.pathnamehash = lsd.pathnamehash';
+        $DB->execute($sql);
+
+        // Smartmedia savepoint reached.
+        upgrade_plugin_savepoint(true, 2020011700, 'local', 'smartmedia');
+    }
     return true;
 }

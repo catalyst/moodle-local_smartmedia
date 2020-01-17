@@ -107,7 +107,7 @@ class extract_metadata extends scheduled_task {
 
         // Danger! Joins on file table.
         // We want to get the pathnamehash and contenthash of files in the
-        // moodle file table, where id is greater than startfileid and contenthash isn't in
+        // moodle file table, where contenthash isn't in
         // the local_smart_media table. Limit the results to MAX_FILES.
 
         // We are not using a recordset here as we are getting a limited number of records,
@@ -121,7 +121,7 @@ class extract_metadata extends scheduled_task {
             '.',
         );
 
-        $sql = "SELECT f.id, f.pathnamehash, f.contenthash
+        $sql = "SELECT f.id, f.pathnamehash, f.contenthash, f.timecreated
                   FROM {files} f
              LEFT JOIN {local_smartmedia_data} lsd ON f.contenthash = lsd.contenthash
                  WHERE mimetype IN ($mimetypes)
@@ -201,6 +201,7 @@ class extract_metadata extends scheduled_task {
             $metadatarecord->width = 0;
             $metadatarecord->height = 0;
             $metadatarecord->metadata = '{}';
+            $metadatarecord->timecreated = $filehash->timecreated;
 
             if ($filemetadata['status'] == 'success') {
                 // Process sucessful metadata.

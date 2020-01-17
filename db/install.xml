@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/smartmedia/db" VERSION="20200116" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+<XMLDB PATH="local/smartmedia/db" VERSION="20200117" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -17,6 +17,7 @@
         <FIELD NAME="width" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Width of primary video stream if it exists"/>
         <FIELD NAME="height" TYPE="int" LENGTH="6" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Height of primary video stream if it exists"/>
         <FIELD NAME="metadata" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="Full extracted metadata in json format"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The time the original Moodle file object was created"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="id" TYPE="primary" FIELDS="id"/>
