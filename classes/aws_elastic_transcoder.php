@@ -158,6 +158,7 @@ class aws_elastic_transcoder {
     /**
      * Get the presets based on the conversion settings.
      *
+     * @param array $presetids Optional array of preset ids to get presets for.
      * @return array $presets array of aws_ets_preset objects.
      * @throws \moodle_exception
      */
