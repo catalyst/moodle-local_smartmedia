@@ -94,6 +94,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $record->videostreams = 1;
         $record->audiostreams = 1;
         $record->height = 1080;
+        $record->id = 1;
 
         // Setup pricing mock for test.
         $locationpricing = new \local_smartmedia\location_transcode_pricing('ap-southeast-2');
