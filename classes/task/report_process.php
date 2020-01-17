@@ -435,15 +435,27 @@ class report_process extends scheduled_task {
             $total = null;
         } else {
             // Get the duration of media type content (in seconds), zero if there is no media of type.
-            $highdefinition = $DB->get_record_select('local_smartmedia_data',
-                'height >= ? AND videostreams > 0 AND timecreated > ?',
-                [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT, $convertfrom], 'COALESCE(SUM(duration), 0) as duration');
-            $standarddefinition = $DB->get_record_select('local_smartmedia_data',
-                '(height < ?) AND (height > 0) AND videostreams > 0 AND timecreated > ?',
-                [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT, $convertfrom], 'COALESCE(SUM(duration), 0) as duration');
-            $audio = $DB->get_record_select('local_smartmedia_data',
-                '((height = 0) OR (height IS NULL)) AND audiostreams > 0 AND timecreated > ?',
-                [$convertfrom], 'COALESCE(SUM(duration), 0) as duration');
+            $highdefinitionsql = 'SELECT COALESCE(SUM(duration), 0) as duration
+                                    FROM {local_smartmedia_data}
+                                   WHERE height >= ?
+                                         AND videostreams > 0
+                                         AND timecreated > ?';
+            $highdefinition = $DB->get_record_sql($highdefinitionsql, [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT, $convertfrom]);
+
+            $standarddefinitionsql = 'SELECT COALESCE(SUM(duration), 0) as duration
+                                        FROM {local_smartmedia_data}
+                                       WHERE (height < ?)
+                                             AND (height > 0)
+                                             AND videostreams > 0
+                                             AND timecreated > ?';
+            $standarddefinition = $DB->get_record_sql($standarddefinitionsql, [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT, $convertfrom]);
+
+            $audiosql = 'SELECT COALESCE(SUM(duration), 0) as duration
+                           FROM {local_smartmedia_data}
+                          WHERE ((height = 0) OR (height IS NULL))
+                                AND audiostreams > 0
+                                AND timecreated > ?';
+            $audio = $DB->get_record_sql($audiosql, [$convertfrom]);
 
             $totalhdcost = $pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,
                 $highdefinition->duration);
