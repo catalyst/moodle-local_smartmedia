@@ -42,102 +42,6 @@ use templatable;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class report_summary implements renderable, templatable {
-
-    /**
-     * @var \local_smartmedia\pricing_calculator the pricing calculator for calculation pricing info.
-     */
-    private $pricingcalculator;
-
-    /**
-     * @var string the AWS region code.
-     */
-    private $region;
-
-    /**
-     * @var array of stdclass objects representing warnings.
-     */
-    private $warnings = [];
-
-    /**
-     * report_summary constructor.
-     *
-     * @param \local_smartmedia\pricing_calculator $pricingcalculator the pricing calculator for transcode cost calculation.
-     * @param string $region the AWS region which this report summary applies to.
-     */
-    public function __construct(pricing_calculator $pricingcalculator, $region) {
-        $this->pricingcalculator = $pricingcalculator;
-        $this->region = $region;
-    }
-
-
-    /**
-     * Validate that all location pricing is valid in pricing calculator, add warnings if not.
-     *
-     * @throws \coding_exception
-     */
-    private function validate_pricing() {
-
-        if (!$this->pricingcalculator->is_high_definition_pricing_valid()) {
-            $warning = new stdClass();
-            $warning->message = get_string('report:summary:warning:nohdcost', 'local_smartmedia', $this->region);
-            $this->warnings[] = $warning;
-        }
-
-        if (!$this->pricingcalculator->is_standard_definition_pricing_valid()) {
-            $warning = new stdClass();
-            $warning->message = get_string('report:summary:warning:nosdcost', 'local_smartmedia', $this->region);
-            $this->warnings[] = $warning;
-        }
-
-        if (!$this->pricingcalculator->is_audio_pricing_valid()) {
-            $warning = new stdClass();
-            $warning->message = get_string('report:summary:warning:noaudiocost', 'local_smartmedia', $this->region);
-            $this->warnings[] = $warning;
-        }
-
-        if (!$this->pricingcalculator->has_presets()) {
-            $warning = new stdClass();
-            $warning->message = get_string('report:summary:warning:invalidpresets', 'local_smartmedia', $this->region);
-            $this->warnings[] = $warning;
-        }
-
-    }
-
-    /**
-     * Calculate the total cost of transcoding all media items.
-     *
-     * @return float|int|null $total cost for all transcoding across all presets, null if total cannot be calculated.
-     *
-     * @throws \dml_exception
-     */
-    private function calculate_total_cost() {
-        global $DB;
-
-        if (!$this->pricingcalculator->has_presets()) {
-            $total = null;
-        } else {
-            // Get the duration of media type content (in seconds), zero if there is no media of type.
-            $highdefinition = $DB->get_record_select('local_smartmedia_data', 'height >= ? AND videostreams > 0',
-                [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
-            $standarddefinition = $DB->get_record_select('local_smartmedia_data',
-                '(height < ?) AND (height > 0) AND videostreams > 0',
-                [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT], 'COALESCE(SUM(duration), 0) as duration');
-            $audio = $DB->get_record_select('local_smartmedia_data',
-                '((height = 0) OR (height IS NULL)) AND audiostreams > 0',
-                null, 'COALESCE(SUM(duration), 0) as duration');
-
-            $totalhdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,
-                $highdefinition->duration);
-            $totalsdcost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_SD_HEIGHT,
-                $standarddefinition->duration);
-            $totalaudiocost = $this->pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_AUDIO_HEIGHT,
-                $audio->duration);
-            $total = $totalhdcost + $totalsdcost + $totalaudiocost;
-        }
-
-        return $total;
-    }
-
     /**
      * Get the file summary totals from the DB.
      * Used in generating chart data.
@@ -269,6 +173,33 @@ class report_summary implements renderable, templatable {
     }
 
     /**
+     * Get the cost of not converted media.
+     *
+     * @return mixed|boolean $total the total cost of not converted media.
+     */
+    private function get_total_cost() {
+        global $DB;
+
+        $total = $DB->get_field('local_smartmedia_reports', 'value', array('name' => 'totalcost'));
+
+        return $total;
+    }
+
+    /**
+     * Get the cost of converted media.
+     *
+     * @return mixed|boolean $total the total cost of converted media.
+     */
+    private function get_converted_cost() {
+        global $DB;
+
+        $total = $DB->get_field('local_smartmedia_reports', 'value', array('name' => 'convertedcost'));
+
+        return $total;
+    }
+
+
+    /**
      * Export the renderer data in a format that is suitable for a
      * mustache template.
      *
@@ -279,18 +210,23 @@ class report_summary implements renderable, templatable {
      * @throws \coding_exception
      */
     public function export_for_template(renderer_base $output) {
-        $this->validate_pricing();
-
         $context = new stdClass();
 
-        $total = $this->calculate_total_cost();
+        $total = $this->get_total_cost();
         if (!empty($total)) {
             $context->total = '$' . number_format($total, 2);
         } else {
             $context->total = get_string('report:nocostdata', 'local_smartmedia');
         }
 
-        $context->warnings = $this->warnings;
+        $convertedtotal = $this->get_converted_cost();
+        if (!empty($convertedtotal)) {
+            $context->convertedtotal = '$' . number_format($convertedtotal, 2);
+        } else {
+            $context->convertedtotal = get_string('report:nocostdata', 'local_smartmedia');
+        }
+
+
         $context->file_summary = $this->get_file_summary_chart();
         $context->process_summary = $this->get_process_summary_chart();
 

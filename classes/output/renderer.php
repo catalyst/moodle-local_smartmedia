@@ -73,8 +73,8 @@ class renderer extends plugin_renderer_base {
      * @throws \dml_exception
      * @throws \moodle_exception
      */
-    public function render_report_summary(pricing_calculator $pricingcalculator, $region) {
-        $reportsummary = new report_summary($pricingcalculator, $region);
+    public function render_report_summary() {
+        $reportsummary = new report_summary();
         $context = $reportsummary->export_for_template($this);
         return $this->render_from_template('local_smartmedia/report-summary', $context);
     }
@@ -93,7 +93,7 @@ class renderer extends plugin_renderer_base {
      * @throws \dml_exception
      * @throws \moodle_exception
      */
-    public function render_report(string $baseurl, pricing_calculator $pricingcalculator, int $page = 0,
+    public function render_report(string $baseurl, int $page = 0,
                                   int $perpage = 50, string $download = '') : string {
         $region = get_config('local_smartmedia', 'api_region');
 
@@ -103,7 +103,7 @@ class renderer extends plugin_renderer_base {
         $html = '';
         $html .= $this->header();
         $html .= $this->heading(get_string('dashboard:heading', 'local_smartmedia', $region));
-        $html .= $this->render_report_summary($pricingcalculator, $region);
+        $html .= $this->render_report_summary();
         $html .= $this->heading(get_string('report:heading', 'local_smartmedia'));
         $html .= \html_writer::div(get_string('report:heading_desc', 'local_smartmedia'));
         $html .= $tablehtml;

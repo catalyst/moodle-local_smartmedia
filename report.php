@@ -44,16 +44,4 @@ $PAGE->set_heading($title);
 
 $output = $PAGE->get_renderer('local_smartmedia');
 
-// Build the report AWS dependencies.
-$api = new \local_smartmedia\aws_api();
-$pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->create_pricing_client());
-$transcoder = new \local_smartmedia\aws_elastic_transcoder($api->create_elastic_transcoder_client());
-
-// Get the location pricing for the AWS region set.
-$locationpricing = $pricingclient->get_location_pricing(get_config('local_smartmedia', 'api_region'));
-// Get the Elastic Transcoder presets which have been set.
-$presets = $transcoder->get_presets();
-
-$pricingcalculator = new \local_smartmedia\pricing_calculator($locationpricing, $presets);
-
-echo $output->render_report($baseurl, $pricingcalculator, $page, $perpage, $download);
+echo $output->render_report($baseurl, $page, $perpage, $download);
