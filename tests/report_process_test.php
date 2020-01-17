@@ -381,6 +381,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $metadatarecord->width = 1920;
         $metadatarecord->height = 1080;
         $metadatarecord->metadata = '{}';
+        $metadatarecord->timecreated = 1575095000;
 
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
@@ -395,6 +396,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $metadatarecord->width = 960;
         $metadatarecord->height = 540;
         $metadatarecord->metadata = '{}';
+        $metadatarecord->timecreated = 1575095000;
 
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
@@ -409,6 +411,8 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $metadatarecord->width = 0;
         $metadatarecord->height = 0;
         $metadatarecord->metadata = '{}';
+        $metadatarecord->timecreated = 1575095000;
+
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
         // Setup pricing mock for test.
@@ -438,7 +442,21 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
 
-        error_log($result);
+        // Proactive conversion not enabled so we should get 0.
+        $this->assertEquals(0, $result);
 
+        set_config('proactiveconversion', '1', 'local_smartmedia');
+        set_config('convertfrom', 1575096000, 'local_smartmedia');
+        $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
+
+        // Zero should be returned, as files are to old.
+        $this->assertEquals(0, $result);
+
+
+        set_config('convertfrom', 1575094000, 'local_smartmedia');
+        $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
+
+        // Should now get a result.
+        $this->assertEquals(3.0466, $result);
     }
 }
