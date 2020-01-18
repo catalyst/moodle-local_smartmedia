@@ -458,5 +458,24 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         // Should now get a result.
         $this->assertEquals(3.0466, $result);
+
+        // Add a conversion record.
+        $conversionrecord = new \stdClass();
+        $conversionrecord->contenthash = '353e7803284d4735030e079a8047bc4e6e3fdf47';
+        $conversionrecord->pathnamehash = '353e7803284d4735030e079a8047bc4e6e3fdf47';
+        $conversionrecord->status = 200;
+        $conversionrecord->transcoder_status = 200;
+        $conversionrecord->rekog_label_status = 404;
+        $conversionrecord->rekog_moderation_status = 200;
+        $conversionrecord->rekog_face_status = 404;
+        $conversionrecord->rekog_person_status = 200;
+        $conversionrecord->timecreated = time();
+        $conversionrecord->timemodified = time();
+        $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+
+        $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
+
+        // Should now get a lesser result.
+        $this->assertEquals(1.2944, $result);
     }
 }

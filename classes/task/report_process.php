@@ -435,26 +435,32 @@ class report_process extends scheduled_task {
             $total = null;
         } else {
             // Get the duration of media type content (in seconds), zero if there is no media of type.
-            $highdefinitionsql = 'SELECT COALESCE(SUM(duration), 0) as duration
-                                    FROM {local_smartmedia_data}
-                                   WHERE height >= ?
-                                         AND videostreams > 0
-                                         AND timecreated > ?';
+            $highdefinitionsql = 'SELECT COALESCE(SUM(d.duration), 0) as duration
+                                    FROM {local_smartmedia_data} d
+                                   LEFT OUTER JOIN {local_smartmedia_conv} c ON d.contenthash = c.contenthash
+                                   WHERE d.height >= ?
+                                         AND d.videostreams > 0
+                                         AND d.timecreated > ?
+                                         AND c.contenthash IS NULL';
             $highdefinition = $DB->get_record_sql($highdefinitionsql, [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT, $convertfrom]);
 
-            $standarddefinitionsql = 'SELECT COALESCE(SUM(duration), 0) as duration
-                                        FROM {local_smartmedia_data}
-                                       WHERE (height < ?)
+            $standarddefinitionsql = 'SELECT COALESCE(SUM(d.duration), 0) as duration
+                                        FROM {local_smartmedia_data} d
+                             LEFT OUTER JOIN {local_smartmedia_conv} c ON d.contenthash = c.contenthash
+                                       WHERE (d.height < ?)
                                              AND (height > 0)
-                                             AND videostreams > 0
-                                             AND timecreated > ?';
+                                             AND d.videostreams > 0
+                                             AND d.timecreated > ?
+                                             AND c.contenthash IS NULL';
             $standarddefinition = $DB->get_record_sql($standarddefinitionsql, [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT, $convertfrom]);
 
-            $audiosql = 'SELECT COALESCE(SUM(duration), 0) as duration
-                           FROM {local_smartmedia_data}
-                          WHERE ((height = 0) OR (height IS NULL))
-                                AND audiostreams > 0
-                                AND timecreated > ?';
+            $audiosql = 'SELECT COALESCE(SUM(d.duration), 0) as duration
+                           FROM {local_smartmedia_data} d
+                LEFT OUTER JOIN {local_smartmedia_conv} c ON d.contenthash = c.contenthash
+                          WHERE ((d.height = 0) OR (d.height IS NULL))
+                                AND d.audiostreams > 0
+                                AND d.timecreated > ?
+                                AND c.contenthash IS NULL';
             $audio = $DB->get_record_sql($audiosql, [$convertfrom]);
 
             $totalhdcost = $pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,
@@ -463,6 +469,7 @@ class report_process extends scheduled_task {
                 $standarddefinition->duration);
             $totalaudiocost = $pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_AUDIO_HEIGHT,
                 $audio->duration);
+
             $total = $totalhdcost + $totalsdcost + $totalaudiocost;
         }
 
