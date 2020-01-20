@@ -190,8 +190,8 @@ class report_process extends scheduled_task {
     private function get_transcoded_files() : int {
         global $DB;
 
-        $conditions = array('status' => '200');
-        $result = $DB->count_records('local_smartmedia_conv', $conditions);
+        $conditions = array('status' => 'Finished');
+        $result = $DB->count_records('local_smartmedia_report_over', $conditions);
 
         return $result;
     }
@@ -483,6 +483,14 @@ class report_process extends scheduled_task {
      * Throw exceptions on errors (the job will be retried).
      */
     public function execute() {
+
+        mtrace('local_smartmedia: Processing data for overview report');
+        // Build the dependencies.
+        $api = new \local_smartmedia\aws_api();
+        $pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->create_pricing_client());
+        $transcoder = new \local_smartmedia\aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->process_overview_report($pricingclient, $transcoder);
+
         mtrace('local_smartmedia: Processing media file data');
         $totalfiles = $this->get_all_file_count(); // Get count of all files in files table.
         $this->update_report_data('totalfiles', $totalfiles);
@@ -501,13 +509,6 @@ class report_process extends scheduled_task {
 
         $transcodedfiles = $this->get_transcoded_files(); // Get count of transcoded multimedia files.
         $this->update_report_data('transcodedfiles', $transcodedfiles);
-
-        mtrace('local_smartmedia: Processing data for overview report');
-        // Build the dependencies.
-        $api = new \local_smartmedia\aws_api();
-        $pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->create_pricing_client());
-        $transcoder = new \local_smartmedia\aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $this->process_overview_report($pricingclient, $transcoder);
 
         mtrace('local_smartmedia: Calculating total cost of converted media.');
         $convertedcost = $this->get_total_converted_cost();
