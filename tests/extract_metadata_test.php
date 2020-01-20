@@ -167,6 +167,7 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
         $fileobject = new \stdClass();
         $fileobject->pathnamehash = $file->get_pathnamehash();
         $fileobject->contenthash = $file->get_contenthash();
+        $fileobject->timecreated = 1579485430;
         $filehashes = array(
             $file->get_pathnamehash() => $fileobject
         );

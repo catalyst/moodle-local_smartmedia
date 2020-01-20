@@ -27,7 +27,6 @@ namespace local_smartmedia\output;
 
 defined('MOODLE_INTERNAL') || die;
 
-use local_smartmedia\pricing_calculator;
 use renderable;
 use renderer_base;
 use stdClass;
@@ -225,7 +224,6 @@ class report_summary implements renderable, templatable {
         } else {
             $context->convertedtotal = get_string('report:nocostdata', 'local_smartmedia');
         }
-
 
         $context->file_summary = $this->get_file_summary_chart();
         $context->process_summary = $this->get_process_summary_chart();

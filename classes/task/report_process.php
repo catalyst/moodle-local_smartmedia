@@ -428,7 +428,7 @@ class report_process extends scheduled_task {
         // Get the Elastic Transcoder presets which have been set.
         $presets = $transcoder->get_presets();
 
-        // Get the pricing calculator
+        // Get the pricing calculator.
         $pricingcalculator = new \local_smartmedia\pricing_calculator($pricingclient, $presets);
 
         if (!$pricingcalculator->has_presets()) {
