@@ -395,7 +395,7 @@ class report_process extends scheduled_task {
      *
      * @return float
      */
-    private function get_total_converted_cost() : float {
+    private function get_total_converted_cost() {
         global $DB;
 
         $sql = 'select sum(cost) from {local_smartmedia_report_over}';
