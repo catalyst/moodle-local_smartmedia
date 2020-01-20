@@ -407,6 +407,8 @@ class report_process extends scheduled_task {
     /**
      * Calculate the total cost of transcoding all not converted media items.
      *
+     * @param \local_smartmedia\aws_ets_pricing_client $pricingclient
+     * @param \local_smartmedia\aws_elastic_transcoder $transcoder
      * @return float|int|null $total cost for all transcoding across all presets, null if total cannot be calculated.
      *
      * @throws \dml_exception

@@ -64,13 +64,7 @@ class renderer extends plugin_renderer_base {
     /**
      * Render the html for the report summary.
      *
-     * @param \local_smartmedia\pricing_calculator $pricingcalculator the pricing calculator for transcode cost calculation.
-     * @param string $region the AWS region this report summary is for.
-     *
      * @return string html to display.
-     * @throws \coding_exception
-     * @throws \dml_exception
-     * @throws \moodle_exception
      */
     public function render_report_summary() {
         $reportsummary = new report_summary();
@@ -82,7 +76,6 @@ class renderer extends plugin_renderer_base {
      * Get the html to render the local_smartmedia report.
      *
      * @param string $baseurl the base url to render this report on.
-     * @param \local_smartmedia\pricing_calculator $pricingcalculator the pricing calculator for transcode cost calculation.
      * @param int $page the page number for pagination.
      * @param int $perpage amount of records per page for pagination.
      * @param string|null $download dataformat type. One of csv, xhtml, ods, etc
