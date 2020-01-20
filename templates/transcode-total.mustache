@@ -27,15 +27,29 @@
 }}
 
     <div class="card">
-        <h5 class="card-header">{{#str}} report:summary:transcodetotal, local_smartmedia {{/str}}</h5>
-        <div class="card-body">
+        <h5 class="local-smartmedia card-header">{{#str}} report:summary:transcodetotal, local_smartmedia {{/str}}</h5>
+        <div class="local-smartmedia card-body">
           <div>
-            <h6 class="card-subtitle mb-2 text-muted">{{#str}} report:summary:cost:description, local_smartmedia {{/str}}</h6>
-            <h2 class="card-text">{{#str}} report:summary:cost:total, local_smartmedia {{/str}} {{total}}</h2>
+            <h6 class="local-smartmedia card-subtitle">
+                {{#str}} report:summary:cost:remaindescription, local_smartmedia {{/str}}
+            </h6>
+            <h2 class="local-smartmedia card-text">
+                {{#str}} report:summary:cost:total, local_smartmedia {{/str}} {{total}}
+            </h2>
           </div>
           <div>
-            <h6 class="card-subtitle mb-2 text-muted">{{#str}} report:summary:cost:description, local_smartmedia {{/str}}</h6>
-            <h2 class="card-text">{{#str}} report:summary:cost:total, local_smartmedia {{/str}} {{convertedtotal}}</h2>
+            <h6 class="local-smartmedia card-subtitle">
+                {{#str}} report:summary:cost:donedescription, local_smartmedia {{/str}}
+            </h6>
+            <h2 class="local-smartmedia card-text">
+                {{#str}} report:summary:cost:total, local_smartmedia {{/str}} {{convertedtotal}}
+            </h2>
+          </div>
+          <div>
+            <h6 class="local-smartmedia card-subtitle text-muted local-smartmedia-disclaimer">
+                {{#str}} report:summary:cost:disclaimer, local_smartmedia {{/str}}
+            </h6>
+
           </div>
         </div>
     </div>

@@ -27,7 +27,6 @@ namespace local_smartmedia\output;
 
 defined('MOODLE_INTERNAL') || die;
 
-use local_smartmedia\pricing_calculator;
 use plugin_renderer_base;
 
 /**
@@ -104,7 +103,7 @@ class renderer extends plugin_renderer_base {
         $html .= $this->header();
         $html .= $this->heading(get_string('dashboard:heading', 'local_smartmedia', $region));
         $html .= $this->render_report_summary();
-        $html .= $this->heading(get_string('report:heading', 'local_smartmedia'));
+        $html .= $this->heading(get_string('report:heading', 'local_smartmedia'), 2, 'local-smartmedia local-smartmedia-heading');
         $html .= \html_writer::div(get_string('report:heading_desc', 'local_smartmedia'));
         $html .= $tablehtml;
         $html .= $this->footer();

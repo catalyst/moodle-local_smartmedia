@@ -1,0 +1,11 @@
+.local-smartmedia .card-text:last-child {
+    margin-bottom: 1.5rem;
+}
+
+.local-smartmedia .card-subtitle {
+    margin-bottom: 0;
+}
+
+.local-smartmedia.local-smartmedia-heading{
+   margin-top: 2rem;
+}
