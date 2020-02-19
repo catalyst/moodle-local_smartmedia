@@ -446,13 +446,13 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $this->assertEquals(0, $result);
 
         set_config('proactiveconversion', '1', 'local_smartmedia');
-        set_config('convertfrom', 1575096000, 'local_smartmedia');
+        set_config('convertfrom', 3628800, 'local_smartmedia');
         $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
 
         // Zero should be returned, as files are to old.
         $this->assertEquals(0, $result);
 
-        set_config('convertfrom', 1575094000, 'local_smartmedia');
+        set_config('convertfrom', 3144960000, 'local_smartmedia');
         $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
 
         // Should now get a result.

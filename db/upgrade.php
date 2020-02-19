@@ -92,5 +92,12 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
         // Smartmedia savepoint reached.
         upgrade_plugin_savepoint(true, 2020011700, 'local', 'smartmedia');
     }
+
+    if ($oldversion < 2020022400) {
+        // Upgrade convertfrom to a duration.
+        require_once('upgradelib.php');
+        update_convertfrom_to_duration();
+        upgrade_plugin_savepoint(true, 2020022400, 'local', 'smartmedia');
+    }
     return true;
 }

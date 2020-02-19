@@ -15,19 +15,24 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Upgrade lib for smartmedia plugin.
  *
  * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
+ * @copyright   2020 Peter Burnett <peterburnett@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_smartmedia';
-$plugin->release = 2020022400;
-$plugin->version = 2020022400;
-$plugin->requires = 2018051700;
-$plugin->dependencies = array(
-    'local_aws' => 2018061900
-);
+/**
+ * Updates the convertfrom config item to a duration, by taking the current timestamp config, rounding to the nearest day,
+ * And updating the duration to the period from now.
+ *
+ * @return void
+ */
+function update_convertfrom_to_duration() {
+    $prevtimestamp = get_config('local_smartmedia', 'convertfrom');
+    $duration = time() - $prevtimestamp;
+    // Round to nearest day.
+    $roundedduration = (round($duration / DAYSECS) * DAYSECS);
+    set_config('convertfrom', $roundedduration, 'local_smartmedia');
+}

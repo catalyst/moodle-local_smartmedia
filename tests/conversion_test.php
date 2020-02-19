@@ -81,6 +81,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         set_config('api_secret', 'somefakesecret', 'local_smartmedia');
         set_config('s3_input_bucket', 'inputbucket', 'local_smartmedia');
         set_config('s3_output_bucket', 'outputbucket', 'local_smartmedia');
+        set_config('audio_output', 0, 'local_smartmedia');
+        set_config('download_files', 0, 'local_smartmedia');
         set_config('detectlabels', 1, 'local_smartmedia');
         set_config('detectmoderation', 1, 'local_smartmedia');
         set_config('detectfaces', 1, 'local_smartmedia');
@@ -657,6 +659,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     public function test_get_conversion_records() {
         $this->resetAfterTest(true);
 
+        // Turn off all quality options.
+        set_config('quality_low', 0, 'local_smartmedia');
+        set_config('quality_high', 0, 'local_smartmedia');
+
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $conversion = new \local_smartmedia\conversion($transcoder);
@@ -695,6 +701,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
 
         set_config('quality_low', 1, 'local_smartmedia');
+        set_config('quality_high', 0, 'local_smartmedia');
 
         // Mock the elastic transcoder client so it returns fixture preset data for low quality.
         $mockdata = array_values($this->fixture['readPreset']['quality_low']);
@@ -1269,7 +1276,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         // Create some test files.
         $fs = get_file_storage();
-
+        set_config('convertfrom', 604800, 'local_smartmedia');
         $filerecord1 = array(
             'contextid' => 1461,
             'component' => 'mod_label',
@@ -1380,7 +1387,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->resetAfterTest(true);
         global $DB;
 
-        set_config('convertfrom', 1572923600, 'local_smartmedia');
+        set_config('convertfrom', 86400, 'local_smartmedia');
 
         // Create some test files.
         $fs = get_file_storage();
@@ -1400,7 +1407,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             'itemid' => 1,
             'filepath' => '/',
             'filename' => 'video2.mp4',
-            'timecreated' => 1572923500
+            'timecreated' => time() - 604800
         );
 
         // For this test it doesn't actually matter these are not real multimedia files.
@@ -1816,7 +1823,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
      */
     public function test_will_convert() {
         global $DB, $CFG;
-
         $this->resetAfterTest(true);
 
         // Setup for testing.
@@ -1857,6 +1863,8 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $conversion = new \local_smartmedia\conversion($transcoder);
 
+        // Set convert time to future to test convert correctly.
+        set_config('convertfrom', -10, 'local_smartmedia');
         $willconvert = $conversion->will_convert($href);
 
         // No settings and no conversion record.
@@ -1864,6 +1872,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         // No conversion record but settings say it is eligble for conversion.
         set_config('proactiveconversion', 1, 'local_smartmedia');
+        set_config('convertfrom', 3628800, 'local_smartmedia');
         $willconvert = $conversion->will_convert($href);
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $willconvert);
 
