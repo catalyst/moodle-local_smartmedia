@@ -309,6 +309,8 @@ class report_process extends scheduled_task {
             $status = 'In Progress';
         } else if ($code == 202) {
             $status = 'In Progress';
+        } else if ($code == 3) {
+            $status = 'File Missing';
         } else {
             $status = 'Error';
         }
