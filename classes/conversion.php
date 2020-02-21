@@ -117,6 +117,11 @@ class conversion {
     private const FILTER_DOWNLOAD = 2;
 
     /**
+     *  The file is not found on disk to transcode.
+     */
+    private const FILE_NOT_FOUND = 3;
+
+    /**
      * @var mixed hash-like object of settings for local_smartmedia.
      */
     private $config;
@@ -736,7 +741,12 @@ class conversion {
         foreach ($conversionrecords as $conversionrecord) { // Itterate through not yet started records.
             $settings = $this->get_conversion_settings($conversionrecord); // Get convession settings.
             $file = $fs->get_file_by_hash($conversionrecord->pathnamehash); // Get the file to process.
-            $results[$conversionrecord->id] = $this->send_file_for_processing($file, $settings); // Send for processing.
+            // Skip file conversion if file not found.
+            if ($file === false) {
+                $results[$conversionrecord->id] = self::FILE_NOT_FOUND;
+            } else {
+                $results[$conversionrecord->id] = $this->send_file_for_processing($file, $settings); // Send for processing.
+            }
             $this->update_conversion_records($results); // Update conversion records.
         }
 
