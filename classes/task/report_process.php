@@ -425,7 +425,7 @@ class report_process extends scheduled_task {
             return 0;
         }
 
-        $convertfrom = (int)get_config('local_smartmedia', 'convertfrom');
+        $convertfrom = time() - (int)get_config('local_smartmedia', 'convertfrom');
 
         // Get the location pricing for the AWS region set.
         $pricingclient = $pricingclient->get_location_pricing(get_config('local_smartmedia', 'api_region'));

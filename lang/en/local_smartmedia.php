@@ -26,7 +26,6 @@
 defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Smart Media';
-$string['pluginsettings'] = 'Smart media settings';
 
 $string['ffprobe:invalidpath'] = 'Invalid FFProbe path';
 $string['privacy:metadata:local_smartmedia:externalpurpose'] = 'This information is sent to AWS API in order the file to be converted to an alternative format. The file is temporarily kept in an AWS S3 bucket and gets deleted after the conversion is done.';
@@ -133,8 +132,8 @@ $string['settings:enrichment:detectsentiment_help'] = 'Perform sentiment detecti
 $string['settings:processing:description'] = 'These settings control how and when media files are processed.';
 $string['settings:processing:header'] = 'Processing settings';
 $string['settings:processing:header_desc'] = 'These settings control how media files are processed.';
-$string['settings:processing:convertfrom'] = 'Convert newer';
-$string['settings:processing:convertfrom_help'] = 'Only files added to Moodle after this date will be converted. Applies to both background processing and view conversionss.';
+$string['settings:processing:convertfrom'] = 'Convert since';
+$string['settings:processing:convertfrom_help'] = 'Only files added to Moodle since this time period will be converted. Applies to both background processing and view conversions.';
 $string['settings:processing:proactiveconversion'] = 'Background processing';
 $string['settings:processing:proactiveconversion_help'] = 'When enabled media files will be processed via scheduled task.';
 $string['settings:processing:viewconversion'] = 'View processing';

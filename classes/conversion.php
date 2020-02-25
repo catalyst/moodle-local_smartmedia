@@ -1158,7 +1158,7 @@ class conversion {
      */
     private function get_pathnamehashes() : array {
         global $DB;
-        $convertfrom = (int)get_config('local_smartmedia', 'convertfrom');
+        $convertfrom = time() - (int)get_config('local_smartmedia', 'convertfrom');
 
         $limit = self::MAX_FILES;
         $sql = "SELECT DISTINCT (lsd.pathnamehash)
@@ -1215,8 +1215,7 @@ class conversion {
         // file is newer than from config.
         $background = get_config('local_smartmedia', 'proactiveconversion');
         $view = get_config('local_smartmedia', 'viewconversion');
-        $convertfrom = (int)get_config('local_smartmedia', 'convertfrom');
-
+        $convertfrom = time() - (int)get_config('local_smartmedia', 'convertfrom');
         if (($background || $view) && ($file->get_timecreated() > $convertfrom)) {
             return self::CONVERSION_ACCEPTED;
         }

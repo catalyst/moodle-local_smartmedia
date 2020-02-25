@@ -81,6 +81,10 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
 
         $this->resetAfterTest();
 
+        // Disable audio and download.
+        set_config('audio_output', 0, 'local_smartmedia');
+        set_config('download_files', 0, 'local_smartmedia');
+
         // Plugin settings.
         $this->region = 'ap-southeast-2';
         $this->version = '2012-09-25';
@@ -150,6 +154,10 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
      */
     public function test_get_presets_not_set() {
 
+        // Disable all quality presets.
+        set_config('quality_low', 0, 'local_smartmedia');
+        set_config('quality_high', 0, 'local_smartmedia');
+
         // Mock the elastic transcoder client so it returns fixture data presets.
         list($mock, $mockresults) = $this->create_mock_elastic_transcoder_client();
 
@@ -172,7 +180,9 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
 
-        // First test should be empty as no config set.
+        // First test should be empty as all quality options disabled.
+        set_config('quality_low', 0, 'local_smartmedia');
+        set_config('quality_high', 0, 'local_smartmedia');
         $presetids = $transcoder->get_preset_ids();
         $this->assertEmpty($presetids);
 
