@@ -390,6 +390,35 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             $filerecord3['contextid'], $filerecord3['component'], $filerecord3['filearea'],
             $filerecord3['itemid'], $filerecord3['filepath'], $filerecord3['filename']);
 
+        // Ensure files with URL-encoded characters are handled correctly.
+        $filerecord4 = array(
+            'contextid' => 1386,
+            'component' => 'mod_folder',
+            'filearea' => 'content',
+            'itemid' => 45,
+            'filepath' => '/a/b/c/',
+            'filename' => 'myfile 4.txt');
+
+        $file4 = $fs->create_file_from_string($filerecord4, 'the fourth test file');
+        $filepathnamehash4 = $file4->get_pathnamehash();
+        $href4 = moodle_url::make_pluginfile_url(
+            $filerecord4['contextid'], $filerecord4['component'], $filerecord4['filearea'],
+            $filerecord4['itemid'], $filerecord4['filepath'], $filerecord4['filename']);
+
+        $filerecord5 = array(
+            'contextid' => 1386,
+            'component' => 'mod_folder',
+            'filearea' => 'content',
+            'itemid' => 45,
+            'filepath' => '/a/b/c/',
+            'filename' => 'myfile+!@#$%^&*(5.txt');
+
+        $file5 = $fs->create_file_from_string($filerecord5, 'the fifth test file');
+        $filepathnamehash5 = $file5->get_pathnamehash();
+        $href5 = moodle_url::make_pluginfile_url(
+            $filerecord5['contextid'], $filerecord5['component'], $filerecord5['filearea'],
+            $filerecord5['itemid'], $filerecord5['filepath'], $filerecord5['filename']);
+
         // Instansiate new conversion class.
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
@@ -402,11 +431,14 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $result1 = $method->invoke($conversion, $href1); // Get result of invoked method.
         $result2 = $method->invoke($conversion, $href2); // Get result of invoked method.
         $result3 = $method->invoke($conversion, $href3); // Get result of invoked method.
+        $result4 = $method->invoke($conversion, $href4); // Get result of invoked method.
+        $result5 = $method->invoke($conversion, $href5); // Get result of invoked method.
 
         $this->assertEquals($filepathnamehash1, $result1->get_pathnamehash());
         $this->assertEquals($filepathnamehash2, $result2->get_pathnamehash());
         $this->assertEquals($filepathnamehash3, $result3->get_pathnamehash());
-
+        $this->assertEquals($filepathnamehash4, $result4->get_pathnamehash());
+        $this->assertEquals($filepathnamehash5, $result5->get_pathnamehash());
     }
 
     /**
