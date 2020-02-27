@@ -328,7 +328,8 @@ class conversion {
         $contextid = $hrefarguments[0];
         $component = clean_param($hrefarguments[1], PARAM_COMPONENT);
         $filearea = clean_param($hrefarguments[2], PARAM_AREA);
-        $filename = $hrefarguments[($argumentcount - 1)];
+        // Unescape URL encoding inside filename here.
+        $filename = clean_param(urldecode($hrefarguments[($argumentcount - 1)]), PARAM_FILE);
 
         // Sensible defaults for item id and filepath.
         $itemid = 0;
