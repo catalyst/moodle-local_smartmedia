@@ -762,11 +762,19 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertEquals('10101010', $result['processes']);
         // Check that all low quality fixture presets are present in the metadata.
         foreach ($this->fixture['readPreset']['quality_low'] as $preset) {
-            $this->assertStringContainsString($preset['Preset']['Id'], $result['presets']);
+            if (method_exists($this, 'assertStringContainsString')) {
+                $this->assertStringContainsString($preset['Preset']['Id'], $result['presets']);
+            } else {
+                $this->assertContains($preset['Preset']['Id'], $result['presets']);
+            }
         }
         // Check that no medium quality fixture presets are present in the metadata.
         foreach ($this->fixture['readPreset']['quality_medium'] as $preset) {
-            $this->assertStringNotContainsString($preset['Preset']['Id'], $result['presets']);
+            if (method_exists($this, 'assertStringNotContainsString')) {
+                $this->assertStringNotContainsString($preset['Preset']['Id'], $result['presets']);
+            } else {
+                $this->assertNotContains($preset['Preset']['Id'], $result['presets']);
+            }
         }
     }
 
