@@ -1183,9 +1183,14 @@ class conversion {
         $pathnamehashes = $this->get_pathnamehashes(); // Get pathnamehashes for conversions.
         $fs = get_file_storage();
 
-        foreach ($pathnamehashes as $pathnamehash) {
+        foreach ($pathnamehashes as $key => $pathnamehash) {
             $file = $fs->get_file_by_hash($pathnamehash->pathnamehash);
-            $this->create_conversion($file);
+            if ($file === false) {
+                // If file not found, remove this element from hash array.
+                unset($pathnamehashes[$key]);
+            } else {
+                $this->create_conversion($file);
+            }
         }
 
         return $pathnamehashes;
