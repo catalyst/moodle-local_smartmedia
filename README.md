@@ -81,6 +81,8 @@ For more information on how the submitted files are processed in AWS please refe
 
 **Note:** Full support on setting up an AWS account and API access keys for AWS stack infrastructure provisioning is beyond the scope of this guide.
 
+**Note:** This plugin currently does not support multiple Moodle's sharing Smartmedia Infrastructure. The AWS stack setup must be performed on an environment by environment basis, with a unique stack per environment.
+
 To setup the AWS conversion stack infrastructure:
 
 1. Create an AWS account, see: `https://aws.amazon.com/premiumsupport/knowledge-center/create-and-activate-aws-account/` for information on how to do this.
