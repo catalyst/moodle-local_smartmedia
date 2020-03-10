@@ -406,7 +406,7 @@ Resources:
   TranscribeEventRule:
     Type: AWS::Events::Rule
     Properties: 
-      Name: 'TranscribeEventRule'
+      Name: !Join [ '-', [!Ref 'AWS::StackName', 'TranscribeEventRule']
       Description: 'Cloudwatch event rule for transcribe completion.'
       EventPattern: 
         source: 
