@@ -403,7 +403,8 @@ class report_process extends scheduled_task {
         $sql = 'select sum(cost) from {local_smartmedia_report_over}';
         $cost = $DB->get_field_sql($sql);
 
-        return $cost;
+        // Return 0 when no cost exists yet.
+        return $cost == null ? 0 : $cost;
     }
 
     /**
