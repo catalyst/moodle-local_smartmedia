@@ -354,7 +354,9 @@ class report_process extends scheduled_task {
         // Get metadata and conversion data from DB.
         $sql = 'SELECT d.*, c.status, c.timecreated, c.timecompleted, c.id
                   FROM {local_smartmedia_data} d
-                  JOIN {local_smartmedia_conv} c ON c.contenthash = d.contenthash;';
+                  JOIN {local_smartmedia_conv} c ON c.contenthash = d.contenthash
+                 WHERE d.videostreams > 0
+                    OR d.audiostreams > 0';
 
         $rs = $DB->get_recordset_sql($sql);
         foreach ($rs as $record) { // Itterate through records.
