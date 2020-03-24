@@ -50,6 +50,13 @@ class aws_elastic_transcoder {
     private $transcoderclient;
 
     /**
+     * Retrieved Preset ID information
+     *
+     * @var array
+     */
+    private $retrievedpresets;
+
+    /**
      * Transcoder presets for low quality video file conversion.
      *
      * @var array
@@ -104,6 +111,7 @@ class aws_elastic_transcoder {
      */
     public function __construct(ElasticTranscoderClient $transcoderclient) {
         $this->transcoderclient = $transcoderclient;
+        $this->retrievedpresets = array();
     }
 
     /**
@@ -114,9 +122,16 @@ class aws_elastic_transcoder {
      * @return mixed|null
      */
     private function read_preset(string $presetid) {
-        $params = ['Id' => $presetid];
-        $result = $this->transcoderclient->readPreset($params);
-        $preset = $result->get('Preset');
+        // Retrieve preset information if already stored.
+        if (array_key_exists($presetid, $this->retrievedpresets)) {
+            $preset = $this->retrievedpresets[$presetid];
+        } else {
+            $params = ['Id' => $presetid];
+            $result = $this->transcoderclient->readPreset($params);
+            $preset = $result->get('Preset');
+            // Store the info for later.
+            $this->retrievedpresets[$presetid] = $preset;
+        }
 
         return $preset;
     }
