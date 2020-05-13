@@ -490,6 +490,14 @@ class report_process extends scheduled_task {
     public function execute() {
 
         mtrace('local_smartmedia: Processing data for overview report');
+
+        // First we should check whether there are an API keys set.
+        $key = get_config('local_smartmedia', 'api_key');
+        if (empty($key)) {
+            mtrace('local_smartmedia: AWS API key is not set. Exiting early.');
+            return;
+        }
+
         // Build the dependencies.
         $api = new \local_smartmedia\aws_api();
         $pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->create_pricing_client());
