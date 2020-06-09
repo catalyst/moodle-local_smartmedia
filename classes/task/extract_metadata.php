@@ -69,6 +69,27 @@ class extract_metadata extends scheduled_task {
         'video/MP2T'.
         'video/x-sgi-movie',
     );
+    /**
+     * The maximum run time for the task in seconds.
+     * The task will cleanup and exit after this time.
+     *
+     * @var int
+     */
+    private $maxruntime;
+
+    /**
+     * Time that the task started execution.
+     *
+     * @var int
+     */
+    private $starttime;
+
+    /**
+     * Constructor for the task. Sets the max runtime from config.
+     */
+    public function __construct() {
+        $this->maxruntime = get_config('local_smartmedia', 'maxruntime');
+    }
 
     /**
      * Get the mime types that support extraction.
@@ -171,61 +192,80 @@ class extract_metadata extends scheduled_task {
         $metadatarecords = array();
         $failhashses = array();
         $duplicatehashes = array();
+        $duplicatecount = 0;
 
         $fs = get_file_storage();
         $ffprobe = new \local_smartmedia\ffprobe();
 
-        foreach ($filehashes as $filehash) {
+        $count = count($filehashes);
+        mtrace("local_smartmedia: Found {$count} file(s) to process");
 
-            // Check if we have already processed this content hash this run and exit early if so.
-            // We do it here instead of in the SQL query that gets the candidate hashes, because of
-            // the large ammount of entries that can be in the database.
-            if (in_array($filehash->contenthash, $duplicatehashes)) {
-                continue; // Duplicate found, skip the cycle.
-            } else {
-                $duplicatehashes[] = $filehash->contenthash;
-            }
+        // Lets split the array into chunks, for more granular processing
+        $filehashes = array_chunk($filehashes, 100, true);
 
-            $file = $fs->get_file_by_hash($filehash->pathnamehash);
-            $filemetadata = $ffprobe->get_media_metadata($file);
+        foreach ($filehashes as $chunkindex => $filehashchunk) {
+            // Output an indicator for every chunk processed
+            $filecount = ($chunkindex * 100) + 1;
+            $batchlimit = ($count < 100) ? $count : ($chunkindex + 1) * 100;
+            mtrace("local_smartmedia: Now processing $filecount - $batchlimit / $count ");
 
-            // Setup initial metadata record.
-            $metadatarecord = new \stdClass();
-            $metadatarecord->contenthash = $file->get_contenthash();
-            $metadatarecord->pathnamehash = $file->get_pathnamehash();
-            $metadatarecord->duration = 0;
-            $metadatarecord->bitrate = 0;
-            $metadatarecord->size = 0;
-            $metadatarecord->videostreams = 0;
-            $metadatarecord->audiostreams = 0;
-            $metadatarecord->width = 0;
-            $metadatarecord->height = 0;
-            $metadatarecord->metadata = '{}';
-            $metadatarecord->timecreated = $filehash->timecreated;
-
-            if ($filemetadata['status'] == 'success') {
-                // Process sucessful metadata.
-                $successcount++;
-
-                $metadatarecord->duration = $filemetadata['data']['duration'];
-                $metadatarecord->bitrate = $filemetadata['data']['bitrate'];
-                $metadatarecord->size = $filemetadata['data']['size'];
-                $metadatarecord->videostreams = $filemetadata['data']['totalvideostreams'];
-                $metadatarecord->audiostreams = $filemetadata['data']['totalaudiostreams'];
-                $metadatarecord->metadata = json_encode($filemetadata['data']);
-
-                // Get width and height from primary video stream if we have one.
-                if ($filemetadata['data']['totalvideostreams'] > 0) {
-                    $metadatarecord->width = $filemetadata['data']['videostreams'][0]['width'];
-                    $metadatarecord->height = $filemetadata['data']['videostreams'][0]['height'];
+            foreach ($filehashchunk as $filehash) {
+                // Check if we have already processed this content hash this run and exit early if so.
+                // We do it here instead of in the SQL query that gets the candidate hashes, because of
+                // the large ammount of entries that can be in the database.
+                if (in_array($filehash->contenthash, $duplicatehashes)) {
+                    $duplicatecount++;
+                    continue; // Duplicate found, skip the cycle.
+                } else {
+                    $duplicatehashes[] = $filehash->contenthash;
                 }
 
-                $metadatarecords[] = $metadatarecord;
-            } else {
-                $failcount++;
-                $failhashses[] = $filehash->pathnamehash; // Record the failed hashes for logging.
+                $file = $fs->get_file_by_hash($filehash->pathnamehash);
+                $filemetadata = $ffprobe->get_media_metadata($file);
+
+                // Setup initial metadata record.
+                $metadatarecord = new \stdClass();
+                $metadatarecord->contenthash = $file->get_contenthash();
+                $metadatarecord->pathnamehash = $file->get_pathnamehash();
+                $metadatarecord->duration = 0;
+                $metadatarecord->bitrate = 0;
+                $metadatarecord->size = 0;
+                $metadatarecord->videostreams = 0;
+                $metadatarecord->audiostreams = 0;
+                $metadatarecord->width = 0;
+                $metadatarecord->height = 0;
+                $metadatarecord->metadata = '{}';
+                $metadatarecord->timecreated = $filehash->timecreated;
+
+                if ($filemetadata['status'] == 'success') {
+                    // Process sucessful metadata.
+                    $successcount++;
+
+                    $metadatarecord->duration = $filemetadata['data']['duration'];
+                    $metadatarecord->bitrate = $filemetadata['data']['bitrate'];
+                    $metadatarecord->size = $filemetadata['data']['size'];
+                    $metadatarecord->videostreams = $filemetadata['data']['totalvideostreams'];
+                    $metadatarecord->audiostreams = $filemetadata['data']['totalaudiostreams'];
+                    $metadatarecord->metadata = json_encode($filemetadata['data']);
+
+                    // Get width and height from primary video stream if we have one.
+                    if ($filemetadata['data']['totalvideostreams'] > 0) {
+                        $metadatarecord->width = $filemetadata['data']['videostreams'][0]['width'];
+                        $metadatarecord->height = $filemetadata['data']['videostreams'][0]['height'];
+                    }
+
+                    $metadatarecords[] = $metadatarecord;
+                } else {
+                    $failcount++;
+                    $failhashses[] = $filehash->pathnamehash; // Record the failed hashes for logging.
+                }
             }
 
+            // Now check if we have exceeded the task runtime. If so, break.
+            if (time() >= $this->starttime + $this->maxruntime) {
+                mtrace('local_smartmedia: Maximum task runtime reached, metadata extraction halted.');
+                break;
+            }
         }
 
         // Insert records into database.
@@ -236,7 +276,8 @@ class extract_metadata extends scheduled_task {
         $results = array(
             'successcount' => $successcount,
             'failcount' => $failcount,
-            'failedhashes' => $failhashses
+            'failedhashes' => $failhashses,
+            'duplicatecount' => $duplicatecount
         );
 
         return $results;
@@ -262,12 +303,20 @@ class extract_metadata extends scheduled_task {
     public function execute() {
         mtrace('local_smartmedia: Processing media file metadata');
 
+        // Get the starttime for the task.
+        $this->starttime = time();
+
         $filehashes = $this->get_files_to_process();  // Select a stack of files.
+        // If already past the time limit, print a message and exit.
+        if (time() >= $this->starttime + $this->maxruntime) {
+            mtrace('local_smartmedia: Task time limit exceeded before processing files. Raise time limit or lower lookback time.');
+        }
         $processresults = $this->process_files($filehashes); // Process the metadata for the selected files.
 
         // Output processing results.
         mtrace('local_smartmedia: Number files successfully processed: ' . $processresults['successcount']);
         mtrace('local_smartmedia: Number files with process failures: ' . $processresults['failcount']);
+        mtrace('local_smartmedia: ' . $processresults['duplicatecount'] . ' duplicate file entries were skipped.');
         foreach ($processresults['failedhashes'] as $failedhash) {
             mtrace('local_smartmedia: Failed to process file with hash: ' . $failedhash);
         }

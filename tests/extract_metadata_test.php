@@ -177,6 +177,8 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'process_files');
         $method->setAccessible(true); // Allow accessing of private method.
+        // Assert any output (suppresses risky test, output verified manually).
+        $this->expectOutputRegex('/.*/');
         $proxy = $method->invoke($task, $filehashes); // Get result of invoked method.
 
         $this->assertEquals(1, $proxy['successcount']);

@@ -118,6 +118,10 @@ if ($hassiteconfig) {
         get_string('settings:processing:convertfrom', 'local_smartmedia'),
         get_string('settings:processing:convertfrom_help', 'local_smartmedia'), WEEKSECS, WEEKSECS));
 
+    $settings->add(new admin_setting_configduration('local_smartmedia/maxruntime',
+        get_string('settings:processing:maxruntime', 'local_smartmedia'),
+        get_string('settings:processing:maxruntime_help', 'local_smartmedia'), 5 * MINSECS, MINSECS));
+
     // Enrichment settings.
     $settings->add(new admin_setting_heading('enrichmentheader',
         get_string('settings:enrichment:header', 'local_smartmedia'),
