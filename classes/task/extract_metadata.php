@@ -257,7 +257,7 @@ class extract_metadata extends scheduled_task {
                     $metadatarecords[] = $metadatarecord;
                 } else {
                     $failcount++;
-                    $failhashses[] = $filehash->pathnamehash; // Record the failed hashes for logging.
+                    $failhashses[$filehash->pathnamehash] = $filemetadata['reason']; // Record the failed hashes for logging.
                 }
             }
 
@@ -317,8 +317,8 @@ class extract_metadata extends scheduled_task {
         mtrace('local_smartmedia: Number files successfully processed: ' . $processresults['successcount']);
         mtrace('local_smartmedia: Number files with process failures: ' . $processresults['failcount']);
         mtrace('local_smartmedia: ' . $processresults['duplicatecount'] . ' duplicate file entries were skipped.');
-        foreach ($processresults['failedhashes'] as $failedhash) {
-            mtrace('local_smartmedia: Failed to process file with hash: ' . $failedhash);
+        foreach ($processresults['failedhashes'] as $failedhash => $reason) {
+            mtrace('local_smartmedia: Failed to process file with hash: ' . $failedhash . ': ' . $reason);
         }
 
         // Remove files from metadata table.

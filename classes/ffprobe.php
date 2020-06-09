@@ -145,12 +145,38 @@ class ffprobe {
 
         // Execute the FFProbe command to get file metadata.
         $command = $this->ffprobe_path . ' -of json -v error -show_format -show_streams ' .  escapeshellarg($tempfile);
-        $rawresults = shell_exec($command);
+        $errfile = $tempfile . "_err";
+        // Send stderr to the err file to retrieve seperate from stdout.
+        $rawresults = shell_exec("$command 2>$errfile");
         unlink($tempfile); // Remove temp file.
 
-        if ($rawresults) {
+        // Check status of errors and results.
+        $exit = false;
+        $errs = file_get_contents($errfile);
+        unlink($errfile);
+        if (!empty($errs)) {
+            $exit = true;
+        }
+
+        if ($rawresults) { // We got a result, check it for sanity
             $resultobject = json_decode($rawresults);
+            if ($resultobject == []) {
+                // FFprobe must have errored and returned empty JSON.
+                $exit = true;
+            } else if (empty($resultobject)) {
+                // FFprobe returned malformed or non JSON string.
+                $exit = true;
+                // If stderr errors is empty, lets try to get some info.
+                if (empty($errs)) {
+                    $errs = $rawresults;
+                }
+            }
         } else {
+            $exit = true;
+        }
+
+        if ($exit) {
+            $metadata['reason'] = $errs;
             return $metadata;  // Return early if we couldn't get any data from FFProbe.
         }
 
