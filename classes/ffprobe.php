@@ -141,14 +141,18 @@ class ffprobe {
         // ffprobe will not take a stream or a file object.
         // This is not ideal when dealing with massive files or object storage,
         // but there isn't anything that can be done about it.
-        $tempfile = $file->copy_content_to_temp();
+
+        // Write the file contents into a local tempfile not a moodle tempfile.
+        $tempfile = tmpfile();
+        $path = stream_get_meta_data($tempfile)['uri'];
+        $file->copy_content_to($path);
 
         // Execute the FFProbe command to get file metadata.
-        $command = $this->ffprobe_path . ' -of json -v error -show_format -show_streams ' .  escapeshellarg($tempfile);
-        $errfile = $tempfile . "_err";
+        $command = $this->ffprobe_path . ' -of json -v error -show_format -show_streams ' .  escapeshellarg($path);
+        $errfile = $path . "_err";
         // Send stderr to the err file to retrieve seperate from stdout.
         $rawresults = shell_exec("$command 2>$errfile");
-        unlink($tempfile); // Remove temp file.
+        fclose($tempfile);
 
         // Check status of errors and results.
         $exit = false;
