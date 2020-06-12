@@ -117,4 +117,47 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
         $this->expectException(\Aws\Exception\AwsException::class);
         $pricingclient->describeServices();
     }
+
+    public function test_create_pricing_client_with_proxy() {
+        global $CFG;
+        $this->resetAfterTest();
+
+        set_config('api_key', 'a', 'local_smartmedia');
+        set_config('api_secret', 'b', 'local_smartmedia');
+
+        // Now instantiate a pricing client using a proxy, and test it instantiates.
+        $CFG->proxyhost = '127.0.0.1';
+        $CFG->proxyuser = 'user';
+        $CFG->proxypassword = 'password';
+        $CFG->proxyport = '1337';
+        set_config('useproxy', 1, 'local_smartmedia');
+
+        $api = new aws_api();
+        $pricingclient = $api->create_pricing_client();
+        $this->assertInstanceOf(\Aws\Pricing\PricingClient::class, $pricingclient);
+
+        // Now set the proxy to SOCKS and test it still instantiates.
+        $CFG->proxytype = 'SOCKS5';
+        $api2 = new aws_api();
+        $pricingclient2 = $api2->create_pricing_client();
+        $this->assertInstanceOf(\Aws\Pricing\PricingClient::class, $pricingclient2);
+    }
+
+    public function test_get_proxy_client() {
+        global $CFG;
+        $this->resetAfterTest();
+        // Confirm with no config an emtpy string is returned.
+        $this->assertEquals('', aws_api::get_proxy_string());
+
+        // Now set some configs.
+        $CFG->proxyhost = '127.0.0.1';
+        $CFG->proxyuser = 'user';
+        $CFG->proxypassword = 'password';
+        $CFG->proxyport = '1337';
+        $this->assertEquals('user:password@127.0.0.1:1337', aws_api::get_proxy_string());
+
+        // Now change to SOCKS proxy.
+        $CFG->proxytype = 'SOCKS5';
+        $this->assertEquals('socks5://user:password@127.0.0.1:1337', aws_api::get_proxy_string());
+    }
 }

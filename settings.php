@@ -77,6 +77,10 @@ if ($hassiteconfig) {
         '',
         PARAM_URL));
 
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/useproxy',
+        get_string('settings:useproxy', 'local_smartmedia'),
+        get_string('settings:useproxy_help', 'local_smartmedia'), 0));
+
     // Output settings.
     $settings->add(new admin_setting_heading('outputheader',
         get_string('settings:output:header', 'local_smartmedia'),
