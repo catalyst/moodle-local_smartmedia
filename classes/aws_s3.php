@@ -82,6 +82,11 @@ class aws_s3 {
                 'secret' => $this->config->api_secret
             ]);
 
+        // If use proxy is configured, add to args.
+        if ($this->config->useproxy) {
+            $connectionoptions['http'] = ['proxy' => aws_api::get_proxy_string()];
+        }
+
         // Allow handler overriding for testing.
         if ($handler != null) {
             $connectionoptions['handler'] = $handler;
