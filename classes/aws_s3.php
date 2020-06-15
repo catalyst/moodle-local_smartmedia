@@ -84,7 +84,7 @@ class aws_s3 {
 
         // If use proxy is configured, add to args.
         if ($this->config->useproxy) {
-            $connectionoptions['http'] = ['proxy' => aws_api::get_proxy_string()];
+            $connectionoptions['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
         }
 
         // Allow handler overriding for testing.

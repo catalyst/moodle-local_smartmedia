@@ -124,7 +124,7 @@ class aws_api {
 
         // If use proxy is configured, add to args.
         if ($this->useproxy) {
-            $args['http'] = ['proxy' => self::get_proxy_string()];
+            $args['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
         }
 
         // Allow handler overriding for testing.
@@ -160,7 +160,7 @@ class aws_api {
 
         // If use proxy is configured, add to args.
         if ($this->useproxy) {
-            $args['http'] = ['proxy' => self::get_proxy_string()];
+            $args['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
         }
 
         // Allow handler overriding for testing.
@@ -176,32 +176,4 @@ class aws_api {
         return $this->transcoderclient;
     }
 
-    /**
-     * Constructs a proxy config string from Moodle settings, for use with AWS clients.
-     *
-     * @return string the proxy string to pass to the AWS client
-     */
-    public static function get_proxy_string() : string {
-        global $CFG;
-        $proxy = '';
-        if (empty($CFG->proxytype)) {
-            return $proxy;
-        }
-        if ($CFG->proxytype === 'SOCKS5') {
-            // If it is a SOCKS proxy, append the protocol info.
-            $protocol = 'socks5://';
-        } else {
-            $protocol = '';
-        }
-        if (!empty($CFG->proxyhost)) {
-            $proxy = $CFG->proxyhost;
-            if (!empty($CFG->proxyport)) {
-                $proxy .= ':'. $CFG->proxyport;
-            }
-            if (!empty($CFG->proxyuser) && !empty($CFG->proxypassword)) {
-                $proxy = $protocol . $CFG->proxyuser . ':' . $CFG->proxypassword . '@' . $proxy;
-            }
-        }
-        return $proxy;
-    }
 }

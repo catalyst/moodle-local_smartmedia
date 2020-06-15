@@ -82,6 +82,11 @@ class provision {
      */
     private $lambdaclient;
 
+    /**
+     * @var bool Whether to use the moodle proxy.
+     */
+    private $useproxy;
+
 
     /**
      * The constructor for the class
@@ -96,6 +101,8 @@ class provision {
         $this->keyid = $keyid;
         $this->secret = $secret;
         $this->region = $region;
+
+        $this->useproxy = get_config('local_smartmedia', 'useproxy');
 
     }
 
@@ -137,6 +144,11 @@ class provision {
                         'key' => $this->keyid,
                         'secret' => $this->secret
                 ]);
+
+        // If use proxy is configured, add to args.
+        if ($this->useproxy) {
+            $connectionoptions['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
+        }
 
         // Allow handler overriding for testing.
         if ($handler != null) {
@@ -298,6 +310,11 @@ class provision {
                 'secret' => $this->secret
             ]);
 
+        // If use proxy is configured, add to args.
+        if ($this->useproxy) {
+            $connectionoptions['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
+        }
+
         // Allow handler overriding for testing.
         if ($handler != null) {
             $connectionoptions['handler'] = $handler;
@@ -431,6 +448,11 @@ class provision {
                 'key' => $this->keyid,
                 'secret' => $this->secret
             ]);
+
+        // If use proxy is configured, add to args.
+        if ($this->useproxy) {
+            $connectionoptions['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
+        }
 
         // Allow handler overriding for testing.
         if ($handler != null) {

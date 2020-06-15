@@ -142,22 +142,4 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
         $pricingclient2 = $api2->create_pricing_client();
         $this->assertInstanceOf(\Aws\Pricing\PricingClient::class, $pricingclient2);
     }
-
-    public function test_get_proxy_client() {
-        global $CFG;
-        $this->resetAfterTest();
-        // Confirm with no config an emtpy string is returned.
-        $this->assertEquals('', aws_api::get_proxy_string());
-
-        // Now set some configs.
-        $CFG->proxyhost = '127.0.0.1';
-        $CFG->proxyuser = 'user';
-        $CFG->proxypassword = 'password';
-        $CFG->proxyport = '1337';
-        $this->assertEquals('user:password@127.0.0.1:1337', aws_api::get_proxy_string());
-
-        // Now change to SOCKS proxy.
-        $CFG->proxytype = 'SOCKS5';
-        $this->assertEquals('socks5://user:password@127.0.0.1:1337', aws_api::get_proxy_string());
-    }
 }
