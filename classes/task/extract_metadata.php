@@ -149,7 +149,8 @@ class extract_metadata extends scheduled_task {
                        AND lsd.contenthash IS NULL
                        AND f.component <> ?
                        AND filearea <> ?
-                       AND filename <> ?";
+                       AND filename <> ?
+              ORDER BY f.timecreated DESC";
         $filehashes = $DB->get_records_sql($sql, $params, 0, $limit);
 
         return $filehashes;
