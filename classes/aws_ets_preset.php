@@ -66,6 +66,11 @@ class aws_ets_preset {
     private $width;
 
     /**
+     * @var array $data array of data passed to the constructor.
+     */
+    private $data;
+
+    /**
      * aws_ets_preset constructor.
      *
      * @param array $preset preset structure from AWS SDK.
@@ -83,6 +88,9 @@ class aws_ets_preset {
             $this->height = 0;
             $this->width = 0;
         }
+
+        // Store the data incase more info is needed.
+        $this->data = $preset;
     }
 
     /**
@@ -209,5 +217,14 @@ class aws_ets_preset {
      */
     public function get_container() : string {
         return $this->container;
+    }
+
+    /**
+     * Getter for the raw preset data.
+     *
+     * @return array the raw preset data array.
+     */
+    public function get_data() : array {
+        return $this->data;
     }
 }

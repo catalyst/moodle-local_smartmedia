@@ -197,4 +197,22 @@ class aws_elastic_transcoder {
         }
         return $presets;
     }
+
+    /**
+     * This function gets all preset objects that can be used in the plugin.
+     *
+     * @return array
+     */
+    public function get_all_presets() : array {
+
+        $presetids = array_merge(
+            self::LOW_PRESETS,
+            self::MEDIUM_PRESETS,
+            self::HIGH_PRESETS,
+            self::AUDIO_PRESETS,
+            self::DOWNLOAD_PRESETS
+        );
+
+        return $this->get_presets($presetids);
+    }
 }
