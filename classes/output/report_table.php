@@ -27,6 +27,8 @@ namespace local_smartmedia\output;
 
 defined('MOODLE_INTERNAL') || die;
 
+use local_smartmedia\aws_api;
+use local_smartmedia\aws_elastic_transcoder;
 use table_sql;
 use renderable;
 
@@ -45,7 +47,14 @@ class report_table extends table_sql implements renderable {
      *
      * @var string
      */
-    const FIELDS = 'id, type, format, resolution, duration, filesize, cost, status, files, timecreated, timecompleted';
+    const FIELDS = 'ro.id, ro.type, ro.format, ro.resolution, ro.duration, ro.filesize, ro.cost, ro.status,
+        ro.files, ro.timecreated, ro.timecompleted, conv.id as convid';
+
+    /**
+     * The tables to select from.
+     */
+    const FROM = '{local_smartmedia_report_over} ro
+        JOIN {local_smartmedia_conv} conv ON ro.contenthash = conv.contenthash';
 
     /**
      * The default WHERE clause to exclude records without at least one video or audio stream.
@@ -53,6 +62,11 @@ class report_table extends table_sql implements renderable {
      * @var string
      */
     const DEFAULT_WHERE = 'duration > 0';
+
+    /**
+     * @var array the presets from the elastic transcoder.
+     */
+    private $presets = [];
 
     /**
      * report_table constructor.
@@ -76,25 +90,27 @@ class report_table extends table_sql implements renderable {
         $this->define_baseurl($baseurl);
         $this->define_columns(
             array(
+                'status',
                 'type',
                 'format',
-                'resolution',
+                'sourceresolution',
+                'targetresolutions',
                 'duration',
                 'filesize',
                 'cost',
-                'status',
                 'files',
                 'timecreated',
                 'timecompleted'
             ));
         $this->define_headers(array(
+            get_string('report:status', 'local_smartmedia'),
             get_string('report:type', 'local_smartmedia'),
             get_string('report:format', 'local_smartmedia'),
-            get_string('report:resolution', 'local_smartmedia'),
+            get_string('report:sourceresolution', 'local_smartmedia'),
+            get_string('report:targetresolutions', 'local_smartmedia'),
             get_string('report:duration', 'local_smartmedia'),
             get_string('report:size', 'local_smartmedia'),
             get_string('report:transcodecost', 'local_smartmedia'),
-            get_string('report:status', 'local_smartmedia'),
             get_string('report:files', 'local_smartmedia'),
             get_string('report:created', 'local_smartmedia'),
             get_string('report:completed', 'local_smartmedia'),
@@ -106,8 +122,13 @@ class report_table extends table_sql implements renderable {
         $this->currpage = $page;
         $this->pagesize = $perpage;
         $this->sortable(true);
-        $this->set_sql(self::FIELDS, '{local_smartmedia_report_over}', self::DEFAULT_WHERE);
+        $this->set_sql(self::FIELDS, self::FROM, self::DEFAULT_WHERE);
 
+        // Setup a transcoder to get all preset information and store it.
+        $api = new aws_api;
+        $transcoderclient = $api->create_elastic_transcoder_client();
+        $transcoder = new aws_elastic_transcoder($transcoderclient);
+        $this->presets = $transcoder->get_all_presets();
     }
 
     /**
@@ -145,8 +166,50 @@ class report_table extends table_sql implements renderable {
      *
      * @return string html used to display the column field.
      */
-    public function col_resolution($row) {
+    public function col_sourceresolution($row) {
         return $this->format_text($row->resolution);
+    }
+
+    /**
+     * Get target resolutions for video transcodes.
+     *
+     * @param \stdClass $row
+     *
+     * @return string HTML used to display the column field.
+     */
+    public function col_targetresolutions($row) {
+        global $DB;
+
+        // Get the preset ids being used for the conversion.
+        $select = 'convid = ?';
+        $presetids = $DB->get_fieldset_select('local_smartmedia_presets', 'preset', $select, [$row->convid]);
+
+        $outputs = [];
+        // Get the information from the presets used in the conversion.
+        foreach ($this->presets as $preset) {
+            if (in_array($preset->get_id(), $presetids)) {
+                $presetdata = $preset->get_data();
+                if (array_key_exists('Video', $presetdata)) {
+                    // This is a video conversion.
+                    $codec = $presetdata['Video']['Codec'];
+                    $width = $presetdata['Video']['MaxWidth'];
+                    $height = $presetdata['Video']['MaxHeight'];
+
+                    // Now get the approximate filesize from the duration and bitrate.
+                    $size = $row->duration * (int) $presetdata['Video']['BitRate'];
+                    $formattedsize = display_size($size);
+
+                    $outputs[] = "{$codec}: {$width} X {$height} - {$formattedsize} ";
+                } else {
+                    // This is only audio, just output codec and size.
+                    $size = $row->duration * (int) $presetdata['Audio']['BitRate'];
+                    $formattedsize = display_size($size);
+                    $outputs[] = $presetdata['Audio']['Codec'] . ' - ' . $formattedsize;
+                }
+            }
+        }
+
+        return $this->format_text(implode('<br>', $outputs));
     }
 
     /**
@@ -177,14 +240,7 @@ class report_table extends table_sql implements renderable {
      */
     public function col_filesize($row) {
         $bytes = $row->filesize;
-        $units = array('B', 'KB', 'MB', 'GB', 'TB');
-
-        $bytes = max($bytes, 0);
-        $pow = floor(($bytes ? log($bytes) : 0) / log(1024));
-        $pow = min($pow, count($units) - 1);
-        $bytes /= pow(1024, $pow);
-
-        return $this->format_text(round($bytes, 2) . ' ' . $units[$pow]);
+        return $this->format_text(display_size($bytes));
     }
 
     /**
@@ -234,7 +290,7 @@ class report_table extends table_sql implements renderable {
      * @return string html used to display the column field.
      */
     public function col_timecreated($row) {
-        $date = userdate($row->timecreated, get_string('strftimedatefullshort', 'langconfig'));
+        $date = userdate($row->timecreated, get_string('strftimedate', 'langconfig'));
         return $this->format_text($date);
     }
 
@@ -249,10 +305,10 @@ class report_table extends table_sql implements renderable {
         if ($row->timecompleted == 0) {
             $date = '-';
         } else {
-            $date = userdate($row->timecompleted, get_string('strftimedatefullshort', 'langconfig'));
+            $date = userdate($row->timecompleted, get_string('strftimedate', 'langconfig'));
         }
 
         return $this->format_text($date);
     }
-}
 
+}
