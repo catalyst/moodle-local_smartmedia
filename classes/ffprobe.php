@@ -145,7 +145,10 @@ class ffprobe {
         // Write the file contents into a local tempfile not a moodle tempfile.
         $tempfile = tmpfile();
         $path = stream_get_meta_data($tempfile)['uri'];
-        $file->copy_content_to($path);
+        if (!$file->copy_content_to($path)) {
+            $metadata['reason'] = 'file does not exist';
+            return $metadata;
+        }
 
         // Execute the FFProbe command to get file metadata.
         $command = $this->ffprobe_path . ' -of json -v error -show_format -show_streams ' .  escapeshellarg($path);
