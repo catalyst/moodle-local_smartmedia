@@ -202,12 +202,13 @@ class extract_metadata extends scheduled_task {
         mtrace("local_smartmedia: Found {$count} file(s) to process");
 
         // Lets split the array into chunks, for more granular processing
-        $filehashes = array_chunk($filehashes, 100, true);
+        $chunksize = 20;
+        $filehashes = array_chunk($filehashes, $chunksize, true);
 
         foreach ($filehashes as $chunkindex => $filehashchunk) {
             // Output an indicator for every chunk processed
-            $filecount = ($chunkindex * 100) + 1;
-            $batchlimit = ($count < 100) ? $count : ($chunkindex + 1) * 100;
+            $filecount = ($chunkindex * $chunksize) + 1;
+            $batchlimit = ($count < $chunksize) ? $count : ($chunkindex + 1) * $chunksize;
             mtrace("local_smartmedia: Now processing $filecount - $batchlimit / $count ");
 
             foreach ($filehashchunk as $filehash) {
