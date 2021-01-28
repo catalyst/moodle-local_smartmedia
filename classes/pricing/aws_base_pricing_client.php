@@ -23,8 +23,9 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_smartmedia;
+namespace local_smartmedia\pricing;
 
+use local_smartmedia\aws_ets_product;
 use Aws\Exception\AwsException;
 use Aws\Pricing\PricingClient;
 
@@ -42,7 +43,7 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
  * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class aws_ets_pricing_client {
+abstract class aws_base_pricing_client {
 
     /**
      * The default filter field for getting AmazonETS pricing information.
@@ -55,21 +56,6 @@ class aws_ets_pricing_client {
     const DEFAULT_TYPE = 'TERM_MATCH';
 
     /**
-     * The string represention an audio transcode service.
-     */
-    const MEDIATYPE_AUDIO = 'Audio';
-
-    /**
-     * The string represention a high definition transcode service (width >= 720).
-     */
-    const MEDIATYPE_HIGH_DEFINITION = 'High Definition';
-
-    /**
-     * The string represention a standard definition transcode service (width < 720).
-     */
-    const MEDIATYPE_STANDARD_DEFINITION = 'Standard Definition';
-
-    /**
      * The string representing a successful transcoding result from a service.
      */
     const TRANSCODINGRESULT_SUCCESS = 'Success';
@@ -77,7 +63,7 @@ class aws_ets_pricing_client {
     /**
      * The ServiceCode for Amazon Elastic Transcode Services.
      */
-    const SERVICE_CODE = 'AmazonETS';
+    const SERVICE_CODE = '';
 
     /**
      * Map of AWS region codes to location names used by \Aws\Pricing\PricingClient.
@@ -211,33 +197,5 @@ class aws_ets_pricing_client {
      *
      * @return \local_smartmedia\location_transcode_pricing $locationpricing object containing pricing.
      */
-    public function get_location_pricing($region) {
-        $locationpricing = new location_transcode_pricing($region);
-
-        // Filter products by location.
-        $locationfilter = ['Field' => 'location', 'Type' => self::DEFAULT_TYPE, 'Value' => self::REGION_LOCATIONS[$region]];
-        // Filter only working transcode services.
-        $transcodingresultfilter = [
-            'Field' => 'transcodingResult',
-            'Type' => self::DEFAULT_TYPE,
-            'Value' => self::TRANSCODINGRESULT_SUCCESS
-        ];
-        $products = $this->get_products([$locationfilter, $transcodingresultfilter]);
-
-        foreach ($products as $product) {
-            $productfamily = $product->get_productfamily();
-            switch ($productfamily) {
-                case self::MEDIATYPE_STANDARD_DEFINITION :
-                    $locationpricing->set_sd_pricing($product->get_transcodecost());
-                    break;
-                case self::MEDIATYPE_HIGH_DEFINITION :
-                    $locationpricing->set_hd_pricing($product->get_transcodecost());
-                    break;
-                default :
-                    $locationpricing->set_audio_pricing($product->get_transcodecost());
-                    break;
-            }
-        }
-        return $locationpricing;
-    }
+    abstract public function get_location_pricing($region);
 }

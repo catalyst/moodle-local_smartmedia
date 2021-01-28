@@ -24,6 +24,7 @@
 namespace local_smartmedia\task;
 
 use core\task\scheduled_task;
+use \local_smartmedia\pricing\aws_ets_pricing_client;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -269,13 +270,13 @@ class report_process extends scheduled_task {
     /**
      * Get the cost to transcode a file with currently configured settings.
      *
-     * @param \local_smartmedia\aws_ets_pricing_client $pricingclient
+     * @param aws_ets_pricing_client $pricingclient
      * @param \local_smartmedia\aws_elastic_transcoder $transcoder
      * @param \stdClass $record Record from metadata table for file.
      * @return float $cost The calculated transcoding cost.
      */
     private function get_file_cost(
-        \local_smartmedia\aws_ets_pricing_client $pricingclient,
+        aws_ets_pricing_client $pricingclient,
         \local_smartmedia\aws_elastic_transcoder $transcoder,  \stdClass $record) : float {
 
         // Get the location pricing for the AWS region set.
@@ -343,10 +344,10 @@ class report_process extends scheduled_task {
     /**
      * Populate the report overview table.
      *
-     * @param \local_smartmedia\aws_ets_pricing_client $pricingclient
+     * @param aws_ets_pricing_client $pricingclient
      * @param \local_smartmedia\aws_elastic_transcoder $transcoder
      */
-    private function process_overview_report(\local_smartmedia\aws_ets_pricing_client $pricingclient,
+    private function process_overview_report(aws_ets_pricing_client $pricingclient,
         \local_smartmedia\aws_elastic_transcoder $transcoder) : void {
         global $DB;
         $reportrecords = array();
@@ -412,13 +413,13 @@ class report_process extends scheduled_task {
     /**
      * Calculate the total cost of transcoding all not converted media items.
      *
-     * @param \local_smartmedia\aws_ets_pricing_client $pricingclient
+     * @param aws_ets_pricing_client $pricingclient
      * @param \local_smartmedia\aws_elastic_transcoder $transcoder
      * @return float|int|null $total cost for all transcoding across all presets, null if total cannot be calculated.
      *
      * @throws \dml_exception
      */
-    private function calculate_total_conversion_cost(\local_smartmedia\aws_ets_pricing_client $pricingclient,
+    private function calculate_total_conversion_cost(aws_ets_pricing_client $pricingclient,
         \local_smartmedia\aws_elastic_transcoder $transcoder) : float {
         global $DB;
 
@@ -500,7 +501,7 @@ class report_process extends scheduled_task {
 
         // Build the dependencies.
         $api = new \local_smartmedia\aws_api();
-        $pricingclient = new \local_smartmedia\aws_ets_pricing_client($api->create_pricing_client());
+        $pricingclient = new aws_ets_pricing_client($api->create_pricing_client());
         $transcoder = new \local_smartmedia\aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $this->process_overview_report($pricingclient, $transcoder);
 

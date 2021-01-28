@@ -206,4 +206,3 @@ class location_transcode_pricing {
         $this->audiopricing = $audiopricing;
     }
 }
-

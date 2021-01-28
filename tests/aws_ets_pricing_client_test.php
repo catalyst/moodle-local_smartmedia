@@ -30,7 +30,7 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 
 use Aws\MockHandler;
 use Aws\Result;
-use local_smartmedia\aws_ets_pricing_client;
+use local_smartmedia\pricing\aws_ets_pricing_client;
 use local_smartmedia\aws_ets_product;
 use local_smartmedia\location_transcode_pricing;
 
