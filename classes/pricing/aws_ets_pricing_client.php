@@ -25,6 +25,8 @@
 
 namespace local_smartmedia\pricing;
 
+use Aws\Pricing\PricingClient;
+
 defined('MOODLE_INTERNAL') || die;
 
 global $CFG;
@@ -60,10 +62,10 @@ class aws_ets_pricing_client extends aws_base_pricing_client {
      */
     const TRANSCODINGRESULT_SUCCESS = 'Success';
 
-    /**
-     * The ServiceCode for Amazon Elastic Transcode Services.
-     */
-    const SERVICE_CODE = 'AmazonETS';
+    public function __construct(PricingClient $pricingclient){
+        parent::__construct($pricingclient);
+        $this->servicecode = 'AmazonETS';
+    }
 
     /**
      * Get the pricing for a specific transcode location.

@@ -60,11 +60,6 @@ abstract class aws_base_pricing_client {
     const TRANSCODINGRESULT_SUCCESS = 'Success';
 
     /**
-     * The ServiceCode for Amazon Elastic Transcode Services.
-     */
-    const SERVICE_CODE = '';
-
-    /**
      * Map of AWS region codes to location names used by \Aws\Pricing\PricingClient.
      */
     const REGION_LOCATIONS = [
@@ -81,8 +76,12 @@ abstract class aws_base_pricing_client {
     /**
      * @var \Aws\Pricing\PricingClient
      */
-    private $pricingclient;
+    protected $pricingclient;
 
+    /**
+     * @var string
+     */
+    protected $servicecode;
 
     /**
      * aws_ets_pricing_client constructor.
@@ -104,7 +103,7 @@ abstract class aws_base_pricing_client {
             [
                 'Field' => self::DEFAULT_FIELD,
                 'Type' => self::DEFAULT_TYPE,
-                'Value' => self::SERVICE_CODE,
+                'Value' => $this->servicecode,
             ],
         ];
     }
@@ -121,7 +120,7 @@ abstract class aws_base_pricing_client {
     public function get_products($filters = [], $product = 'base') {
         $params = [];
         // Ensure we are only looking for Amazon ETS services.
-        $params['ServiceCode'] = self::SERVICE_CODE;
+        $params['ServiceCode'] = $this->servicecode;
         $params['Filters'] = array_merge($this->get_default_product_filters(), $filters);
 
         try {
@@ -146,7 +145,7 @@ abstract class aws_base_pricing_client {
     public function describe_service() {
 
         // Ensure we are only looking for Amazon ETS services.
-        $params = ['ServiceCode' => self::SERVICE_CODE];
+        $params = ['ServiceCode' => $this->servicecode];
 
         $result = $this->pricingclient->describeServices($params);
         try {
@@ -174,7 +173,7 @@ abstract class aws_base_pricing_client {
         $params = [];
         $params['AttributeName'] = $attributename;
         // Ensure we are only looking for Amazon ETS services.
-        $params['ServiceCode'] = self::SERVICE_CODE;
+        $params['ServiceCode'] = $this->servicecode;
 
         try {
             $result = $this->pricingclient->getAttributeValues($params);

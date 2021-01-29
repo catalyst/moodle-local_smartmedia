@@ -38,12 +38,19 @@ defined('MOODLE_INTERNAL') || die;
 class aws_rekog_product extends aws_base_product {
 
     /**
+     * @var string the description returned from the pricing API.
+     */
+    private $description;
+
+    /**
      * aws_product constructor.
      *
      * @param string $rawproduct json encoded raw product.
      */
     public function __construct($rawproduct) {
         parent::__construct($rawproduct);
+        $productobject = json_decode($rawproduct);
+        $this->description = $productobject->product->attributes->groupDescription;
     }
 
     /**
@@ -54,7 +61,7 @@ class aws_rekog_product extends aws_base_product {
      */
     protected function set_cost($productobject, $terms = 'OnDemand') : void {
         // Get the product terms as an array to make it easier to handle.
-        /*$terms = json_decode(json_encode($productobject->terms->$terms), true);
+        $terms = json_decode(json_encode($productobject->terms->$terms), true);
 
         // There should only be one set of pricing for each set of terms, so use the first.
         $termspricing = reset($terms);
@@ -62,18 +69,12 @@ class aws_rekog_product extends aws_base_product {
         $pricingdimension = reset($termspricing['priceDimensions']);
 
         // Always use US Dollars as our baseline for costing.
-        $transcodecost = $pricingdimension['pricePerUnit']['USD'];*/
+        $cost = $pricingdimension['pricePerUnit']['USD'];
 
-        //$this->cost = $transcodecost;
+        $this->cost = $cost;
     }
 
-    /**
-     * Get the transcoding result for this product.
-     *
-     * @return string enumerated value of 'Error' if this product fails transcoding or
-     * 'Success' if this product passes transcoding currently.
-     */
-    public function get_transcodingresult() {
-        return $this->transcodingresult;
+    public function get_description() {
+        return $this->description;
     }
 }

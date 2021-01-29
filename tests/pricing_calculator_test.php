@@ -26,6 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 use local_smartmedia\aws_ets_preset;
 use local_smartmedia\pricing\location_transcode_pricing;
+use local_smartmedia\pricing\location_rekog_pricing;
 use local_smartmedia\pricing_calculator;
 
 /**
@@ -170,18 +171,19 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
                                                   $sdpricing, $audiopricing, $expected) {
 
         // Setup the location pricing for dependency injection.
-        $locationpricing = new location_transcode_pricing('ap-southeast-2');
+        $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');
         if (!is_null($hdpricing)) {
-            $locationpricing->set_hd_pricing($hdpricing);
+            $transcodelocationpricing->set_hd_pricing($hdpricing);
         }
         if (!is_null($sdpricing)) {
-            $locationpricing->set_sd_pricing($sdpricing);
+            $transcodelocationpricing->set_sd_pricing($sdpricing);
         }
         if (!is_null($audiopricing)) {
-            $locationpricing->set_audio_pricing($audiopricing);
+            $transcodelocationpricing->set_audio_pricing($audiopricing);
         }
+        $rekoglocationpricing = new location_rekog_pricing('ap-southeast-2');
 
-        $pricingcalculator = new pricing_calculator($locationpricing, $this->presets);
+        $pricingcalculator = new pricing_calculator($transcodelocationpricing, $rekoglocationpricing, $this->presets);
         $actual = $pricingcalculator->calculate_transcode_cost($height, $duration, $videostreams, $audiostreams);
 
         $this->assertEquals($expected, $actual);
@@ -194,9 +196,10 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
 
         // Setup the location pricing for dependency injection.
         $locationpricing = new location_transcode_pricing('ap-southeast-2');
+        $rekogpricing = new location_rekog_pricing('ap-southeast-2');
 
         // Instantiate the class with no presets.
-        $pricingcalculator = new pricing_calculator($locationpricing);
+        $pricingcalculator = new pricing_calculator($locationpricing, $rekogpricing);
         $actual = $pricingcalculator->calculate_transcode_cost(rand(0, 1080), rand(0, 3600));
 
         $this->assertNull($actual);

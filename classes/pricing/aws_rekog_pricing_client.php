@@ -25,6 +25,8 @@
 
 namespace local_smartmedia\pricing;
 
+use Aws\Pricing\PricingClient;
+
 defined('MOODLE_INTERNAL') || die;
 
 global $CFG;
@@ -41,17 +43,17 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
  */
 class aws_rekog_pricing_client extends aws_base_pricing_client {
 
-    /**
-     * The ServiceCode for Amazon Rekognition Services.
-     */
-    const SERVICE_CODE = 'AmazonRekognition';
+    public function __construct(PricingClient $pricingclient){
+        parent::__construct($pricingclient);
+        $this->servicecode = 'AmazonRekognition';
+    }
 
     /**
      * Get the pricing for a specific transcode location.
      *
      * @param string $region the region code of an AmazonETS location to get pricing for.
      *
-     * @return \local_smartmedia\location_transcode_pricing $locationpricing object containing pricing.
+     * @return location_rekog_pricing $locationpricing object containing pricing.
      */
     public function get_location_pricing($region) {
         $locationpricing = new location_rekog_pricing($region);
@@ -59,28 +61,33 @@ class aws_rekog_pricing_client extends aws_base_pricing_client {
         // Filter products by location.
         $locationfilter = ['Field' => 'location', 'Type' => self::DEFAULT_TYPE, 'Value' => self::REGION_LOCATIONS[$region]];
 
-        // Filter only working transcode services.
-        $transcodingresultfilter = [
-            'Field' => 'transcodingResult',
+        // Filter only Rekognition video services.
+        $rekogvideofilter = [
+            'Field' => 'productFamily',
             'Type' => self::DEFAULT_TYPE,
-            'Value' => self::TRANSCODINGRESULT_SUCCESS
+            'Value' => 'Rekognition Video API - Archived Content'
         ];
-        $products = $this->get_products([$locationfilter, $transcodingresultfilter], 'rekog');
+        $products = $this->get_products([$locationfilter, $rekogvideofilter], 'rekog');
 
-        /*foreach ($products as $product) {
-            $productfamily = $product->get_productfamily();
-            switch ($productfamily) {
-                case self::MEDIATYPE_STANDARD_DEFINITION :
-                    $locationpricing->set_sd_pricing($product->get_transcodecost());
-                    break;
-                case self::MEDIATYPE_HIGH_DEFINITION :
-                    $locationpricing->set_hd_pricing($product->get_transcodecost());
-                    break;
-                default :
-                    $locationpricing->set_audio_pricing($product->get_transcodecost());
-                    break;
+        foreach ($products as $product) {
+            $desc = $product->get_description();
+            if (strpos($desc, 'FaceDetection') !== false) {
+                // AWS has a fixed rate for all rekog services leveraged.
+                $locationpricing->set_face_detection_pricing($product->get_cost());
+            }
+            if (strpos($desc, 'ContentModeration') !== false) {
+                // AWS has a fixed rate for all rekog services leveraged.
+                $locationpricing->set_content_moderation_pricing($product->get_cost());
+            }
+            if (strpos($desc, 'PersonTracking') !== false) {
+                // AWS has a fixed rate for all rekog services leveraged.
+                $locationpricing->set_person_tracking_pricing($product->get_cost());
+            }
+            if (strpos($desc, 'LabelDetection') !== false) {
+                // AWS has a fixed rate for all rekog services leveraged.
+                $locationpricing->set_label_detection_pricing($product->get_cost());
             }
         }
-        return $locationpricing;*/
+        return $locationpricing;
     }
 }

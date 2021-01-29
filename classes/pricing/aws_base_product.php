@@ -43,7 +43,7 @@ abstract class aws_base_product {
     private $productid;
 
     /**
-     * @var string enumerated value out of ['High Definition', 'Standard Definition', 'Audio']
+     * @var string The product family from the API.
      */
     private $productfamily;
 
