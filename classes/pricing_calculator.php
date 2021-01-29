@@ -56,6 +56,11 @@ class pricing_calculator {
     private $presets;
 
     /**
+     * @var array $presets array of settings for rekognition billing.
+     */
+    private $rekogsettings;
+
+    /**
      * @var string $region the AWS region applying to this calculator.
      */
     private $region;
@@ -66,11 +71,12 @@ class pricing_calculator {
      * @param location_transcode_pricing $locationpricing object containing pricing information for region.
      * @param array $presets array of aws_ets_preset objects containing preset transcode output settings.
      */
-    public function __construct(location_transcode_pricing $transcodelocationpricing, location_rekog_pricing $rekoglocationpricing, array $presets = []) {
+    public function __construct(location_transcode_pricing $transcodelocationpricing, location_rekog_pricing $rekoglocationpricing, array $presets = [], array $rekogsettings = []) {
         $this->transcodelocationpricing = $transcodelocationpricing;
         $this->rekoglocationpricing = $rekoglocationpricing;
         $this->region = $transcodelocationpricing->get_region();
         $this->presets = $presets;
+        $this->rekogsettings = $rekogsettings;
     }
 
     /**
@@ -155,6 +161,30 @@ class pricing_calculator {
         } else {
             // If there are no presets, or no audio or video streams, no transcoding could be conducted.
             $cost = null;
+        }
+        return $cost;
+    }
+
+    /**
+     * Calculates the cost of all rekognition services selected for the duration supplied.
+     *
+     * @param float $duration
+     * @return float $cost the cost in USD to perform all rekognition analysis.
+     */
+    public function calculate_rekog_cost(float $duration) {
+        // From https://aws.amazon.com/rekognition/pricing/
+        // each output file is billed in whole minute increments
+        // where each partial minute is rounded up to the next full minute.
+        $durationminutes = ceil($duration / 60);
+
+        $cost = 0;
+        foreach ($this->rekogsettings as $setting => $value) {
+            if ($value) {
+                $methodname = 'calculate_' . $setting . '_cost';
+                if (method_exists($this->rekoglocationpricing, $methodname)) {
+                    $cost += $this->rekoglocationpricing->$methodname($durationminutes);
+                }
+            }
         }
         return $cost;
     }

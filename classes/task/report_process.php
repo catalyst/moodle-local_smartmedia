@@ -26,6 +26,7 @@ namespace local_smartmedia\task;
 use core\task\scheduled_task;
 use \local_smartmedia\pricing\aws_ets_pricing_client;
 use \local_smartmedia\pricing\aws_rekog_pricing_client;
+use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -269,6 +270,30 @@ class report_process extends scheduled_task {
     }
 
     /**
+     * Get the enrichment settings used for a given conversion.
+     *
+     * @param int $convid The conversion id to get the presets for.
+     * @return array $presetids The preset ids for the conversion.
+     */
+    private function get_enrichment_settings(int $convid) : stdClass {
+        global $DB;
+        $record = $DB->get_record('local_smartmedia_conv', ['id' => $convid]);
+        // Remove non-enrichment settings.
+        unset($record->id);
+        unset($record->pathnamehash);
+        unset($record->contenthash);
+        unset($record->status);
+        unset($record->transcoder_status);
+
+        // Map to bool for completed process.
+        $record = array_map(function($el) {
+            return $el === \local_smartmedia\conversion::CONVERSION_FINISHED;
+        }, (array) $record);
+
+        return (object) $record;
+    }
+
+    /**
      * Get the cost to transcode a file with currently configured settings.
      *
      * @param aws_ets_pricing_client $pricingclient
@@ -291,11 +316,19 @@ class report_process extends scheduled_task {
 
         // Get the Elastic Transcoder presets which have been set.
         $presets = $transcoder->get_presets($presetids);
+        $enrichmentsettings = $this->get_enrichment_settings($record->id);
+        $rekogsettings = [
+            'face_detection' => $enrichmentsettings->rekog_face_status,
+            'content_moderation' => $enrichmentsettings->rekog_moderation_status,
+            'label_detection' => $enrichmentsettings->rekog_label_status,
+            'person_tracking' => $enrichmentsettings->rekog_person_status,
+        ];
 
-        $pricingcalculator = new \local_smartmedia\pricing_calculator($transcodelocationpricing, $rekoglocationpricing, $presets);
+        $pricingcalculator = new \local_smartmedia\pricing_calculator($transcodelocationpricing, $rekoglocationpricing, $presets, $rekogsettings);
 
         $cost = $pricingcalculator->calculate_transcode_cost(
             $record->height, $record->duration, $record->videostreams, $record->audiostreams);
+        $cost += $pricingcalculator->calculate_rekog_cost($record->duration);
 
         return $cost;
     }
@@ -444,10 +477,16 @@ class report_process extends scheduled_task {
         // Get the Elastic Transcoder presets which have been set.
         $presets = $transcoder->get_presets();
         // Get enrichment settings for rekog.
-        $settings
+        $config = get_config('local_smartmedia');
+        $rekogsettings = [
+            'face_detection' => $config->detectfaces,
+            'content_moderation' => $config->detectmoderation,
+            'label_detection' => $config->detectlabels,
+            'person_tracking' => $config->detectpeople,
+        ];
 
         // Get the pricing calculator.
-        $pricingcalculator = new \local_smartmedia\pricing_calculator($transcodelocationpricing, $rekoglocationpricing, $presets);
+        $pricingcalculator = new \local_smartmedia\pricing_calculator($transcodelocationpricing, $rekoglocationpricing, $presets, $rekogsettings);
 
         if (!$pricingcalculator->has_presets()) {
             $total = null;
@@ -488,10 +527,12 @@ class report_process extends scheduled_task {
             $totalaudiocost = $pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_AUDIO_HEIGHT,
                 $audio->duration);
 
+            // Now add on the rekognition analysis on the transcoded video size only. Audio is not passed to rekog.
+            $totalhdcost += $pricingcalculator->calculate_rekog_cost($highdefinition->duration);
+            $totalsdcost += $pricingcalculator->calculate_rekog_cost($standarddefinition->duration);
+
             $total = $totalhdcost + $totalsdcost + $totalaudiocost;
         }
-
-        if ($)
 
         return $total;
     }
