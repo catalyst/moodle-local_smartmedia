@@ -54,6 +54,33 @@ class aws_rekog_pricing_client extends aws_base_pricing_client {
      * @return \local_smartmedia\location_transcode_pricing $locationpricing object containing pricing.
      */
     public function get_location_pricing($region) {
+        $locationpricing = new location_rekog_pricing($region);
 
+        // Filter products by location.
+        $locationfilter = ['Field' => 'location', 'Type' => self::DEFAULT_TYPE, 'Value' => self::REGION_LOCATIONS[$region]];
+
+        // Filter only working transcode services.
+        $transcodingresultfilter = [
+            'Field' => 'transcodingResult',
+            'Type' => self::DEFAULT_TYPE,
+            'Value' => self::TRANSCODINGRESULT_SUCCESS
+        ];
+        $products = $this->get_products([$locationfilter, $transcodingresultfilter], 'rekog');
+
+        /*foreach ($products as $product) {
+            $productfamily = $product->get_productfamily();
+            switch ($productfamily) {
+                case self::MEDIATYPE_STANDARD_DEFINITION :
+                    $locationpricing->set_sd_pricing($product->get_transcodecost());
+                    break;
+                case self::MEDIATYPE_HIGH_DEFINITION :
+                    $locationpricing->set_hd_pricing($product->get_transcodecost());
+                    break;
+                default :
+                    $locationpricing->set_audio_pricing($product->get_transcodecost());
+                    break;
+            }
+        }
+        return $locationpricing;*/
     }
 }

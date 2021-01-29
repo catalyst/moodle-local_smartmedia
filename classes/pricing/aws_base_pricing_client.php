@@ -25,7 +25,6 @@
 
 namespace local_smartmedia\pricing;
 
-use local_smartmedia\aws_ets_product;
 use Aws\Exception\AwsException;
 use Aws\Pricing\PricingClient;
 
@@ -115,10 +114,11 @@ abstract class aws_base_pricing_client {
      *
      * @param array $filters of filter structures to be included for filtering products retrieved.
      * See https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-pricing-2017-10-15.html#shape-filter for filter structure.
+     * @param string $product the product type to create.
      *
-     * @return array $products of \local_smartmedia\aws_ets_product.
+     * @return array $products of \local_smartmedia\aws_base_product.
      */
-    public function get_products($filters = []) {
+    public function get_products($filters = [], $product = 'base') {
         $params = [];
         // Ensure we are only looking for Amazon ETS services.
         $params['ServiceCode'] = self::SERVICE_CODE;
@@ -131,8 +131,9 @@ abstract class aws_base_pricing_client {
             throw new \moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
         }
         $products = [];
+        $productclass = 'local_smartmedia\pricing\aws_' . $product . '_product';
         foreach ($result->get('PriceList') as $product) {
-             $products[] = new aws_ets_product($product);
+             $products[] = new $productclass($product);
         }
         return $products;
     }

@@ -25,6 +25,8 @@
 
 namespace local_smartmedia;
 
+use local_smartmedia\pricing\location_transcode_pricing;
+
 defined('MOODLE_INTERNAL') || die;
 
 /**
@@ -38,7 +40,7 @@ defined('MOODLE_INTERNAL') || die;
 class pricing_calculator {
 
     /**
-     * @var \local_smartmedia\location_transcode_pricing object containing location pricing information.
+     * @var location_transcode_pricing object containing location pricing information.
      */
     private $locationpricing;
 

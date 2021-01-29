@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 use local_smartmedia\aws_ets_preset;
-use local_smartmedia\location_transcode_pricing;
+use local_smartmedia\pricing\location_transcode_pricing;
 use local_smartmedia\pricing_calculator;
 
 /**

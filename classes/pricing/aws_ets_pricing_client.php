@@ -25,8 +25,6 @@
 
 namespace local_smartmedia\pricing;
 
-use local_smartmedia\location_transcode_pricing;
-
 defined('MOODLE_INTERNAL') || die;
 
 global $CFG;
@@ -72,7 +70,7 @@ class aws_ets_pricing_client extends aws_base_pricing_client {
      *
      * @param string $region the region code of an AmazonETS location to get pricing for.
      *
-     * @return \local_smartmedia\location_transcode_pricing $locationpricing object containing pricing.
+     * @return location_transcode_pricing $locationpricing object containing pricing.
      */
     public function get_location_pricing($region) {
         $locationpricing = new location_transcode_pricing($region);
@@ -85,19 +83,19 @@ class aws_ets_pricing_client extends aws_base_pricing_client {
             'Type' => self::DEFAULT_TYPE,
             'Value' => self::TRANSCODINGRESULT_SUCCESS
         ];
-        $products = $this->get_products([$locationfilter, $transcodingresultfilter]);
+        $products = $this->get_products([$locationfilter, $transcodingresultfilter], 'ets');
 
         foreach ($products as $product) {
             $productfamily = $product->get_productfamily();
             switch ($productfamily) {
                 case self::MEDIATYPE_STANDARD_DEFINITION :
-                    $locationpricing->set_sd_pricing($product->get_transcodecost());
+                    $locationpricing->set_sd_pricing($product->get_cost());
                     break;
                 case self::MEDIATYPE_HIGH_DEFINITION :
-                    $locationpricing->set_hd_pricing($product->get_transcodecost());
+                    $locationpricing->set_hd_pricing($product->get_cost());
                     break;
                 default :
-                    $locationpricing->set_audio_pricing($product->get_transcodecost());
+                    $locationpricing->set_audio_pricing($product->get_cost());
                     break;
             }
         }
