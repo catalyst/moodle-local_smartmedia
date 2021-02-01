@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Service client for getting AWS pricing information for the Elastic Transcode Services (ETS).
+ * Base client for getting AWS pricing information.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <tomdickman@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -45,7 +45,7 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 abstract class aws_base_pricing_client {
 
     /**
-     * The default filter field for getting AmazonETS pricing information.
+     * The default filter field for getting pricing information.
      */
     const DEFAULT_FIELD = 'servicecode';
 
@@ -53,11 +53,6 @@ abstract class aws_base_pricing_client {
      * The default filter type used by AWS Pricing List API filters.
      */
     const DEFAULT_TYPE = 'TERM_MATCH';
-
-    /**
-     * The string representing a successful transcoding result from a service.
-     */
-    const TRANSCODINGRESULT_SUCCESS = 'Success';
 
     /**
      * Map of AWS region codes to location names used by \Aws\Pricing\PricingClient.
@@ -84,7 +79,7 @@ abstract class aws_base_pricing_client {
     protected $servicecode;
 
     /**
-     * aws_ets_pricing_client constructor.
+     * aws_base_pricing_client constructor.
      *
      * @param \Aws\Pricing\PricingClient $pricingclient the client for making Pricing List API Calls.
      */
@@ -93,7 +88,7 @@ abstract class aws_base_pricing_client {
     }
 
     /**
-     * Default filters to get all Elastic Transcode Service products.
+     * Default filters to get all products in the service code family.
      *
      * @return array of filter structures with the default filter values for getting AWS Pricing List information.
      * See https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-pricing-2017-10-15.html#shape-filter for filter structure.
@@ -109,7 +104,7 @@ abstract class aws_base_pricing_client {
     }
 
     /**
-     * Get all available Amazon Elastic Transcode Service products.
+     * Get all available service products.
      *
      * @param array $filters of filter structures to be included for filtering products retrieved.
      * See https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-pricing-2017-10-15.html#shape-filter for filter structure.
@@ -172,7 +167,7 @@ abstract class aws_base_pricing_client {
         // Set up the required parameters for the Pricing Client query.
         $params = [];
         $params['AttributeName'] = $attributename;
-        // Ensure we are only looking for Amazon ETS services.
+        // Ensure we are only looking for matching services.
         $params['ServiceCode'] = $this->servicecode;
 
         try {
@@ -193,9 +188,9 @@ abstract class aws_base_pricing_client {
     /**
      * Get the pricing for a specific transcode location.
      *
-     * @param string $region the region code of an AmazonETS location to get pricing for.
+     * @param string $region the region code of a location to get pricing for.
      *
-     * @return \local_smartmedia\location_transcode_pricing $locationpricing object containing pricing.
+     * @return \local_smartmedia\location_base_pricing $locationpricing object containing pricing.
      */
     abstract public function get_location_pricing($region);
 }

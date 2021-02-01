@@ -287,6 +287,8 @@ class report_process extends scheduled_task {
         unset($record->transcoder_status);
 
         // Map to bool for completed process.
+        // This transforms the status code (200, 404) to a boolean status for this process.
+        // 200 is true, the process completed, the rest is false.
         $record = array_map(function($el) {
             return $el === \local_smartmedia\conversion::CONVERSION_FINISHED;
         }, (array) $record);
@@ -321,12 +323,12 @@ class report_process extends scheduled_task {
         $presets = $transcoder->get_presets($presetids);
         $enrichmentsettings = $this->get_enrichment_settings($record->id);
         $rekogsettings = [
-            'face_detection' => $enrichmentsettings->rekog_face_status,
-            'content_moderation' => $enrichmentsettings->rekog_moderation_status,
-            'label_detection' => $enrichmentsettings->rekog_label_status,
-            'person_tracking' => $enrichmentsettings->rekog_person_status,
+            'face_detection' => $enrichmentsettings->rekog_face_status ?? false,
+            'content_moderation' => $enrichmentsettings->rekog_moderation_status ?? false,
+            'label_detection' => $enrichmentsettings->rekog_label_status ?? false,
+            'person_tracking' => $enrichmentsettings->rekog_person_status ?? false,
         ];
-        $transcribe = $enrichmentsettings->transcribe_status;
+        $transcribe = $enrichmentsettings->transcribe_status ?? false;
 
         $pricingcalculator = new \local_smartmedia\pricing_calculator(
             $transcodelocationpricing,

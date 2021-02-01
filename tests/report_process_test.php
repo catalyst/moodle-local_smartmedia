@@ -97,13 +97,28 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $record->id = 1;
 
         // Setup pricing mock for test.
-        $locationpricing = new \local_smartmedia\location_transcode_pricing('ap-southeast-2');
-        $locationpricing->set_hd_pricing(0.034);
-        $locationpricing->set_sd_pricing(0.017);
-        $locationpricing->set_audio_pricing(0.00522);
+        $transcodelocationpricing = new \local_smartmedia\pricing\location_transcode_pricing('ap-southeast-2');
+        $transcodelocationpricing->set_hd_pricing(0.034);
+        $transcodelocationpricing->set_sd_pricing(0.017);
+        $transcodelocationpricing->set_audio_pricing(0.00522);
 
-        $mockpricing = $this->createMock(\local_smartmedia\aws_ets_pricing_client::class);
-        $mockpricing->method('get_location_pricing')->willReturn($locationpricing);
+        $mocktranscodepricing = $this->createMock(\local_smartmedia\pricing\aws_ets_pricing_client::class);
+        $mocktranscodepricing->method('get_location_pricing')->willReturn($transcodelocationpricing);
+
+        $rekoglocationpricing = new \local_smartmedia\pricing\location_rekog_pricing('ap-southeast-2');
+        $rekoglocationpricing->set_face_detection_pricing(0.017);
+        $rekoglocationpricing->set_label_detection_pricing(0.017);
+        $rekoglocationpricing->set_content_moderation_pricing(0.017);
+        $rekoglocationpricing->set_person_tracking_pricing(0.017);
+
+        $mockrekogpricing = $this->createMock(\local_smartmedia\pricing\aws_rekog_pricing_client::class);
+        $mockrekogpricing->method('get_location_pricing')->willReturn($rekoglocationpricing);
+
+        $transcribelocationpricing = new \local_smartmedia\pricing\location_transcribe_pricing('ap-southeast-2');
+        $transcribelocationpricing->set_transcribe_pricing(0.00125);
+
+        $mocktranscribepricing = $this->createMock(\local_smartmedia\pricing\aws_transcribe_pricing_client::class);
+        $mocktranscribepricing->method('get_location_pricing')->willReturn($transcribelocationpricing);
 
         // Get our fixture representing a response from the AWS Elastic Transcoder API.
         $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/pricing_calculator_fixture.php');
@@ -121,7 +136,14 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $task = new \local_smartmedia\task\report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'get_file_cost');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($task, $mockpricing, $mocktranscoder, $record); // Get result of invoked method.
+        $result = $method->invoke(
+            $task,
+            $mocktranscodepricing,
+            $mockrekogpricing,
+            $mocktranscribepricing,
+            $mocktranscoder,
+            $record
+        ); // Get result of invoked method.
 
         $this->assertEquals('1.752', round($result, 3));
     }
@@ -270,14 +292,29 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         $DB->insert_record('local_smartmedia_conv', $conversionrecord);
 
-        // Setup pricing mock for test.
-        $locationpricing = new \local_smartmedia\location_transcode_pricing('ap-southeast-2');
-        $locationpricing->set_hd_pricing(0.034);
-        $locationpricing->set_sd_pricing(0.017);
-        $locationpricing->set_audio_pricing(0.00522);
+        // Setup pricing mocks for test.
+        $transcodelocationpricing = new \local_smartmedia\pricing\location_transcode_pricing('ap-southeast-2');
+        $transcodelocationpricing->set_hd_pricing(0.034);
+        $transcodelocationpricing->set_sd_pricing(0.017);
+        $transcodelocationpricing->set_audio_pricing(0.00522);
 
-        $mockpricing = $this->createMock(\local_smartmedia\aws_ets_pricing_client::class);
-        $mockpricing->method('get_location_pricing')->willReturn($locationpricing);
+        $mocktranscodepricing = $this->createMock(\local_smartmedia\pricing\aws_ets_pricing_client::class);
+        $mocktranscodepricing->method('get_location_pricing')->willReturn($transcodelocationpricing);
+
+        $rekoglocationpricing = new \local_smartmedia\pricing\location_rekog_pricing('ap-southeast-2');
+        $rekoglocationpricing->set_face_detection_pricing(0.017);
+        $rekoglocationpricing->set_label_detection_pricing(0.017);
+        $rekoglocationpricing->set_content_moderation_pricing(0.017);
+        $rekoglocationpricing->set_person_tracking_pricing(0.017);
+
+        $mockrekogpricing = $this->createMock(\local_smartmedia\pricing\aws_rekog_pricing_client::class);
+        $mockrekogpricing->method('get_location_pricing')->willReturn($rekoglocationpricing);
+
+        $transcribelocationpricing = new \local_smartmedia\pricing\location_transcribe_pricing('ap-southeast-2');
+        $transcribelocationpricing->set_transcribe_pricing(0.00125);
+
+        $mocktranscribepricing = $this->createMock(\local_smartmedia\pricing\aws_transcribe_pricing_client::class);
+        $mocktranscribepricing->method('get_location_pricing')->willReturn($transcribelocationpricing);
 
         // Get our fixture representing a response from the AWS Elastic Transcoder API.
         $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/pricing_calculator_fixture.php');
@@ -295,7 +332,13 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $task = new \local_smartmedia\task\report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'process_overview_report');
         $method->setAccessible(true); // Allow accessing of private method.
-        $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
+        $method->invoke(
+            $task,
+            $mocktranscodepricing,
+            $mockrekogpricing,
+            $mocktranscribepricing,
+            $mocktranscoder
+        ); // Get result of invoked method.
 
         $records = $DB->get_records('local_smartmedia_report_over');
         $record = reset($records);
@@ -370,7 +413,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         global $DB, $CFG;
         set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
 
-            // Create a high definition metadata record.
+        // Create a high definition metadata record.
         $metadatarecord = new \stdClass();
         $metadatarecord->contenthash = '353e7803284d4735030e079a8047bc4e6e3fdf47';
         $metadatarecord->duration = 600;
@@ -415,14 +458,29 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
-        // Setup pricing mock for test.
-        $locationpricing = new \local_smartmedia\location_transcode_pricing('ap-southeast-2');
-        $locationpricing->set_hd_pricing(0.034);
-        $locationpricing->set_sd_pricing(0.017);
-        $locationpricing->set_audio_pricing(0.00522);
+        // Setup pricing mocks for test.
+        $transcodelocationpricing = new \local_smartmedia\pricing\location_transcode_pricing('ap-southeast-2');
+        $transcodelocationpricing->set_hd_pricing(0.034);
+        $transcodelocationpricing->set_sd_pricing(0.017);
+        $transcodelocationpricing->set_audio_pricing(0.00522);
 
-        $mockpricing = $this->createMock(\local_smartmedia\aws_ets_pricing_client::class);
-        $mockpricing->method('get_location_pricing')->willReturn($locationpricing);
+        $mocktranscodepricing = $this->createMock(\local_smartmedia\pricing\aws_ets_pricing_client::class);
+        $mocktranscodepricing->method('get_location_pricing')->willReturn($transcodelocationpricing);
+
+        $rekoglocationpricing = new \local_smartmedia\pricing\location_rekog_pricing('ap-southeast-2');
+        $rekoglocationpricing->set_face_detection_pricing(0.017);
+        $rekoglocationpricing->set_label_detection_pricing(0.017);
+        $rekoglocationpricing->set_content_moderation_pricing(0.017);
+        $rekoglocationpricing->set_person_tracking_pricing(0.017);
+
+        $mockrekogpricing = $this->createMock(\local_smartmedia\pricing\aws_rekog_pricing_client::class);
+        $mockrekogpricing->method('get_location_pricing')->willReturn($rekoglocationpricing);
+
+        $transcribelocationpricing = new \local_smartmedia\pricing\location_transcribe_pricing('ap-southeast-2');
+        $transcribelocationpricing->set_transcribe_pricing(0.00125);
+
+        $mocktranscribepricing = $this->createMock(\local_smartmedia\pricing\aws_transcribe_pricing_client::class);
+        $mocktranscribepricing->method('get_location_pricing')->willReturn($transcribelocationpricing);
 
         // Get our fixture representing a response from the AWS Elastic Transcoder API.
         $this->fixture = require($CFG->dirroot . '/local/smartmedia/tests/fixtures/pricing_calculator_fixture.php');
@@ -440,20 +498,38 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $task = new \local_smartmedia\task\report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'calculate_total_conversion_cost');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
+        $result = $method->invoke(
+            $task,
+            $mocktranscodepricing,
+            $mockrekogpricing,
+            $mocktranscribepricing,
+            $mocktranscoder
+        ); // Get result of invoked method.
 
         // Proactive conversion not enabled so we should get 0.
         $this->assertEquals(0, $result);
 
         set_config('proactiveconversion', '1', 'local_smartmedia');
         set_config('convertfrom', 3628800, 'local_smartmedia');
-        $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
+        $result = $method->invoke(
+            $task,
+            $mocktranscodepricing,
+            $mockrekogpricing,
+            $mocktranscribepricing,
+            $mocktranscoder
+        ); // Get result of invoked method.
 
         // Zero should be returned, as files are to old.
         $this->assertEquals(0, $result);
 
         set_config('convertfrom', 3144960000, 'local_smartmedia');
-        $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
+        $result = $method->invoke(
+            $task,
+            $mocktranscodepricing,
+            $mockrekogpricing,
+            $mocktranscribepricing,
+            $mocktranscoder
+        ); // Get result of invoked method.
 
         // Should now get a result.
         $this->assertEquals(3.0466, $result);
@@ -464,17 +540,40 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $conversionrecord->pathnamehash = '353e7803284d4735030e079a8047bc4e6e3fdf47';
         $conversionrecord->status = 200;
         $conversionrecord->transcoder_status = 200;
-        $conversionrecord->rekog_label_status = 404;
+        $conversionrecord->rekog_label_status = 200;
         $conversionrecord->rekog_moderation_status = 200;
-        $conversionrecord->rekog_face_status = 404;
+        $conversionrecord->rekog_face_status = 200;
         $conversionrecord->rekog_person_status = 200;
+        $conversionrecord->transcribe_status = 200;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
-        $DB->insert_record('local_smartmedia_conv', $conversionrecord);
+        $id = $DB->insert_record('local_smartmedia_conv', $conversionrecord);
 
-        $result = $method->invoke($task, $mockpricing, $mocktranscoder); // Get result of invoked method.
+        $result = $method->invoke(
+            $task,
+            $mocktranscodepricing,
+            $mockrekogpricing,
+            $mocktranscribepricing,
+            $mocktranscoder
+        ); // Get result of invoked method.
 
         // Should now get a lesser result.
         $this->assertEquals(1.2944, $result);
+
+        set_config('detectfaces', 1, 'local_smartmedia');
+        set_config('detectmoderation', 1, 'local_smartmedia');
+        set_config('detectlabels', 1, 'local_smartmedia');
+        set_config('detectpeople', 1, 'local_smartmedia');
+        set_config('transcribe', 1, 'local_smartmedia');
+
+        $result = $method->invoke(
+            $task,
+            $mocktranscodepricing,
+            $mockrekogpricing,
+            $mocktranscribepricing,
+            $mocktranscoder
+        ); // Get result of invoked method.
+
+        $this->assertEquals(2.7244, $result);
     }
 }

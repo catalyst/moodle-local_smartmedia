@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Service client for getting AWS pricing information for the Elastic Transcode Services (ETS).
+ * Service client for getting AWS pricing information for the Transcribe service.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <peterburnett@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -34,15 +34,20 @@ global $CFG;
 require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 
 /**
- * A client for getting pricing information for AWS Elastic Transcode Services.
+ * Service client for getting AWS pricing information for the Transcribe service.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <peterburnett@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class aws_transcribe_pricing_client extends aws_base_pricing_client {
 
+    /**
+     * aws_transcribe_pricing_client constructor.
+     *
+     * @param \Aws\Pricing\PricingClient $pricingclient the client for making Pricing List API Calls.
+     */
     public function __construct(PricingClient $pricingclient) {
         parent::__construct($pricingclient);
         $this->servicecode = 'Transcribe';
@@ -51,7 +56,7 @@ class aws_transcribe_pricing_client extends aws_base_pricing_client {
     /**
      * Get the pricing for a specific transcode location.
      *
-     * @param string $region the region code of an AmazonETS location to get pricing for.
+     * @param string $region the region code of a location to get pricing for.
      *
      * @return location_transcribe_pricing $locationpricing object containing pricing.
      */

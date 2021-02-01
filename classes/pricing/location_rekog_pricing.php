@@ -18,8 +18,8 @@
  * Class describing the pricing for an AWS region.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <peterburnett@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -33,8 +33,8 @@ require_once($CFG->dirroot . '/local/smartmedia/lib.php');
  * Class describing the pricing for an AWS region.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <peterburnett@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class location_rekog_pricing {

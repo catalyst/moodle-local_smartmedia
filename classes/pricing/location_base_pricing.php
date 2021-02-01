@@ -18,8 +18,8 @@
  * Class describing the pricing for an AWS region.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <peterburnett@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -45,7 +45,7 @@ class location_base_pricing {
     private $region;
 
     /**
-     * location_transcode_pricing constructor.
+     * location_base_pricing constructor.
      *
      * @param string $region the AWS region code this pricing is for.
      */
@@ -54,7 +54,7 @@ class location_base_pricing {
     }
 
     /**
-     * Get the region to which this location_transcode_pricing applies.
+     * Get the region to which this location_base_pricing applies.
      *
      * @return string AWS region code.
      */

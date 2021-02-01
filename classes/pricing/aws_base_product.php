@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * An AWS Elastic Transcode Service product.
+ * An AWS Service product.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <peterburnett@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -77,7 +77,7 @@ abstract class aws_base_product {
     }
 
     /**
-     * Set the transcode cost for this product based on AWS API data.
+     * Set the cost for this product based on AWS API data.
      *
      * @param object $productobject json decoded raw product from AWS Pricing List API.
      * @param string $terms the pricing terms to use in determining cost.
@@ -85,7 +85,7 @@ abstract class aws_base_product {
     abstract protected function set_cost($productobject, $terms = 'OnDemand') : void;
 
     /**
-     * Get the transcode cost for this product.
+     * Get the cost for this product.
      *
      * @return float|int the cost per minute of this product.
      */

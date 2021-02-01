@@ -15,11 +15,11 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * An AWS Elastic Transcode Service product.
+ * An AWS Transcribe Service product.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <peterburnett@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -28,11 +28,11 @@ namespace local_smartmedia\pricing;
 defined('MOODLE_INTERNAL') || die;
 
 /**
- * An AWS Elastic Transcode Service product.
+ * An AWS Transcribe Service product.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <peterburnett@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class aws_transcribe_product extends aws_base_product {
@@ -54,7 +54,7 @@ class aws_transcribe_product extends aws_base_product {
     }
 
     /**
-     * Set the transcode cost for this product based on AWS API data.
+     * Set the cost for this product based on AWS API data.
      *
      * @param object $productobject json decoded raw product from AWS Pricing List API.
      * @param string $terms the pricing terms to use in determining transcode cost.
@@ -74,6 +74,11 @@ class aws_transcribe_product extends aws_base_product {
         $this->cost = $cost;
     }
 
+    /**
+     * Get the usagetype of this product.
+     *
+     * @return string
+     */
     public function get_usagetype() {
         return $this->usagetype;
     }
