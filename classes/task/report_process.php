@@ -26,6 +26,7 @@ namespace local_smartmedia\task;
 use core\task\scheduled_task;
 use \local_smartmedia\pricing\aws_ets_pricing_client;
 use \local_smartmedia\pricing\aws_rekog_pricing_client;
+use local_smartmedia\pricing\aws_transcribe_pricing_client;
 use stdClass;
 
 defined('MOODLE_INTERNAL') || die();
@@ -304,12 +305,14 @@ class report_process extends scheduled_task {
     private function get_file_cost(
         aws_ets_pricing_client $transcodepricingclient,
         aws_rekog_pricing_client $rekogpricingclient,
+        aws_transcribe_pricing_client $transcribepricingclient,
         \local_smartmedia\aws_elastic_transcoder $transcoder,  \stdClass $record) : float {
 
         // Get the location pricing for the AWS region set.
         $location = get_config('local_smartmedia', 'api_region');
         $transcodelocationpricing = $transcodepricingclient->get_location_pricing($location);
         $rekoglocationpricing = $rekogpricingclient->get_location_pricing($location);
+        $transcribelocationpricing = $transcribepricingclient->get_location_pricing($location);
 
         // Get the preset ids for this conversion.
         $presetids = $this->get_conversion_presets($record->id);
@@ -323,12 +326,20 @@ class report_process extends scheduled_task {
             'label_detection' => $enrichmentsettings->rekog_label_status,
             'person_tracking' => $enrichmentsettings->rekog_person_status,
         ];
+        $transcribe = $enrichmentsettings->transcribe_status;
 
-        $pricingcalculator = new \local_smartmedia\pricing_calculator($transcodelocationpricing, $rekoglocationpricing, $presets, $rekogsettings);
+        $pricingcalculator = new \local_smartmedia\pricing_calculator(
+            $transcodelocationpricing,
+            $rekoglocationpricing,
+            $transcribelocationpricing,
+            $presets, $rekogsettings,
+            $transcribe
+        );
 
         $cost = $pricingcalculator->calculate_transcode_cost(
             $record->height, $record->duration, $record->videostreams, $record->audiostreams);
         $cost += $pricingcalculator->calculate_rekog_cost($record->duration);
+        $cost += $pricingcalculator->calculate_transcribe_cost($record->duration);
 
         return $cost;
     }
@@ -386,6 +397,7 @@ class report_process extends scheduled_task {
      */
     private function process_overview_report(aws_ets_pricing_client $transcodepricingclient,
         aws_rekog_pricing_client $rekogpricingclient,
+        aws_transcribe_pricing_client $transcribepricingclient,
         \local_smartmedia\aws_elastic_transcoder $transcoder) : void {
         global $DB;
         $reportrecords = array();
@@ -406,10 +418,15 @@ class report_process extends scheduled_task {
             $reportrecord->contenthash = $record->contenthash;
             $reportrecord->type = $this->get_file_type($record);
             $reportrecord->format = $metadata->formatname;
-            $reportrecord->resolution = $record->width . ' X ' . $record->height;;
+            $reportrecord->resolution = $record->width . ' X ' . $record->height;
             $reportrecord->duration = round($record->duration, 3);
             $reportrecord->filesize = $record->size;
-            $reportrecord->cost = round($this->get_file_cost($transcodepricingclient, $rekogpricingclient, $transcoder, $record), 3);
+            $reportrecord->cost = round($this->get_file_cost(
+                $transcodepricingclient,
+                $rekogpricingclient,
+                $transcribepricingclient,
+                $transcoder,
+                $record), 3);
             $reportrecord->status = $this->get_file_status($record->status);
             $reportrecord->files = $this->get_file_count($record->contenthash);
             $reportrecord->timecreated = $record->timecreated;
@@ -457,9 +474,12 @@ class report_process extends scheduled_task {
      *
      * @throws \dml_exception
      */
-    private function calculate_total_conversion_cost(aws_ets_pricing_client $transcodepricingclient,
+    private function calculate_total_conversion_cost(
+        aws_ets_pricing_client $transcodepricingclient,
         aws_rekog_pricing_client $rekogpricingclient,
+        aws_transcribe_pricing_client $transcribepricingclient,
         \local_smartmedia\aws_elastic_transcoder $transcoder) : float {
+
         global $DB;
 
         // If background processing disabled, return early.
@@ -474,6 +494,7 @@ class report_process extends scheduled_task {
         $location = get_config('local_smartmedia', 'api_region');
         $transcodelocationpricing = $transcodepricingclient->get_location_pricing($location);
         $rekoglocationpricing = $rekogpricingclient->get_location_pricing($location);
+        $transcribelocationpricing = $transcribepricingclient->get_location_pricing($location);
         // Get the Elastic Transcoder presets which have been set.
         $presets = $transcoder->get_presets();
         // Get enrichment settings for rekog.
@@ -484,9 +505,17 @@ class report_process extends scheduled_task {
             'label_detection' => $config->detectlabels,
             'person_tracking' => $config->detectpeople,
         ];
+        $transcribe = $config->transcribe;
 
         // Get the pricing calculator.
-        $pricingcalculator = new \local_smartmedia\pricing_calculator($transcodelocationpricing, $rekoglocationpricing, $presets, $rekogsettings);
+        $pricingcalculator = new \local_smartmedia\pricing_calculator(
+            $transcodelocationpricing,
+            $rekoglocationpricing,
+            $transcribelocationpricing,
+            $presets,
+            $rekogsettings,
+            $transcribe
+        );
 
         if (!$pricingcalculator->has_presets()) {
             $total = null;
@@ -531,6 +560,9 @@ class report_process extends scheduled_task {
             $totalhdcost += $pricingcalculator->calculate_rekog_cost($highdefinition->duration);
             $totalsdcost += $pricingcalculator->calculate_rekog_cost($standarddefinition->duration);
 
+            // Now check Audio against the transcribe pricing.
+            $totalaudiocost += $pricingcalculator->calculate_transcribe_cost($audio->duration);
+
             $total = $totalhdcost + $totalsdcost + $totalaudiocost;
         }
 
@@ -556,8 +588,9 @@ class report_process extends scheduled_task {
         $api = new \local_smartmedia\aws_api();
         $transcodepricingclient = new aws_ets_pricing_client($api->create_pricing_client());
         $rekogpricingclient = new aws_rekog_pricing_client($api->create_pricing_client());
+        $transcribepricingclient = new aws_transcribe_pricing_client($api->create_pricing_client());
         $transcoder = new \local_smartmedia\aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $this->process_overview_report($transcodepricingclient, $rekogpricingclient, $transcoder);
+        $this->process_overview_report($transcodepricingclient, $rekogpricingclient, $transcribepricingclient, $transcoder);
 
         mtrace('local_smartmedia: Processing media file data');
         $totalfiles = $this->get_all_file_count(); // Get count of all files in files table.
@@ -583,7 +616,11 @@ class report_process extends scheduled_task {
         $this->update_report_data('convertedcost', $convertedcost);
 
         mtrace('local_smartmedia: Calculating cost to convert media.');
-        $totalcost = $this->calculate_total_conversion_cost($transcodepricingclient, $rekogpricingclient, $transcoder);
+        $totalcost = $this->calculate_total_conversion_cost($transcodepricingclient,
+            $rekogpricingclient,
+            $transcribepricingclient,
+            $transcoder
+        );
         $this->update_report_data('totalcost', $totalcost);
     }
 

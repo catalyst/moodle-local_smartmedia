@@ -201,6 +201,7 @@ class extract_metadata extends scheduled_task {
         $count = count($filehashes);
         mtrace("local_smartmedia: Found {$count} file(s) to process");
 
+<<<<<<< HEAD
         // Lets split the array into chunks, for more granular processing
         $chunksize = 20;
         $filehashes = array_chunk($filehashes, $chunksize, true);
@@ -209,6 +210,15 @@ class extract_metadata extends scheduled_task {
             // Output an indicator for every chunk processed
             $filecount = ($chunkindex * $chunksize) + 1;
             $batchlimit = ($count < $chunksize) ? $count : ($chunkindex + 1) * $chunksize;
+=======
+        // Lets split the array into chunks, for more granular processing.
+        $filehashes = array_chunk($filehashes, 100, true);
+
+        foreach ($filehashes as $chunkindex => $filehashchunk) {
+            // Output an indicator for every chunk processed.
+            $filecount = ($chunkindex * 100) + 1;
+            $batchlimit = ($count < 100) ? $count : ($chunkindex + 1) * 100;
+>>>>>>> d372c58... Added support for transcribing service
             mtrace("local_smartmedia: Now processing $filecount - $batchlimit / $count ");
 
             foreach ($filehashchunk as $filehash) {

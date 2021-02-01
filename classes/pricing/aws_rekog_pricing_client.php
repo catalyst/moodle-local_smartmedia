@@ -43,7 +43,7 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
  */
 class aws_rekog_pricing_client extends aws_base_pricing_client {
 
-    public function __construct(PricingClient $pricingclient){
+    public function __construct(PricingClient $pricingclient) {
         parent::__construct($pricingclient);
         $this->servicecode = 'AmazonRekognition';
     }

@@ -41,30 +41,11 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
  * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class aws_ets_pricing_client extends aws_base_pricing_client {
-    /**
-     * The string represention an audio transcode service.
-     */
-    const MEDIATYPE_AUDIO = 'Audio';
-
-    /**
-     * The string represention a high definition transcode service (width >= 720).
-     */
-    const MEDIATYPE_HIGH_DEFINITION = 'High Definition';
-
-    /**
-     * The string represention a standard definition transcode service (width < 720).
-     */
-    const MEDIATYPE_STANDARD_DEFINITION = 'Standard Definition';
-
-    /**
-     * The string representing a successful transcoding result from a service.
-     */
-    const TRANSCODINGRESULT_SUCCESS = 'Success';
+class aws_transcribe_pricing_client extends aws_base_pricing_client {
 
     public function __construct(PricingClient $pricingclient) {
         parent::__construct($pricingclient);
-        $this->servicecode = 'AmazonETS';
+        $this->servicecode = 'Transcribe';
     }
 
     /**
@@ -72,35 +53,29 @@ class aws_ets_pricing_client extends aws_base_pricing_client {
      *
      * @param string $region the region code of an AmazonETS location to get pricing for.
      *
-     * @return location_transcode_pricing $locationpricing object containing pricing.
+     * @return location_transcribe_pricing $locationpricing object containing pricing.
      */
     public function get_location_pricing($region) {
-        $locationpricing = new location_transcode_pricing($region);
+        $locationpricing = new location_transcribe_pricing($region);
 
         // Filter products by location.
         $locationfilter = ['Field' => 'location', 'Type' => self::DEFAULT_TYPE, 'Value' => self::REGION_LOCATIONS[$region]];
-        // Filter only working transcode services.
-        $transcodingresultfilter = [
-            'Field' => 'transcodingResult',
-            'Type' => self::DEFAULT_TYPE,
-            'Value' => self::TRANSCODINGRESULT_SUCCESS
-        ];
-        $products = $this->get_products([$locationfilter, $transcodingresultfilter], 'ets');
 
+        // Filter only Transcription job audio services.
+        $transcribefilter = [
+            'Field' => 'productFamily',
+            'Type' => self::DEFAULT_TYPE,
+            'Value' => 'Transcription Job'
+        ];
+        $products = $this->get_products([$locationfilter, $transcribefilter], 'transcribe');
+
+        // Filter for the usagetype that has no extras (medical, custom models, etc...)
         foreach ($products as $product) {
-            $productfamily = $product->get_productfamily();
-            switch ($productfamily) {
-                case self::MEDIATYPE_STANDARD_DEFINITION :
-                    $locationpricing->set_sd_pricing($product->get_cost());
-                    break;
-                case self::MEDIATYPE_HIGH_DEFINITION :
-                    $locationpricing->set_hd_pricing($product->get_cost());
-                    break;
-                default :
-                    $locationpricing->set_audio_pricing($product->get_cost());
-                    break;
+            if (strpos($product->get_usagetype(), '-TranscribeAudio') !== false) {
+                $locationpricing->set_transcribe_pricing($product->get_cost());
             }
         }
+
         return $locationpricing;
     }
 }

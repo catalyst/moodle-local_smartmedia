@@ -165,7 +165,7 @@ class ffprobe {
             $exit = true;
         }
 
-        if ($rawresults) { // We got a result, check it for sanity
+        if ($rawresults) { // We got a result, check it for sanity.
             $resultobject = json_decode($rawresults);
             if ($resultobject == []) {
                 // FFprobe must have errored and returned empty JSON.

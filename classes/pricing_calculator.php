@@ -27,6 +27,7 @@ namespace local_smartmedia;
 
 use local_smartmedia\pricing\location_rekog_pricing;
 use local_smartmedia\pricing\location_transcode_pricing;
+use local_smartmedia\pricing\location_transcribe_pricing;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -45,10 +46,15 @@ class pricing_calculator {
      */
     private $transcodelocationpricing;
 
-     /**
+    /**
      * @var location_rekog_pricing object containing location pricing information.
      */
     private $rekoglocationpricing;
+
+    /**
+     * @var location_transcribe_pricing object containing location pricing information.
+     */
+    private $transcribelocationpricing;
 
     /**
      * @var array $presets array of aws_ets_preset objects containing preset transcode output information.
@@ -56,9 +62,14 @@ class pricing_calculator {
     private $presets;
 
     /**
-     * @var array $presets array of settings for rekognition billing.
+     * @var array $rekog array of settings for rekognition billing.
      */
     private $rekogsettings;
+
+    /**
+     * @var bool $transcribe array of settings for rekognition billing.
+     */
+    private $transcribe;
 
     /**
      * @var string $region the AWS region applying to this calculator.
@@ -71,12 +82,21 @@ class pricing_calculator {
      * @param location_transcode_pricing $locationpricing object containing pricing information for region.
      * @param array $presets array of aws_ets_preset objects containing preset transcode output settings.
      */
-    public function __construct(location_transcode_pricing $transcodelocationpricing, location_rekog_pricing $rekoglocationpricing, array $presets = [], array $rekogsettings = []) {
+    public function __construct(
+        location_transcode_pricing $transcodelocationpricing,
+        location_rekog_pricing $rekoglocationpricing,
+        location_transcribe_pricing $transcribelocationpricing,
+        array $presets = [],
+        array $rekogsettings = [],
+        $transcribe = false) {
+
         $this->transcodelocationpricing = $transcodelocationpricing;
         $this->rekoglocationpricing = $rekoglocationpricing;
+        $this->transcribelocationpricing = $transcribelocationpricing;
         $this->region = $transcodelocationpricing->get_region();
         $this->presets = $presets;
         $this->rekogsettings = $rekogsettings;
+        $this->transcribe = $transcribe;
     }
 
     /**
@@ -185,6 +205,22 @@ class pricing_calculator {
                     $cost += $this->rekoglocationpricing->$methodname($durationminutes);
                 }
             }
+        }
+        return $cost;
+    }
+
+    /**
+     * Calculates the cost of all rekognition services selected for the duration supplied.
+     *
+     * @param float $duration the duration in seconds
+     * @return float $cost the cost in USD to perform all transcription.
+     */
+    public function calculate_transcribe_cost(float $duration) {
+        // From https://aws.amazon.com/transcribe/pricing/
+        // each output file is billed in seconds.
+        $cost = 0;
+        if ($this->transcribe) {
+            $cost += $this->transcribelocationpricing->calculate_transcribe_cost($duration);
         }
         return $cost;
     }
