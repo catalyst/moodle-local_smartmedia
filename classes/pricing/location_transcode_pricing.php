@@ -23,7 +23,7 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_smartmedia;
+namespace local_smartmedia\pricing;
 
 defined('MOODLE_INTERNAL') || die;
 
@@ -37,12 +37,7 @@ require_once($CFG->dirroot . '/local/smartmedia/lib.php');
  * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class location_transcode_pricing {
-
-    /**
-     * @var string the AWS region code this pricing is for.
-     */
-    private $region;
+class location_transcode_pricing extends location_base_pricing {
 
     /**
      * @var float the cost per minute for standard definition transcoding.
@@ -58,24 +53,6 @@ class location_transcode_pricing {
      * @var float the cost per minute for audio transcoding.
      */
     private $audiopricing;
-
-    /**
-     * location_transcode_pricing constructor.
-     *
-     * @param string $region the AWS region code this pricing is for.
-     */
-    public function __construct(string $region) {
-        $this->region = $region;
-    }
-
-    /**
-     * Get the region to which this location_transcode_pricing applies.
-     *
-     * @return string AWS region code.
-     */
-    public function get_region() {
-        return $this->region;
-    }
 
     /**
      * Check if this has standard definition pricing.
@@ -206,4 +183,3 @@ class location_transcode_pricing {
         $this->audiopricing = $audiopricing;
     }
 }
-

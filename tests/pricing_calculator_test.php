@@ -25,7 +25,9 @@
 defined('MOODLE_INTERNAL') || die();
 
 use local_smartmedia\aws_ets_preset;
-use local_smartmedia\location_transcode_pricing;
+use local_smartmedia\pricing\location_transcode_pricing;
+use local_smartmedia\pricing\location_rekog_pricing;
+use local_smartmedia\pricing\location_transcribe_pricing;
 use local_smartmedia\pricing_calculator;
 
 /**
@@ -45,7 +47,7 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
     public $fixture;
 
     /**
-     * @var string the AWS Elastic Transcoder presets to test against.
+     * @var array the AWS Elastic Transcoder presets to test against.
      */
     public $presets;
 
@@ -170,18 +172,25 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
                                                   $sdpricing, $audiopricing, $expected) {
 
         // Setup the location pricing for dependency injection.
-        $locationpricing = new location_transcode_pricing('ap-southeast-2');
+        $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');
         if (!is_null($hdpricing)) {
-            $locationpricing->set_hd_pricing($hdpricing);
+            $transcodelocationpricing->set_hd_pricing($hdpricing);
         }
         if (!is_null($sdpricing)) {
-            $locationpricing->set_sd_pricing($sdpricing);
+            $transcodelocationpricing->set_sd_pricing($sdpricing);
         }
         if (!is_null($audiopricing)) {
-            $locationpricing->set_audio_pricing($audiopricing);
+            $transcodelocationpricing->set_audio_pricing($audiopricing);
         }
+        $rekoglocationpricing = new location_rekog_pricing('ap-southeast-2');
+        $transcribepricing = new location_transcribe_pricing('ap-southeast-2');
 
-        $pricingcalculator = new pricing_calculator($locationpricing, $this->presets);
+        $pricingcalculator = new pricing_calculator(
+            $transcodelocationpricing,
+            $rekoglocationpricing,
+            $transcribepricing,
+            $this->presets
+        );
         $actual = $pricingcalculator->calculate_transcode_cost($height, $duration, $videostreams, $audiostreams);
 
         $this->assertEquals($expected, $actual);
@@ -194,12 +203,137 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
 
         // Setup the location pricing for dependency injection.
         $locationpricing = new location_transcode_pricing('ap-southeast-2');
+        $rekogpricing = new location_rekog_pricing('ap-southeast-2');
+        $transcribepricing = new location_transcribe_pricing('ap-southeast-2');
 
         // Instantiate the class with no presets.
-        $pricingcalculator = new pricing_calculator($locationpricing);
+        $pricingcalculator = new pricing_calculator($locationpricing, $rekogpricing, $transcribepricing);
         $actual = $pricingcalculator->calculate_transcode_cost(rand(0, 1080), rand(0, 3600));
 
         $this->assertNull($actual);
+    }
+
+    /**
+     * Data provider for test_calculate_rekog_cost.
+     * @return array
+     */
+    public function calculate_rekog_cost_provider() {
+        return [
+            '1 min Video, 0 Rekognition Enrichments' => [60, 0, 0.017, 1 * 0 * 0.017],
+            '1 min Video, 1 Rekognition Enrichments' => [60, 1, 0.017, 1 * 1 * 0.017],
+            '1 min Video, 2 Rekognition Enrichments' => [60, 2, 0.017, 1 * 2 * 0.017],
+            '1 min Video, 4 Rekognition Enrichments' => [60, 4, 0.017, 1 * 4 * 0.017],
+            '3 min Video, 0 Rekognition Enrichments' => [180, 0, 0.017, 3 * 0 * 0.017],
+            '3 min Video, 1 Rekognition Enrichments' => [180, 1, 0.017, 3 * 1 * 0.017],
+            '3 min Video, 2 Rekognition Enrichments' => [180, 2, 0.017, 3 * 2 * 0.017],
+            '3 min Video, 4 Rekognition Enrichments' => [180, 4, 0.017, 3 * 4 * 0.017],
+        ];
+    }
+
+    /**
+     * Test rekognition cost calculation.
+     *
+     * @param int $duration the duration of the video
+     * @param int $enabled the number of rekognition features enabled
+     * @param float $cost the cost per minute of video
+     * @param float|null $expected the expected return value.
+     *
+     * @dataProvider calculate_rekog_cost_provider
+     */
+    public function test_calculate_rekog_cost($duration, $enabled, $cost, $expected) {
+
+        // Setup the location pricing for dependency injection.
+        $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');
+        $rekoglocationpricing = new location_rekog_pricing('ap-southeast-2');
+        $transcribepricing = new location_transcribe_pricing('ap-southeast-2');
+        $rekog = [
+            'content_moderation' => false,
+            'face_detection' => false,
+            'label_detection' => false,
+            'person_tracking' => false,
+        ];
+
+        switch ($enabled) {
+            case 1:
+                $rekoglocationpricing->set_content_moderation_pricing($cost);
+                $rekog['content_moderation'] = true;
+                break;
+
+            case 2:
+                $rekoglocationpricing->set_content_moderation_pricing($cost);
+                $rekoglocationpricing->set_face_detection_pricing($cost);
+                $rekog['content_moderation'] = true;
+                $rekog['face_detection'] = true;
+                break;
+
+            case 4:
+                $rekoglocationpricing->set_content_moderation_pricing($cost);
+                $rekoglocationpricing->set_face_detection_pricing($cost);
+                $rekoglocationpricing->set_label_detection_pricing($cost);
+                $rekoglocationpricing->set_person_tracking_pricing($cost);
+                $rekog['content_moderation'] = true;
+                $rekog['face_detection'] = true;
+                $rekog['label_detection'] = true;
+                $rekog['person_tracking'] = true;
+                break;
+        }
+
+        $pricingcalculator = new pricing_calculator(
+            $transcodelocationpricing,
+            $rekoglocationpricing,
+            $transcribepricing,
+            $this->presets,
+            $rekog
+        );
+        $actual = $pricingcalculator->calculate_rekog_cost($duration);
+
+        $this->assertEquals($expected, $actual);
+    }
+
+    /**
+     * Data provider for test_calculate_transcribe_cost.
+     * @return array
+     */
+    public function calculate_transcribe_cost_provider() {
+        return [
+            '1 min Video, Transcribe Off' => [60, false, 0.00125, 1 * 0 * 0.00125 * 60],
+            '1 min Video, Transcribe On' => [60, true, 0.00125, 1 * 1 * 0.00125 * 60],
+            '2 min Video, Transcribe Off' => [120, false, 0.00125, 2 * 0 * 0.00125 * 60],
+            '2 min Video, Transcribe On' => [120, true, 0.00125, 2 * 1 * 0.00125 * 60],
+            '3 min Video, Transcribe Off' => [180, false, 0.00125, 3 * 0 * 0.00125 * 60],
+            '3 min Video, Transcribe On' => [180, true, 0.00125, 3 * 1 * 0.00125 * 60],
+        ];
+    }
+
+    /**
+     * Test transcode cost calculation.
+     *
+     * @param int $duration the duration of the video
+     * @param int $enabled the number of rekognition features enabled
+     * @param float $cost the cost per minute of video
+     * @param float|null $expected the expected return value.
+     *
+     * @dataProvider calculate_transcribe_cost_provider
+     */
+    public function test_calculate_transcribe_cost($duration, $enabled, $cost, $expected) {
+
+        // Setup the location pricing for dependency injection.
+        $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');
+        $rekoglocationpricing = new location_rekog_pricing('ap-southeast-2');
+        $transcribepricing = new location_transcribe_pricing('ap-southeast-2');
+        $transcribepricing->set_transcribe_pricing($cost);
+
+        $pricingcalculator = new pricing_calculator(
+            $transcodelocationpricing,
+            $rekoglocationpricing,
+            $transcribepricing,
+            $this->presets,
+            [],
+            $enabled
+        );
+        $actual = $pricingcalculator->calculate_transcribe_cost($duration);
+
+        $this->assertEquals($expected, $actual);
     }
 
 }

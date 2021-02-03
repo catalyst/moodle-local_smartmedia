@@ -15,15 +15,15 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Service client for getting AWS pricing information for the Elastic Transcode Services (ETS).
+ * Base client for getting AWS pricing information.
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Peter Burnett <tomdickman@catalyst-au.net>
+ * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_smartmedia;
+namespace local_smartmedia\pricing;
 
 use Aws\Exception\AwsException;
 use Aws\Pricing\PricingClient;
@@ -42,10 +42,10 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
  * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class aws_ets_pricing_client {
+abstract class aws_base_pricing_client {
 
     /**
-     * The default filter field for getting AmazonETS pricing information.
+     * The default filter field for getting pricing information.
      */
     const DEFAULT_FIELD = 'servicecode';
 
@@ -53,31 +53,6 @@ class aws_ets_pricing_client {
      * The default filter type used by AWS Pricing List API filters.
      */
     const DEFAULT_TYPE = 'TERM_MATCH';
-
-    /**
-     * The string represention an audio transcode service.
-     */
-    const MEDIATYPE_AUDIO = 'Audio';
-
-    /**
-     * The string represention a high definition transcode service (width >= 720).
-     */
-    const MEDIATYPE_HIGH_DEFINITION = 'High Definition';
-
-    /**
-     * The string represention a standard definition transcode service (width < 720).
-     */
-    const MEDIATYPE_STANDARD_DEFINITION = 'Standard Definition';
-
-    /**
-     * The string representing a successful transcoding result from a service.
-     */
-    const TRANSCODINGRESULT_SUCCESS = 'Success';
-
-    /**
-     * The ServiceCode for Amazon Elastic Transcode Services.
-     */
-    const SERVICE_CODE = 'AmazonETS';
 
     /**
      * Map of AWS region codes to location names used by \Aws\Pricing\PricingClient.
@@ -96,11 +71,15 @@ class aws_ets_pricing_client {
     /**
      * @var \Aws\Pricing\PricingClient
      */
-    private $pricingclient;
-
+    protected $pricingclient;
 
     /**
-     * aws_ets_pricing_client constructor.
+     * @var string
+     */
+    protected $servicecode;
+
+    /**
+     * aws_base_pricing_client constructor.
      *
      * @param \Aws\Pricing\PricingClient $pricingclient the client for making Pricing List API Calls.
      */
@@ -109,7 +88,7 @@ class aws_ets_pricing_client {
     }
 
     /**
-     * Default filters to get all Elastic Transcode Service products.
+     * Default filters to get all products in the service code family.
      *
      * @return array of filter structures with the default filter values for getting AWS Pricing List information.
      * See https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-pricing-2017-10-15.html#shape-filter for filter structure.
@@ -119,23 +98,24 @@ class aws_ets_pricing_client {
             [
                 'Field' => self::DEFAULT_FIELD,
                 'Type' => self::DEFAULT_TYPE,
-                'Value' => self::SERVICE_CODE,
+                'Value' => $this->servicecode,
             ],
         ];
     }
 
     /**
-     * Get all available Amazon Elastic Transcode Service products.
+     * Get all available service products.
      *
      * @param array $filters of filter structures to be included for filtering products retrieved.
      * See https://docs.aws.amazon.com/aws-sdk-php/v3/api/api-pricing-2017-10-15.html#shape-filter for filter structure.
+     * @param string $product the product type to create.
      *
-     * @return array $products of \local_smartmedia\aws_ets_product.
+     * @return array $products of \local_smartmedia\aws_base_product.
      */
-    public function get_products($filters = []) {
+    public function get_products($filters = [], $product = 'base') {
         $params = [];
         // Ensure we are only looking for Amazon ETS services.
-        $params['ServiceCode'] = self::SERVICE_CODE;
+        $params['ServiceCode'] = $this->servicecode;
         $params['Filters'] = array_merge($this->get_default_product_filters(), $filters);
 
         try {
@@ -145,8 +125,9 @@ class aws_ets_pricing_client {
             throw new \moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
         }
         $products = [];
+        $productclass = 'local_smartmedia\pricing\aws_' . $product . '_product';
         foreach ($result->get('PriceList') as $product) {
-             $products[] = new aws_ets_product($product);
+             $products[] = new $productclass($product);
         }
         return $products;
     }
@@ -159,7 +140,7 @@ class aws_ets_pricing_client {
     public function describe_service() {
 
         // Ensure we are only looking for Amazon ETS services.
-        $params = ['ServiceCode' => self::SERVICE_CODE];
+        $params = ['ServiceCode' => $this->servicecode];
 
         $result = $this->pricingclient->describeServices($params);
         try {
@@ -186,8 +167,8 @@ class aws_ets_pricing_client {
         // Set up the required parameters for the Pricing Client query.
         $params = [];
         $params['AttributeName'] = $attributename;
-        // Ensure we are only looking for Amazon ETS services.
-        $params['ServiceCode'] = self::SERVICE_CODE;
+        // Ensure we are only looking for matching services.
+        $params['ServiceCode'] = $this->servicecode;
 
         try {
             $result = $this->pricingclient->getAttributeValues($params);
@@ -207,37 +188,9 @@ class aws_ets_pricing_client {
     /**
      * Get the pricing for a specific transcode location.
      *
-     * @param string $region the region code of an AmazonETS location to get pricing for.
+     * @param string $region the region code of a location to get pricing for.
      *
-     * @return \local_smartmedia\location_transcode_pricing $locationpricing object containing pricing.
+     * @return \local_smartmedia\location_base_pricing $locationpricing object containing pricing.
      */
-    public function get_location_pricing($region) {
-        $locationpricing = new location_transcode_pricing($region);
-
-        // Filter products by location.
-        $locationfilter = ['Field' => 'location', 'Type' => self::DEFAULT_TYPE, 'Value' => self::REGION_LOCATIONS[$region]];
-        // Filter only working transcode services.
-        $transcodingresultfilter = [
-            'Field' => 'transcodingResult',
-            'Type' => self::DEFAULT_TYPE,
-            'Value' => self::TRANSCODINGRESULT_SUCCESS
-        ];
-        $products = $this->get_products([$locationfilter, $transcodingresultfilter]);
-
-        foreach ($products as $product) {
-            $productfamily = $product->get_productfamily();
-            switch ($productfamily) {
-                case self::MEDIATYPE_STANDARD_DEFINITION :
-                    $locationpricing->set_sd_pricing($product->get_transcodecost());
-                    break;
-                case self::MEDIATYPE_HIGH_DEFINITION :
-                    $locationpricing->set_hd_pricing($product->get_transcodecost());
-                    break;
-                default :
-                    $locationpricing->set_audio_pricing($product->get_transcodecost());
-                    break;
-            }
-        }
-        return $locationpricing;
-    }
+    abstract public function get_location_pricing($region);
 }

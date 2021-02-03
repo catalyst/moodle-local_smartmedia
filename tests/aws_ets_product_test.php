@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-use local_smartmedia\aws_ets_product;
+use local_smartmedia\pricing\aws_ets_product;
 
 /**
  * Unit test for \local_smartmedia\aws_ets_product class.
@@ -75,7 +75,7 @@ class local_smartmedia_aws_ets_product_testcase extends advanced_testcase {
 
         foreach ($this->fixture['getProducts']['PriceList'] as $rawproduct) {
             $product = new aws_ets_product($rawproduct);
-            $actual = $product->get_transcodecost();
+            $actual = $product->get_cost();
             $expected = $this->get_expected_transcodecost_from_fixture($rawproduct);
 
             $this->assertEquals($expected, $actual);
