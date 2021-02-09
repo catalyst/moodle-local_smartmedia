@@ -98,6 +98,10 @@ if ($hassiteconfig) {
         get_string('settings:output:quality_high', 'local_smartmedia'),
         get_string('settings:output:quality_high_help', 'local_smartmedia'), 1));
 
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/quality_extrahigh',
+        get_string('settings:output:quality_extrahigh', 'local_smartmedia'),
+        get_string('settings:output:quality_extrahigh_help', 'local_smartmedia'), 0));
+
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/audio_output',
         get_string('settings:output:audio_output', 'local_smartmedia'),
         get_string('settings:output:audio_output_help', 'local_smartmedia'), 1));

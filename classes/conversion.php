@@ -196,6 +196,7 @@ class conversion {
                 aws_elastic_transcoder::LOW_PRESETS,
                 aws_elastic_transcoder::MEDIUM_PRESETS,
                 aws_elastic_transcoder::HIGH_PRESETS,
+                aws_elastic_transcoder::EXTRA_HIGH_PRESETS,
                 aws_elastic_transcoder::DOWNLOAD_PRESETS
                 );
             $presetids = array_diff($presetids, $videostreams);

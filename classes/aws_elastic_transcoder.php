@@ -87,6 +87,15 @@ class aws_elastic_transcoder {
     );
 
     /**
+     * Transcoder presets for extra high quality video file conversion.
+     *
+     * @var array
+     */
+    public const EXTRA_HIGH_PRESETS = array(
+        '1351620000001-500020' // System preset: MPEG-Dash Video - 4.8M
+    );
+
+    /**
      * Transcoder presets for audio file conversion.
      *
      * @var array
@@ -158,6 +167,10 @@ class aws_elastic_transcoder {
             $presetids = array_merge(self::HIGH_PRESETS, $presetids);
         }
 
+        if (!empty($pluginconfig->quality_extrahigh)) {
+            $presetids = array_merge(self::EXTRA_HIGH_PRESETS, $presetids);
+        }
+
         if (!empty($pluginconfig->audio_output)) {
             $presetids = array_merge(self::AUDIO_PRESETS, $presetids);
         }
@@ -209,6 +222,7 @@ class aws_elastic_transcoder {
             self::LOW_PRESETS,
             self::MEDIUM_PRESETS,
             self::HIGH_PRESETS,
+            self::EXTRA_HIGH_PRESETS,
             self::AUDIO_PRESETS,
             self::DOWNLOAD_PRESETS
         );
