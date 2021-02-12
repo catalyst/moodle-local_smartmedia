@@ -179,6 +179,22 @@ class aws_elastic_transcoder {
             $presetids = array_merge(self::DOWNLOAD_PRESETS, $presetids);
         }
 
+        // Now do some special checks. Rekognition relies on the download preset as the base video.
+        // Transcribe relies on the audio preset. If these settings are enabled,
+        // We MUST add these presets if they arent already.
+        $rekogenabled = $pluginconfig->detectlabels ||
+            $pluginconfig->detectmoderation ||
+            $pluginconfig->detectfaces ||
+            $pluginconfig->detectpeople;
+
+        if (empty($pluginconfig->download_files) && $rekogenabled) {
+            $presetids = array_merge(self::DOWNLOAD_PRESETS, $presetids);
+        }
+
+        if (empty($pluginconfig->audio_output) && $pluginconfig->transcribe) {
+            $presetids = array_merge(self::AUDIO_PRESETS, $presetids);
+        }
+
         return $presetids;
 
     }
