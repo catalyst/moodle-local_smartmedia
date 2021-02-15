@@ -537,9 +537,14 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         set_config('quality_low', 1, 'local_smartmedia');
         set_config('quality_high', 1, 'local_smartmedia');
+        set_config('transcribe', 0, 'local_smartmedia');
 
         // Mock the elastic transcoder client so it returns low quality and high quality presets.
-        $mockdata = array_merge($this->fixture['readPreset']['quality_low'], $this->fixture['readPreset']['quality_high']);
+        $mockdata = array_merge(
+            $this->fixture['readPreset']['quality_low'],
+            $this->fixture['readPreset']['quality_high'],
+            $this->fixture['readPreset']['download_files']
+        );
         $mock = $this->create_mock_elastic_transcoder_client($mockdata);
 
         $transcoder = new aws_elastic_transcoder($mock);
@@ -571,7 +576,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->rekog_label_status);
 
         $result = $DB->count_records('local_smartmedia_presets');
-        $this->assertEquals(4, $result);
+        $this->assertEquals(5, $result);
 
     }
 
@@ -694,6 +699,12 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         // Turn off all quality options.
         set_config('quality_low', 0, 'local_smartmedia');
         set_config('quality_high', 0, 'local_smartmedia');
+        // Disable enrichment that forces quality.
+        set_config('transcribe', 0, 'local_smartmedia');
+        set_config('detectlabels', 0, 'local_smartmedia');
+        set_config('detectmoderation', 0, 'local_smartmedia');
+        set_config('detectfaces', 0, 'local_smartmedia');
+        set_config('detectpeople', 0, 'local_smartmedia');
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
@@ -734,6 +745,12 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
 
         set_config('quality_low', 1, 'local_smartmedia');
         set_config('quality_high', 0, 'local_smartmedia');
+        // Disable enrichment that forces quality.
+        set_config('transcribe', 0, 'local_smartmedia');
+        set_config('detectlabels', 0, 'local_smartmedia');
+        set_config('detectmoderation', 0, 'local_smartmedia');
+        set_config('detectfaces', 0, 'local_smartmedia');
+        set_config('detectpeople', 0, 'local_smartmedia');
 
         // Mock the elastic transcoder client so it returns fixture preset data for low quality.
         $mockdata = array_values($this->fixture['readPreset']['quality_low']);

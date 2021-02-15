@@ -93,7 +93,7 @@ Resources:
           - elastictranscoder:ReadPreset
           Resource: '*'
         - Effect: Allow
-          Action: 
+          Action:
           - sqs:SendMessage
           Resource: '*'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
@@ -154,6 +154,7 @@ Resources:
           Action:
           - s3:GetObject
           - s3:PutObject
+          - s3:ListBucket
           - s3:DeleteObject
           Resource: arn:aws:s3:::*
         - Effect: Allow
@@ -186,7 +187,7 @@ Resources:
             Action: iam:PassRole
             Resource: '*'
         -   Effect: Allow
-            Action: 
+            Action:
             - sqs:SendMessage
             Resource: '*'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
@@ -279,9 +280,9 @@ Resources:
       FunctionName: !Ref LambdaTranscodeTriggerFunction
       Principal: s3.amazonaws.com
       SourceArn: !Join [ '', ['arn:aws:s3:::', !Ref 'AWS::StackName', '-','input'] ]
-  PermissionForEventsToInvokeLambda: 
+  PermissionForEventsToInvokeLambda:
     Type: AWS::Lambda::Permission
-    Properties: 
+    Properties:
       Action: 'lambda:InvokeFunction'
       FunctionName: !Ref LambdaTranscribeCompleteFunction
       Principal: events.amazonaws.com
@@ -349,6 +350,10 @@ Resources:
       Code:
         S3Bucket: !Ref ResourceBucket
         S3Key: !Ref LambdaTranscribeCompleteArchiveKey
+      Environment:
+        Variables:
+          OutputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
+          InputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'input'] ]
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcribe_complete'] ]
       Handler: lambda_transcribe_complete.lambda_handler
       MemorySize: 128
@@ -405,20 +410,20 @@ Resources:
 # Trigger actions based on custom events.
   TranscribeEventRule:
     Type: AWS::Events::Rule
-    Properties: 
+    Properties:
       Name: !Join [ '-', [!Ref 'AWS::StackName', 'TranscribeEventRule'] ]
       Description: 'Cloudwatch event rule for transcribe completion.'
-      EventPattern: 
-        source: 
+      EventPattern:
+        source:
           - "aws.transcribe"
-        detail-type: 
+        detail-type:
           - "Transcribe Job State Change"
-        detail: 
-          TranscriptionJobStatus: 
+        detail:
+          TranscriptionJobStatus:
             - COMPLETED
       State: 'ENABLED'
-      Targets: 
-        - 
+      Targets:
+        -
           Arn: !GetAtt LambdaTranscribeCompleteFunction.Arn
           Id: 'LambdaTranscribeCompleteFunction'
 

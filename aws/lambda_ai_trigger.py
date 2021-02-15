@@ -37,10 +37,12 @@ def start_rekognition(input_key, job_id):
 
     # Get environvent variables
     output_bucket = os.environ.get('OutputBucket')  # Ouput S3 bucket
+    input_bucket = os.environ.get('InputBucket')  # Input S3 bucket
     rekognition_Complete_Role_arn = os.environ.get('RekognitionCompleteRoleArn')
     sns_rekognition_complete_arn = os.environ.get('SnsTopicRekognitionCompleteArn')
 
     rekognition_input = '{}/conversions/{}.mp4'.format(input_key, input_key)
+    transcribe_input = '{}/conversions/{}.mp3'.format(input_key, input_key)
 
     video_dict = {
             'S3Object': {
@@ -53,73 +55,116 @@ def start_rekognition(input_key, job_id):
             'RoleArn': rekognition_Complete_Role_arn
         }
 
-    # Start Rekognition Label extraction.
-    logger.info('Starting Rekognition label detection')
-    label_response = rekognition_client.start_label_detection(
-        Video=video_dict,
-        ClientRequestToken=job_id,
-        MinConfidence=80,  # 50 is default.
-        NotificationChannel=notification_dict,
-        JobTag=job_id
-        )
+    services = get_enabled_services(s3_client, input_bucket, input_key)
 
-    logging.error(label_response)
+    if not(True in services.values()):
+        return
+
+    # Now that we know we are running a service here, use the first encountered file that is .mp4.
+    # There is guaranteed to be atleast one, as we force the download preset.
+    # Do the same for mp3 using the audio preset.
+    objects = s3_client.list_objects_v2(
+        Bucket=output_bucket,
+        Prefix='{}/conversions/'.format(input_key)
+    )
+    for file_object in objects.get('Contents', []):
+        # We are looking for the first file that has an .mp4 extension
+        filename = file_object.get('Key')
+        name, ext = os.path.splitext(filename)
+        if ext == '.mp4':
+            videofilename = filename
+        if ext == '.mp3':
+            audiofilename = filename
+
+    s3_client.copy_object(
+        Bucket=output_bucket,
+        Key=rekognition_input,
+        CopySource={
+            'Bucket': output_bucket,
+            'Key': videofilename
+        }
+    )
+    s3_client.copy_object(
+        Bucket=output_bucket,
+        Key=transcribe_input,
+        CopySource={
+            'Bucket': output_bucket,
+            'Key': audiofilename
+        }
+    )
+
+    # Start Rekognition Label extraction.
+    if services['rekog_label']:
+        logger.info('Starting Rekognition label detection')
+        label_response = rekognition_client.start_label_detection(
+            Video=video_dict,
+            ClientRequestToken=job_id,
+            MinConfidence=80,  # 50 is default.
+            NotificationChannel=notification_dict,
+            JobTag=job_id
+            )
+
+        logging.error(label_response)
 
     # Start Rekognition content moderation operatations.
-    logger.info('Starting Rekognition moderation detection')
-    moderation_response = rekognition_client.start_content_moderation(
-        Video=video_dict,
-        MinConfidence=80,  # 50 is default.
-        ClientRequestToken=job_id,
-        NotificationChannel=notification_dict,
-        JobTag=job_id
-        )
+    if services['rekog_moderation']:
+        logger.info('Starting Rekognition moderation detection')
+        moderation_response = rekognition_client.start_content_moderation(
+            Video=video_dict,
+            MinConfidence=80,  # 50 is default.
+            ClientRequestToken=job_id,
+            NotificationChannel=notification_dict,
+            JobTag=job_id
+            )
 
-    logging.error(moderation_response)
+        logging.error(moderation_response)
 
     # Start Rekognition face detection.
-    logger.info('Starting Rekognition face detection')
-    face_response = rekognition_client.start_face_detection(
-        Video=video_dict,
-        ClientRequestToken=job_id,
-        NotificationChannel=notification_dict,
-        FaceAttributes='DEFAULT',  # Other option is ALL.
-        JobTag=job_id
-    )
+    if services['rekog_face']:
+        logger.info('Starting Rekognition face detection')
+        face_response = rekognition_client.start_face_detection(
+            Video=video_dict,
+            ClientRequestToken=job_id,
+            NotificationChannel=notification_dict,
+            FaceAttributes='DEFAULT',  # Other option is ALL.
+            JobTag=job_id
+        )
 
-    logger.error(face_response)
+        logger.error(face_response)
 
     # Start Rekognition Person tracking.
-    logger.info('Starting Rekognition person tracking')
-    person_tracking_response = rekognition_client.start_person_tracking(
-        Video=video_dict,
-        ClientRequestToken=job_id,
-        NotificationChannel=notification_dict,
-        JobTag=job_id
-    )
+    if services['rekog_label']:
+        logger.info('Starting Rekognition person tracking')
+        person_tracking_response = rekognition_client.start_person_tracking(
+            Video=video_dict,
+            ClientRequestToken=job_id,
+            NotificationChannel=notification_dict,
+            JobTag=job_id
+        )
 
-    logger.error(person_tracking_response)
+        logger.error(person_tracking_response)
 
     # Start transcription job.
-    logger.info('Starting transcription.')
-    media_uri = 'https://s3-{}.amazonaws.com/{}/{}/conversions/{}.mp3'.format(
-        os.environ.get('AWS_REGION'),
-        output_bucket,
-        input_key,
-        input_key
-        )
-    transcription_response = transcribe_client.start_transcription_job(
-        TranscriptionJobName=job_id,
-        LanguageCode='en-AU',
-        MediaSampleRateHertz=44100,
-        MediaFormat='mp3',
-        Media={
-            'MediaFileUri': media_uri
-        },
-        Settings={}
-        )
+    if services['transcribe']:
+        logger.info('Starting transcription.')
+        media_uri = 'https://s3-{}.amazonaws.com/{}/{}/conversions/{}.mp3'.format(
+            os.environ.get('AWS_REGION'),
+            output_bucket,
+            input_key,
+            input_key
+            )
+        transcription_response = transcribe_client.start_transcription_job(
+            TranscriptionJobName=job_id,
+            LanguageCode='en-AU',
+            MediaSampleRateHertz=44100,
+            MediaFormat='mp3',
+            Media={
+                'MediaFileUri': media_uri
+            },
+            Settings={}
+            )
 
-    logger.error(transcription_response)
+        logger.error(transcription_response)
 
 
 def sqs_send_message(input_key, message_state, sns_message_object):
@@ -164,6 +209,31 @@ def sqs_send_message(input_key, message_state, sns_message_object):
         }
     )
 
+def get_enabled_services(s3_client, bucket, input_key):
+    # Get input object metadata as we will need for SQS message sending.
+    input_object_headdata_object = s3_client.head_object(
+        Bucket=bucket,
+        Key=input_key
+        )
+
+    metadata = input_object_headdata_object['Metadata']
+    serviceraw = list(metadata['processes'])
+
+    # Dict of rekognition position => service
+    positions = [
+        'transcribe',
+        'rekog_label',
+        'rekog_moderation',
+        'rekog_face',
+        'rekog_person'
+        ]
+
+    # Map services to bool from position in processes string.
+    services = dict()
+    for x in range(5):
+        services[positions[x]] = True if serviceraw[x] == '1' else False
+
+    return services
 
 def lambda_handler(event, context):
     """

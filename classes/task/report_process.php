@@ -559,7 +559,6 @@ class report_process extends scheduled_task {
                 $audio->duration);
 
             // Now add on the rekognition analysis on the transcoded video size only. Audio is not passed to rekog.
-            $totalhdcost += $pricingcalculator->calculate_rekog_cost($highdefinition->duration);
             $totalsdcost += $pricingcalculator->calculate_rekog_cost($standarddefinition->duration);
 
             // Now check Audio against the transcribe pricing.
