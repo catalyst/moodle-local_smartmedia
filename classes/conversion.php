@@ -503,13 +503,14 @@ class conversion {
      *
      * @param \moodle_url $href the url of the file to find smart media for.
      * @param bool $triggerconversion true if conversion should be triggered by this method, false otherwise.
+     * @param bool $rawfiles return the file objects instead of the download urls. Used for downloading metadata from smartmedia.
      * @return array $smartmedia 2D array of \stored_file objects for the smart media associated with the $href file,
      *                  converted media is contained in 'media' element, metadata and other smart media files in the
      *                  'data' element.
      *                  Example:
      *                      ['media' => [\stored_file $file1, ...], 'data' => [\stored_file $file2, ...]]
      */
-    public function get_smart_media(\moodle_url $href, bool $triggerconversion = false) : array {
+    public function get_smart_media(\moodle_url $href, bool $triggerconversion = false, bool $rawfiles = false) : array {
         $smartmedia = array();
         $viewconversion = (bool)get_config('local_smartmedia', 'viewconversion');
 
@@ -540,18 +541,18 @@ class conversion {
             $mediafiles = $this->get_media_files($file->get_contenthash());
             $updatedplaylists = $this->generate_playlists($mediafiles, $file->get_id());
             $filteredfiles = $this->filter_playlists($updatedplaylists);
-            $smartmedia['media'] = $this->map_files_to_urls($filteredfiles, $file->get_id());
+            $smartmedia['media'] = $rawfiles ? $filteredfiles : $this->map_files_to_urls($filteredfiles, $file->get_id());
 
             // Get download files.
             $datafiles = $this->get_media_files($file->get_contenthash(), self::FILTER_DOWNLOAD);
-            $smartmedia['download'] = $this->map_files_to_urls($datafiles, $file->get_id());
+            $smartmedia['download'] = $rawfiles ? $datafiles : $this->map_files_to_urls($datafiles, $file->get_id());
 
             // Get data files.
             $fs = get_file_storage();
             $files = $fs->get_area_files(1, 'local_smartmedia', 'metadata', 0);
             $datafilepath = '/' . $file->get_contenthash() . '/metadata/';
             $datafiles = $this->filter_files_by_filepath($files, $datafilepath);
-            $smartmedia['data'] = $this->map_files_to_urls($datafiles, $file->get_id());
+            $smartmedia['data'] = $rawfiles ? $datafiles : $this->map_files_to_urls($datafiles, $file->get_id());
         }
 
         // TODO: Cache the result for a very long time as once processing is finished it will never change
