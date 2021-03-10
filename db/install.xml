@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/smartmedia/db" VERSION="20200117" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+<XMLDB PATH="local/smartmedia/db" VERSION="20210310" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -119,6 +119,18 @@
       <INDEXES>
         <INDEX NAME="contenthash" UNIQUE="true" FIELDS="contenthash"/>
       </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_smartmedia_data_fail" COMMENT="Table to store information on damaged metadata files that were unable to be processed by ffprobe.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="contenthash" TYPE="char" LENGTH="40" NOTNULL="true" SEQUENCE="false" COMMENT="Contenthash of the failed file"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="15" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Time when this file failed to process."/>
+        <FIELD NAME="reason" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The error message returned from ffprobe"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="contenthashunique" TYPE="unique" FIELDS="contenthash" COMMENT="Contenthash unique key"/>
+      </KEYS>
     </TABLE>
   </TABLES>
 </XMLDB>
