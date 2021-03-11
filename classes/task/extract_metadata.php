@@ -145,8 +145,10 @@ class extract_metadata extends scheduled_task {
         $sql = "SELECT f.id, f.pathnamehash, f.contenthash, f.timecreated
                   FROM {files} f
              LEFT JOIN {local_smartmedia_data} lsd ON f.contenthash = lsd.contenthash
+             LEFT JOIN {local_smartmedia_data_fail} lsdf ON f.contenthash = lsdf.contenthash
                  WHERE mimetype IN ($mimetypes)
                        AND lsd.contenthash IS NULL
+                       AND lsdf.contenthash IS NULL
                        AND f.component <> ?
                        AND filearea <> ?
                        AND filename <> ?
@@ -260,6 +262,16 @@ class extract_metadata extends scheduled_task {
                 } else {
                     $failcount++;
                     $failhashses[$filehash->pathnamehash] = $filemetadata['reason']; // Record the failed hashes for logging.
+
+                    // Store this hash in a failed table, for future filtering of metadata candidates.
+                    if (!$DB->record_exists('tool_smartmedia_data_fail', ['contenthash' => $filehash->contenthash])) {
+                        $record = [
+                            'contenthash' => $filehash->contenthash,
+                            'reason' => $filemetadata['reason'],
+                            'timecreated' => time()
+                        ];
+                        $DB->insert_record('tool_smartmedia_data_fail', (object) $record);
+                    }
                 }
             }
 

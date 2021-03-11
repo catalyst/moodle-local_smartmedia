@@ -317,5 +317,30 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         upgrade_plugin_savepoint(true, 2020030200, 'local', 'smartmedia');
     }
+
+    if ($oldversion < 2021031000) {
+
+        // Define table local_smartmedia_data_fail to be created.
+        $table = new xmldb_table('local_smartmedia_data_fail');
+
+        // Adding fields to table local_smartmedia_data_fail.
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('contenthash', XMLDB_TYPE_CHAR, '40', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '15', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('reason', XMLDB_TYPE_TEXT, null, null, null, null, null);
+
+        // Adding keys to table local_smartmedia_data_fail.
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('contenthashunique', XMLDB_KEY_UNIQUE, ['contenthash']);
+
+        // Conditionally launch create table for local_smartmedia_data_fail.
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        // Smartmedia savepoint reached.
+        upgrade_plugin_savepoint(true, 2021031000, 'local', 'smartmedia');
+    }
+
     return true;
 }
