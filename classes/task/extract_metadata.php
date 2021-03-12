@@ -270,7 +270,7 @@ class extract_metadata extends scheduled_task {
                             'reason' => $filemetadata['reason'],
                             'timecreated' => time()
                         ];
-                        $DB->insert_record('tool_smartmedia_data_fail', (object) $record);
+                        $DB->insert_record('local_smartmedia_data_fail', (object) $record);
                     }
                 }
             }
