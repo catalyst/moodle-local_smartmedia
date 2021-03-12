@@ -47,14 +47,15 @@ class report_table extends table_sql implements renderable {
      *
      * @var string
      */
-    const FIELDS = 'ro.id, ro.type, ro.format, ro.resolution, ro.duration, ro.filesize, ro.cost, ro.status,
+    const FIELDS = 'f.filename, ro.id, ro.type, ro.cost, ro.status,
         ro.files, ro.timecreated, ro.timecompleted, conv.id as convid';
 
     /**
      * The tables to select from.
      */
     const FROM = '{local_smartmedia_report_over} ro
-        JOIN {local_smartmedia_conv} conv ON ro.contenthash = conv.contenthash';
+        JOIN {local_smartmedia_conv} conv ON ro.contenthash = conv.contenthash
+        JOIN {files} f on f.contenthash = conv.contenthash AND f.pathnamehash = conv.pathnamehash';
 
     /**
      * The default WHERE clause to exclude records without at least one video or audio stream.
@@ -62,11 +63,6 @@ class report_table extends table_sql implements renderable {
      * @var string
      */
     const DEFAULT_WHERE = 'duration > 0';
-
-    /**
-     * @var array the presets from the elastic transcoder.
-     */
-    private $presets = [];
 
     /**
      * report_table constructor.
@@ -90,34 +86,25 @@ class report_table extends table_sql implements renderable {
         $this->define_baseurl($baseurl);
         $this->define_columns(
             array(
+                'filename',
                 'status',
                 'type',
-                'format',
-                'sourceresolution',
-                'targetresolutions',
-                'duration',
-                'filesize',
                 'cost',
                 'files',
                 'timecreated',
                 'timecompleted'
             ));
         $this->define_headers(array(
+            get_string('filename', 'repository'),
             get_string('report:status', 'local_smartmedia'),
             get_string('report:type', 'local_smartmedia'),
-            get_string('report:format', 'local_smartmedia'),
-            get_string('report:sourceresolution', 'local_smartmedia'),
-            get_string('report:targetresolutions', 'local_smartmedia'),
-            get_string('report:duration', 'local_smartmedia'),
-            get_string('report:size', 'local_smartmedia'),
             get_string('report:transcodecost', 'local_smartmedia'),
             get_string('report:files', 'local_smartmedia'),
             get_string('report:created', 'local_smartmedia'),
             get_string('report:completed', 'local_smartmedia'),
         ));
-        $this->column_class('duration', 'mdl-right');
-        $this->column_class('filesize', 'mdl-right');
         $this->column_class('cost', 'mdl-right');
+        $this->column_class('files', 'mdl-right');
         // Setup pagination.
         $this->currpage = $page;
         $this->pagesize = $perpage;
@@ -129,6 +116,17 @@ class report_table extends table_sql implements renderable {
         $transcoderclient = $api->create_elastic_transcoder_client();
         $transcoder = new aws_elastic_transcoder($transcoderclient);
         $this->presets = $transcoder->get_all_presets();
+    }
+
+    /**
+     * Display filename with link to file details.
+     *
+     * @param \stdClass $row
+     *
+     * @return string html used to display the filename field.
+     */
+    public function col_filename($row) {
+        return \html_writer::link(new \moodle_url('/local/smartmedia/report_details.php', ['id' => $row->id]), $row->filename);
     }
 
     /**
@@ -144,103 +142,6 @@ class report_table extends table_sql implements renderable {
      */
     public function col_type($row) {
         return $this->format_text($row->type);
-    }
-
-    /**
-     * Get content for format column.
-     * Requires `metadata` field.
-     *
-     * @param \stdClass $row
-     *
-     * @return string html used to display the type field.
-     */
-    public function col_format($row) {
-        return $this->format_text($row->format);
-    }
-
-    /**
-     * Get content for width column.
-     * We use `width` for sorting purposes, requires `width` and `height` fields.
-     *
-     * @param \stdClass $row
-     *
-     * @return string html used to display the column field.
-     */
-    public function col_sourceresolution($row) {
-        return $this->format_text($row->resolution);
-    }
-
-    /**
-     * Get target resolutions for video transcodes.
-     *
-     * @param \stdClass $row
-     *
-     * @return string HTML used to display the column field.
-     */
-    public function col_targetresolutions($row) {
-        global $DB;
-
-        // Get the preset ids being used for the conversion.
-        $select = 'convid = ?';
-        $presetids = $DB->get_fieldset_select('local_smartmedia_presets', 'preset', $select, [$row->convid]);
-
-        $outputs = [];
-        // Get the information from the presets used in the conversion.
-        foreach ($this->presets as $preset) {
-            if (in_array($preset->get_id(), $presetids)) {
-                $presetdata = $preset->get_data();
-                if (array_key_exists('Video', $presetdata)) {
-                    // This is a video conversion.
-                    $codec = $presetdata['Video']['Codec'];
-                    $width = $presetdata['Video']['MaxWidth'];
-                    $height = $presetdata['Video']['MaxHeight'];
-
-                    // Now get the approximate filesize from the duration and bitrate.
-                    $size = $row->duration * (int) $presetdata['Video']['BitRate'];
-                    $formattedsize = display_size($size);
-
-                    $outputs[] = "{$codec}: {$width} X {$height} - {$formattedsize} ";
-                } else {
-                    // This is only audio, just output codec and size.
-                    $size = $row->duration * (int) $presetdata['Audio']['BitRate'];
-                    $formattedsize = display_size($size);
-                    $outputs[] = $presetdata['Audio']['Codec'] . ' - ' . $formattedsize;
-                }
-            }
-        }
-
-        return $this->format_text(implode('<br>', $outputs));
-    }
-
-    /**
-     * Get content for duration column.
-     * Duration in seconds.
-     *
-     * @param \stdClass $row
-     *
-     * @return string html used to display the column field.
-     */
-    public function col_duration($row) {
-        $rawduration = $row->duration;
-
-        $hours = floor($rawduration / 3600);
-        $minutes = str_pad(floor(($rawduration / 60) % 60), 2, '0', STR_PAD_LEFT);
-        $seconds = str_pad($rawduration % 60, 2, '0', STR_PAD_LEFT);
-
-        return $this->format_text("$hours:$minutes:$seconds");
-    }
-
-    /**
-     * Get content for size column.
-     * Size displayed in Megabytes (Mb).
-     *
-     * @param \stdClass $row
-     *
-     * @return string html used to display the column field.
-     */
-    public function col_filesize($row) {
-        $bytes = $row->filesize;
-        return $this->format_text(display_size($bytes));
     }
 
     /**
