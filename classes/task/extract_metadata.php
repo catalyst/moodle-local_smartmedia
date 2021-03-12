@@ -264,7 +264,7 @@ class extract_metadata extends scheduled_task {
                     $failhashses[$filehash->pathnamehash] = $filemetadata['reason']; // Record the failed hashes for logging.
 
                     // Store this hash in a failed table, for future filtering of metadata candidates.
-                    if (!$DB->record_exists('tool_smartmedia_data_fail', ['contenthash' => $filehash->contenthash])) {
+                    if (!$DB->record_exists('local_smartmedia_data_fail', ['contenthash' => $filehash->contenthash])) {
                         $record = [
                             'contenthash' => $filehash->contenthash,
                             'reason' => $filemetadata['reason'],
