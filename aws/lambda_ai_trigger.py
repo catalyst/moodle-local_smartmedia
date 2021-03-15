@@ -67,6 +67,8 @@ def start_rekognition(input_key, job_id):
         Bucket=output_bucket,
         Prefix='{}/conversions/'.format(input_key)
     )
+    videofilename = None
+    audiofilename = None
     for file_object in objects.get('Contents', []):
         # We are looking for the first file that has an .mp4 extension
         filename = file_object.get('Key')
@@ -76,25 +78,27 @@ def start_rekognition(input_key, job_id):
         if ext == '.mp3':
             audiofilename = filename
 
-    s3_client.copy_object(
-        Bucket=output_bucket,
-        Key=rekognition_input,
-        CopySource={
-            'Bucket': output_bucket,
-            'Key': videofilename
-        }
-    )
-    s3_client.copy_object(
-        Bucket=output_bucket,
-        Key=transcribe_input,
-        CopySource={
-            'Bucket': output_bucket,
-            'Key': audiofilename
-        }
-    )
+    if videofilename is not None:
+        s3_client.copy_object(
+            Bucket=output_bucket,
+            Key=rekognition_input,
+            CopySource={
+                'Bucket': output_bucket,
+                'Key': videofilename
+            }
+        )
+    if audiofilename is not None:
+        s3_client.copy_object(
+            Bucket=output_bucket,
+            Key=transcribe_input,
+            CopySource={
+                'Bucket': output_bucket,
+                'Key': audiofilename
+            }
+        )
 
     # Start Rekognition Label extraction.
-    if services['rekog_label']:
+    if services['rekog_label'] and videofilename is not None:
         logger.info('Starting Rekognition label detection')
         label_response = rekognition_client.start_label_detection(
             Video=video_dict,
@@ -107,7 +111,7 @@ def start_rekognition(input_key, job_id):
         logging.error(label_response)
 
     # Start Rekognition content moderation operatations.
-    if services['rekog_moderation']:
+    if services['rekog_moderation'] and videofilename is not None:
         logger.info('Starting Rekognition moderation detection')
         moderation_response = rekognition_client.start_content_moderation(
             Video=video_dict,
@@ -120,7 +124,7 @@ def start_rekognition(input_key, job_id):
         logging.error(moderation_response)
 
     # Start Rekognition face detection.
-    if services['rekog_face']:
+    if services['rekog_face'] and videofilename is not None:
         logger.info('Starting Rekognition face detection')
         face_response = rekognition_client.start_face_detection(
             Video=video_dict,
@@ -133,7 +137,7 @@ def start_rekognition(input_key, job_id):
         logger.error(face_response)
 
     # Start Rekognition Person tracking.
-    if services['rekog_label']:
+    if services['rekog_label'] and videofilename is not None:
         logger.info('Starting Rekognition person tracking')
         person_tracking_response = rekognition_client.start_person_tracking(
             Video=video_dict,
@@ -145,7 +149,7 @@ def start_rekognition(input_key, job_id):
         logger.error(person_tracking_response)
 
     # Start transcription job.
-    if services['transcribe']:
+    if services['transcribe'] and audiofilename is not None:
         logger.info('Starting transcription.')
         media_uri = 'https://s3-{}.amazonaws.com/{}/{}/conversions/{}.mp3'.format(
             os.environ.get('AWS_REGION'),

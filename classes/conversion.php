@@ -37,6 +37,37 @@ use moodle_url;
  */
 class conversion {
 
+    private const AUDIO_MIMETYPES = [
+        'audio/aac',
+        'audio/au',
+        'audio/mp3',
+        'audio/mp4',
+        'audio/ogg',
+        'audio/wav',
+        'audio/x-aiff',
+        'audio/x-mpegurl',
+        'audio/x-ms-wma',
+        'audio/x-pn-realaudio-plugin',
+        'audio/x-matroska',
+    ];
+
+    private const VIDEO_MIMETYPES = [
+        'video/mp4',
+        'video/mpeg',
+        'video/ogg',
+        'video/quicktime',
+        'video/webm',
+        'video/x-dv',
+        'video/x-flv',
+        'video/x-ms-asf',
+        'video/x-ms-wm',
+        'video/x-ms-wmv',
+        'video/x-matroska',
+        'video/x-matroska-3d',
+        'video/MP2T'.
+        'video/x-sgi-movie',
+    ];
+
     /**
      * Smart media conversion finished without error.
      *
@@ -257,9 +288,17 @@ class conversion {
                 'detect_entities_status' => 'detectentities',
         );
 
+        // If this is an audio file, we must force disable all rekognition video API services.
+        $audioonly = in_array($file->get_mimetype(), $this::AUDIO_MIMETYPES);
+
         // Process the settings.
         foreach ($settingsmap as $field => $setting) {
-            $cnvrec->$field = $this->config->$setting == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+            // If we are audio only, we should only write the setting if it is not 'rekog' label.
+            if (!$audioonly || (strpos($field, 'rekog') === false)) {
+                $cnvrec->$field = $this->config->$setting == 1 ? $this::CONVERSION_ACCEPTED : $this::CONVERSION_NOT_FOUND;
+            } else {
+                $cnvrec->$field = $this::CONVERSION_NOT_FOUND;
+            }
         }
 
         $cnvrec->timecreated = $now;
