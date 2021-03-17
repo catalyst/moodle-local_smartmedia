@@ -84,7 +84,9 @@ Resources:
           - s3:GetObject
           - s3:PutObject
           - s3:DeleteObject
-          Resource: arn:aws:s3:::*
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
         - Effect: Allow
           Action:
           - elastictranscoder:CreateJob
@@ -95,7 +97,7 @@ Resources:
         - Effect: Allow
           Action:
           - sqs:SendMessage
-          Resource: '*'
+          Resource: !GetAtt SqsQueue.Arn
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
         - !Ref LambdaTranscodeTriggerRole
@@ -123,7 +125,8 @@ Resources:
           Action:
           - sns:Publish
           Resource:
-          - "*"
+          - !Ref 'SnsTopicConversion'
+          - !Ref 'SnsTopicRekognitionComplete'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'rekognition-complete-sns-policy'] ]
       Roles:
         - !Ref RekognitionCompleteRole
@@ -152,11 +155,18 @@ Resources:
           Resource: arn:aws:logs:*:*:*
         - Effect: Allow
           Action:
+          - s3:ListBucket
+          Resource:
+          - !GetAtt InputS3Bucket.Arn
+          - !GetAtt OutputS3Bucket.Arn
+        - Effect: Allow
+          Action:
           - s3:GetObject
           - s3:PutObject
-          - s3:ListBucket
           - s3:DeleteObject
-          Resource: arn:aws:s3:::*
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
         - Effect: Allow
           Action:
           - rekognition:StartCelebrityRecognition
@@ -185,11 +195,11 @@ Resources:
           Resource: '*'
         -   Effect: Allow
             Action: iam:PassRole
-            Resource: '*'
+            Resource: !GetAtt RekognitionCompleteRole.Arn
         -   Effect: Allow
             Action:
             - sqs:SendMessage
-            Resource: '*'
+            Resource: !GetAtt SqsQueue.Arn
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
       Roles:
         - !Ref LambdaAiRole
@@ -203,18 +213,26 @@ Resources:
           Effect: Allow
           Action:
           - s3:ListBucket
+          Resource:
+          - !GetAtt InputS3Bucket.Arn
+          - !GetAtt OutputS3Bucket.Arn
+        - Sid: '2'
+          Effect: Allow
+          Action:
           - s3:Put*
           - s3:Get*
           - s3:*MultipartUpload*
           Resource:
-          - "*"
-        - Sid: '2'
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
+        - Sid: '3'
           Effect: Allow
           Action:
           - sns:Publish
           Resource:
-          - "*"
-        - Sid: '3'
+          - !Ref 'SnsTopicConversion'
+          - !Ref 'SnsTopicRekognitionComplete'
+        - Sid: '4'
           Effect: Deny
           Action:
           - s3:*Policy*
