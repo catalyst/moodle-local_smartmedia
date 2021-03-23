@@ -96,6 +96,12 @@ class aws_api {
      * @param string $apisecret the Access key secret for AWS Security Credentials.
      */
     public function set_credentials(string $apikey, string $apisecret) {
+        $usesdkcreds = get_config('local_smartmedia', 'usesdkcreds');
+        if ($usesdkcreds) {
+            $this->credentials = null;
+            return;
+        }
+
         try {
             $credentials = new Credentials($apikey, $apisecret);
             $this->credentials = $credentials;
@@ -117,10 +123,13 @@ class aws_api {
 
         // Set up the minimum arguments required for client.
         $args = [
-            'credentials' => $this->credentials,
             'region' => self::PRICING_CLIENT_REGION,
             'version' => $version,
         ];
+
+        if (!empty($this->credentials)) {
+            $args['credentials'] = $this->credentials;
+        }
 
         // If use proxy is configured, add to args.
         if ($this->useproxy) {
@@ -153,10 +162,13 @@ class aws_api {
 
         // Set up the minimum arguments required for client.
         $args = [
-            'credentials' => $this->credentials,
             'region' => $this->region,
             'version' => $version,
         ];
+
+        if (!empty($this->credentials)) {
+            $args['credentials'] = $this->credentials;
+        }
 
         // If use proxy is configured, add to args.
         if ($this->useproxy) {
