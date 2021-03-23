@@ -26,12 +26,14 @@ import json
 import time
 import urllib3
 from botocore.exceptions import ClientError
+from datetime import datetime
 
 logger = logging.getLogger()
 
 # Get clients and resources.
 s3_client = boto3.client('s3')
 s3_resource = boto3.resource('s3')
+sqs_client = boto3.client('sqs')
 transcribe_client = boto3.client('transcribe')
 comprehend_client = boto3.client('comprehend')
 
@@ -59,6 +61,45 @@ def get_enabled_services(s3_client, bucket, input_key):
 
     return services
 
+def sqs_send_message(input_key, message_state, process):
+    # Get environvent variables
+    input_bucket = os.environ.get('InputBucket')  # Ouput S3 bucket
+    sqs_url = os.environ.get('SmartmediaSqsQueue')  # SQS queue URL.
+
+    # Get input object metadata as we will need for SQS message sending.
+    input_object_headdata_object = s3_client.head_object(
+        Bucket=input_bucket,
+        Key=input_key
+        )
+
+    now = datetime.now()  # Current date and time.
+
+    message_object = {
+        'siteid' : input_object_headdata_object['Metadata']['siteid'],
+        'objectkey' : input_key,
+        'process': process,
+        'status': message_state,
+        'message': '{}: {}'.format(input_key, process), # Use the process name and objectkey to deduplicate. If we get here, we have no meaningful info for the message.
+        'timestamp': int(datetime.timestamp(now))
+        }
+    message_json = json.dumps(message_object)
+
+    # Send message to SQS queue, we do this from Lambda not directly from sns,
+    # as we want to add some extra information to the message.
+    sqs_client.send_message(
+        QueueUrl=sqs_url,
+        MessageBody=message_json,
+        MessageAttributes={
+            'siteid': {
+                'StringValue': input_object_headdata_object['Metadata']['siteid'],
+                'DataType': 'String'
+            },
+            'inputkey': {
+                'StringValue': input_key,
+                'DataType': 'String'
+            },
+        }
+    )
 
 def lambda_handler(event, context):
     """
@@ -87,7 +128,8 @@ def lambda_handler(event, context):
     transcription_url = transcription_response['TranscriptionJob']['Transcript']['TranscriptFileUri']
 
     output_vars = input_url.split('/')
-    output_key = '{}/metadata/transcription.json'.format(output_vars[4])
+    input_key = output_vars[4]
+    output_key = '{}/metadata/transcription.json'.format(input_key)
     output_bucket = os.environ.get('OutputBucket')
     input_bucket = os.environ.get('InputBucket')
 
@@ -101,8 +143,11 @@ def lambda_handler(event, context):
     # Do the actual upload to s3
     s3_resource.Bucket(output_bucket).put_object(Key=output_key, Body=response.data.decode('utf-8'))
 
+    # Send SQS message for completed transcription.
+    sqs_send_message(input_key, 'SUCCEEDED', 'TranscribeComplete')  # Send message to SQS queue.
+
     perform_analysis = len(transcription_text) > 0
-    services = get_enabled_services(s3_client, input_bucket, output_vars[4])
+    services = get_enabled_services(s3_client, input_bucket, input_key)
 
     # Send the transcription for sentiment analysis.
     # Detect sentiment
@@ -113,10 +158,12 @@ def lambda_handler(event, context):
                 LanguageCode='en'
             )
 
-            s3_object = s3_resource.Object(output_bucket, '{}/metadata/sentiment.json'.format(output_vars[4]))
+            s3_object = s3_resource.Object(output_bucket, '{}/metadata/sentiment.json'.format(input_key))
             s3_object.put(
                 Body=(bytes(json.dumps(sentiment_response).encode('UTF-8')))
             )
+             # Send SQS message for completed sentiment.
+            sqs_send_message(input_key, 'SUCCEEDED', 'SentimentComplete')  # Send message to SQS queue.
 
         # Detect key phrases
         if services['phrases'] :
@@ -125,10 +172,12 @@ def lambda_handler(event, context):
                 LanguageCode='en'
             )
 
-            s3_object = s3_resource.Object(output_bucket, '{}/metadata/phrases.json'.format(output_vars[4]))
+            s3_object = s3_resource.Object(output_bucket, '{}/metadata/phrases.json'.format(input_key))
             s3_object.put(
                 Body=(bytes(json.dumps(keyphrases_response).encode('UTF-8')))
             )
+            # Send SQS message for completed phrases.
+            sqs_send_message(input_key, 'SUCCEEDED', 'PhrasesComplete')  # Send message to SQS queue.
 
         # Detect entities
         if services['entities']:
@@ -137,7 +186,9 @@ def lambda_handler(event, context):
                 LanguageCode='en'
             )
 
-            s3_object = s3_resource.Object(output_bucket, '{}/metadata/entities.json'.format(output_vars[4]))
+            s3_object = s3_resource.Object(output_bucket, '{}/metadata/entities.json'.format(input_key))
             s3_object.put(
                 Body=(bytes(json.dumps(entities_response).encode('UTF-8')))
             )
+            # Send SQS message for completed phrases.
+            sqs_send_message(input_key, 'SUCCEEDED', 'EntitiesComplete')  # Send message to SQS queue.

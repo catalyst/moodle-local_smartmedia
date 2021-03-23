@@ -354,6 +354,7 @@ Resources:
         Variables:
           OutputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
           InputBucket: !Join [ '-', [!Ref 'AWS::StackName', 'input'] ]
+          SmartmediaSqsQueue: !Ref SqsQueue
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcribe_complete'] ]
       Handler: lambda_transcribe_complete.lambda_handler
       MemorySize: 128
