@@ -134,7 +134,10 @@ class conversion {
         'StartContentModeration' => array('rekog_moderation_status', 'ModerationLabels'),
         'StartFaceDetection' => array('rekog_face_status', 'Faces'),
         'StartPersonTracking' => array('rekog_person_status', 'Persons'),
-
+        'TranscribeComplete' => array('transcribe_status', 'transcription'),
+        'SentimentComplete' => array('detect_sentiment_status', 'sentiment'),
+        'PhrasesComplete' => array('detect_phrases_status', 'phrases'),
+        'EntitiesComplete' => array('detect_entities_status', 'entities'),
     );
 
     /**
@@ -832,6 +835,22 @@ class conversion {
             || $conversionrecord->rekog_person_status == self::CONVERSION_IN_PROGRESS) {
             $services[] = 'StartPersonTracking';
         }
+        if ($conversionrecord->transcribe_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->transcribe_status == self::CONVERSION_IN_PROGRESS) {
+            $services[] = 'TranscribeComplete';
+        }
+        if ($conversionrecord->detect_sentiment_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->detect_sentiment_status == self::CONVERSION_IN_PROGRESS) {
+            $services[] = 'SentimentComplete';
+        }
+        if ($conversionrecord->detect_phrases_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->detect_phrases_status == self::CONVERSION_IN_PROGRESS) {
+            $services[] = 'PhrasesComplete';
+        }
+        if ($conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->detect_entities_status == self::CONVERSION_IN_PROGRESS) {
+            $services[] = 'EntitiesComplete';
+        }
 
         // Get all queue messages for this object.
         list($processinsql, $processinparams) = $DB->get_in_or_equal($services);
@@ -932,7 +951,14 @@ class conversion {
                 $filecontent = $this->replace_playlist_urls_with_pluginfile_urls($filecontent, $conversionrecord->contenthash);
             }
 
-            $trancodedfile = $fs->create_file_from_string($filerecord, $filecontent);
+            try {
+                $trancodedfile = $fs->create_file_from_string($filerecord, $filecontent);
+            } catch (\moodle_exception $e) {
+                // This file may already exist. Perhaps a reprocessed queue message.
+                // Either way, there isn't anything we can do about it.
+                // Move on.
+                continue;
+            }
 
             $transcodedfiles[] = $trancodedfile;
         }
@@ -1066,7 +1092,15 @@ class conversion {
         fwrite($tmpfile, $getobject['Body']);
         $tmppath = stream_get_meta_data($tmpfile)['uri'];
 
-        $fs->create_file_from_pathname($filerecord, $tmppath);
+        try {
+            $fs->create_file_from_pathname($filerecord, $tmppath);
+        } catch (\moodle_exception $e) {
+            // This data file may already exist. Perhaps a reprocessed queue message.
+            // Either way, there isn't anything we can do about it.
+            // Move on.
+            fclose($tmpfile);
+            return;
+        }
         fclose($tmpfile);
     }
 
@@ -1151,7 +1185,15 @@ class conversion {
             && ($updatedrecord->rekog_face_status == self::CONVERSION_FINISHED
                 || $updatedrecord->rekog_face_status == self::CONVERSION_NOT_FOUND)
             && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND)) {
+                || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->transcribe_status == self::CONVERSION_FINISHED
+                || $updatedrecord->transcribe_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->detect_sentiment_status == self::CONVERSION_FINISHED
+                || $updatedrecord->detect_sentiment_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->detect_phrases_status == self::CONVERSION_FINISHED
+                || $updatedrecord->detect_phrases_status == self::CONVERSION_NOT_FOUND)
+            && ($updatedrecord->detect_entities_status == self::CONVERSION_FINISHED
+                || $updatedrecord->detect_entities_status == self::CONVERSION_NOT_FOUND)) {
 
                 $updatedrecord->status = self::CONVERSION_FINISHED;
                 $updatedrecord->timemodified = time();

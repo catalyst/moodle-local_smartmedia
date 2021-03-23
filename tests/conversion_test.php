@@ -902,6 +902,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -974,6 +977,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1020,6 +1027,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1073,6 +1084,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1126,6 +1141,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1196,6 +1215,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_ACCEPTED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_ACCEPTED;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1241,6 +1264,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_FINISHED;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1264,6 +1291,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1287,6 +1318,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1310,6 +1345,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
@@ -1560,6 +1599,10 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversionrecord->rekog_moderation_status = $conversion::CONVERSION_FINISHED;
         $conversionrecord->rekog_face_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->rekog_person_status = $conversion::CONVERSION_FINISHED;
+        $conversionrecord->transcribe_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_sentiment_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_entities_status = $conversion::CONVERSION_NOT_FOUND;
+        $conversionrecord->detect_phrases_status = $conversion::CONVERSION_NOT_FOUND;
         $conversionrecord->timecreated = time();
         $conversionrecord->timemodified = time();
 
