@@ -87,6 +87,10 @@ class provision {
      */
     private $useproxy;
 
+    /**
+     * @var bool Whether to use the AWS default credential provider chain.
+     */
+    private $usesdkcreds;
 
     /**
      * The constructor for the class
@@ -96,14 +100,12 @@ class provision {
      * @param string $region The AWS region to create the environment in.
      */
     public function __construct($keyid, $secret, $region) {
-        global $CFG;
-
         $this->keyid = $keyid;
         $this->secret = $secret;
         $this->region = $region;
 
         $this->useproxy = get_config('local_smartmedia', 'useproxy');
-
+        $this->usesdkcreds = get_config('local_smartmedia', 'usesdkcreds');
     }
 
     /**
@@ -138,12 +140,16 @@ class provision {
      */
     public function create_s3_client($handler=null) {
         $connectionoptions = array(
-                'version' => 'latest',
-                'region' => $this->region,
-                'credentials' => [
-                        'key' => $this->keyid,
-                        'secret' => $this->secret
-                ]);
+            'version' => 'latest',
+            'region' => $this->region,
+        );
+
+        if (!$this->usesdkcreds) {
+            $connectionoptions['credentials'] = [
+                'key' => $this->config->api_key,
+                'secret' => $this->config->api_secret
+            ];
+        }
 
         // If use proxy is configured, add to args.
         if ($this->useproxy) {
@@ -305,10 +311,14 @@ class provision {
         $connectionoptions = array(
             'version' => 'latest',
             'region' => $this->region,
-            'credentials' => [
-                'key' => $this->keyid,
-                'secret' => $this->secret
-            ]);
+        );
+
+        if (!$this->usesdkcreds) {
+            $connectionoptions['credentials'] = [
+                'key' => $this->config->api_key,
+                'secret' => $this->config->api_secret
+            ];
+        }
 
         // If use proxy is configured, add to args.
         if ($this->useproxy) {
@@ -444,10 +454,14 @@ class provision {
         $connectionoptions = array(
             'version' => 'latest',
             'region' => $this->region,
-            'credentials' => [
-                'key' => $this->keyid,
-                'secret' => $this->secret
-            ]);
+        );
+
+        if (!$this->usesdkcreds) {
+            $connectionoptions['credentials'] = [
+                'key' => $this->config->api_key,
+                'secret' => $this->config->api_secret
+            ];
+        }
 
         // If use proxy is configured, add to args.
         if ($this->useproxy) {

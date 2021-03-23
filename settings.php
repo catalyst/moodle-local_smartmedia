@@ -34,6 +34,10 @@ if ($hassiteconfig) {
         get_string('settings:aws:header', 'local_smartmedia'),
         get_string('settings:aws:header_desc', 'local_smartmedia')));
 
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/usesdkcreds',
+        get_string('settings:aws:usesdkcreds', 'local_smartmedia'),
+        get_string('settings:aws:usesdkcreds_desc', 'local_smartmedia'), false));
+
     $settings->add(new admin_setting_configtext('local_smartmedia/api_key',
         get_string('settings:aws:key', 'local_smartmedia'),
         get_string('settings:aws:key_help', 'local_smartmedia'),

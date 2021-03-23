@@ -75,11 +75,16 @@ class queue_process {
     public function create_client($handler=null) {
         $connectionoptions = array(
             'version' => 'latest',
-            'region' => $this->config->api_region,
-            'credentials' => [
+            'region' => $this->config->api_region
+        );
+
+        $usesdkcreds = get_config('local_smartmedia', 'usesdkcreds');
+        if (!$usesdkcreds) {
+            $connectionoptions['credentials'] = [
                 'key' => $this->config->api_key,
                 'secret' => $this->config->api_secret
-            ]);
+            ];
+        }
 
         // If use proxy is configured, add to args.
         if ($this->config->useproxy) {
