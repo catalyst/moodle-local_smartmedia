@@ -361,7 +361,7 @@ Resources:
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaTranscodeTriggerRole.Arn
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 600
   LambdaAiFunction:
     Type: AWS::Lambda::Function
@@ -381,7 +381,7 @@ Resources:
       Handler: lambda_ai_trigger.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaAiRole.Arn
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 600
   LambdaRekognitionCompleteFunction:
     Type: AWS::Lambda::Function
@@ -398,7 +398,7 @@ Resources:
       Handler: lambda_rekognition_complete.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaAiRole.Arn
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 600
   LambdaTranscribeCompleteFunction:
     Type: AWS::Lambda::Function
@@ -416,7 +416,7 @@ Resources:
       Handler: lambda_transcribe_complete.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaAiRole.Arn
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 600
 # SQS Queues.
 # These provide messaging notifications to various sevices.
