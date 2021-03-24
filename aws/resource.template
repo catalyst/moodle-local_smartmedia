@@ -86,7 +86,7 @@ Resources:
       Handler: lambda_resource_transcoder.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaTranscodeResourceRole.Arn
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 600
 
 Outputs:

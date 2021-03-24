@@ -84,7 +84,9 @@ Resources:
           - s3:GetObject
           - s3:PutObject
           - s3:DeleteObject
-          Resource: arn:aws:s3:::*
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
         - Effect: Allow
           Action:
           - elastictranscoder:CreateJob
@@ -95,7 +97,7 @@ Resources:
         - Effect: Allow
           Action:
           - sqs:SendMessage
-          Resource: '*'
+          Resource: !GetAtt SqsQueue.Arn
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
         - !Ref LambdaTranscodeTriggerRole
@@ -123,7 +125,8 @@ Resources:
           Action:
           - sns:Publish
           Resource:
-          - "*"
+          - !Ref 'SnsTopicConversion'
+          - !Ref 'SnsTopicRekognitionComplete'
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'rekognition-complete-sns-policy'] ]
       Roles:
         - !Ref RekognitionCompleteRole
@@ -152,11 +155,18 @@ Resources:
           Resource: arn:aws:logs:*:*:*
         - Effect: Allow
           Action:
+          - s3:ListBucket
+          Resource:
+          - !GetAtt InputS3Bucket.Arn
+          - !GetAtt OutputS3Bucket.Arn
+        - Effect: Allow
+          Action:
           - s3:GetObject
           - s3:PutObject
-          - s3:ListBucket
           - s3:DeleteObject
-          Resource: arn:aws:s3:::*
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
         - Effect: Allow
           Action:
           - rekognition:StartCelebrityRecognition
@@ -185,11 +195,11 @@ Resources:
           Resource: '*'
         -   Effect: Allow
             Action: iam:PassRole
-            Resource: '*'
+            Resource: !GetAtt RekognitionCompleteRole.Arn
         -   Effect: Allow
             Action:
             - sqs:SendMessage
-            Resource: '*'
+            Resource: !GetAtt SqsQueue.Arn
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
       Roles:
         - !Ref LambdaAiRole
@@ -203,18 +213,26 @@ Resources:
           Effect: Allow
           Action:
           - s3:ListBucket
+          Resource:
+          - !GetAtt InputS3Bucket.Arn
+          - !GetAtt OutputS3Bucket.Arn
+        - Sid: '2'
+          Effect: Allow
+          Action:
           - s3:Put*
           - s3:Get*
           - s3:*MultipartUpload*
           Resource:
-          - "*"
-        - Sid: '2'
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
+        - Sid: '3'
           Effect: Allow
           Action:
           - sns:Publish
           Resource:
-          - "*"
-        - Sid: '3'
+          - !Ref 'SnsTopicConversion'
+          - !Ref 'SnsTopicRekognitionComplete'
+        - Sid: '4'
           Effect: Deny
           Action:
           - s3:*Policy*
@@ -256,6 +274,45 @@ Resources:
               aws:SourceArn: !GetAtt LambdaAiFunction.Arn
       Queues:
         - !Ref SqsQueue
+  SmartMediaMoodlePolicy:
+    # Policy used by the Moodle IAM user and/or role
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:ListBucket
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '*'] ]
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
+        - Effect: Allow
+          Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          Resource: !GetAtt SqsQueue.Arn
+        - Effect: Allow
+          Action:
+          - pricing:*
+          Resource:
+          - '*'
+        - Effect: Allow
+          Action:
+          - elastictranscoder:ReadPreset
+          Resource:
+          - '*'
+      ManagedPolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'moodle-policy'] ]
+      Users:
+        - !Ref SmartMediaS3User
 # Lambda permissions.
 # Theses are specific permissions used to allow services and resources
 # To invoke Lambda functions.
@@ -304,7 +361,7 @@ Resources:
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaTranscodeTriggerRole.Arn
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 600
   LambdaAiFunction:
     Type: AWS::Lambda::Function
@@ -324,7 +381,7 @@ Resources:
       Handler: lambda_ai_trigger.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaAiRole.Arn
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 600
   LambdaRekognitionCompleteFunction:
     Type: AWS::Lambda::Function
@@ -341,7 +398,7 @@ Resources:
       Handler: lambda_rekognition_complete.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaAiRole.Arn
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 600
   LambdaTranscribeCompleteFunction:
     Type: AWS::Lambda::Function
@@ -359,7 +416,7 @@ Resources:
       Handler: lambda_transcribe_complete.lambda_handler
       MemorySize: 128
       Role: !GetAtt LambdaAiRole.Arn
-      Runtime: python3.6
+      Runtime: python3.8
       Timeout: 600
 # SQS Queues.
 # These provide messaging notifications to various sevices.
@@ -452,40 +509,6 @@ Resources:
     Type: AWS::IAM::User
     Properties:
       UserName: !Join [ '', [!Ref 'AWS::StackName', 'SmartMediaS3User'] ]
-      Policies:
-       - PolicyName: !Join [ '', [!Ref 'AWS::StackName', 'SmartMediaS3UserPolicy'] ]
-         PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-            - Effect: Allow
-              Action:
-              - s3:ListBucket
-              Resource:
-              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '*'] ]
-              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '*'] ]
-            - Effect: Allow
-              Action:
-              - s3:GetObject
-              - s3:PutObject
-              - s3:DeleteObject
-              Resource:
-              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
-              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
-            - Effect: Allow
-              Action:
-              - sqs:ReceiveMessage
-              - sqs:DeleteMessage
-              Resource: !GetAtt SqsQueue.Arn
-            - Effect: Allow
-              Action:
-              - pricing:*
-              Resource:
-              - '*'
-            - Effect: Allow
-              Action:
-              - elastictranscoder:ReadPreset
-              Resource:
-              - '*'
   SmartMediaS3UserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties:
