@@ -274,6 +274,45 @@ Resources:
               aws:SourceArn: !GetAtt LambdaAiFunction.Arn
       Queues:
         - !Ref SqsQueue
+  SmartMediaMoodlePolicy:
+    # Policy used by the Moodle IAM user and/or role
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:ListBucket
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '*'] ]
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
+        - Effect: Allow
+          Action:
+          - sqs:ReceiveMessage
+          - sqs:DeleteMessage
+          Resource: !GetAtt SqsQueue.Arn
+        - Effect: Allow
+          Action:
+          - pricing:*
+          Resource:
+          - '*'
+        - Effect: Allow
+          Action:
+          - elastictranscoder:ReadPreset
+          Resource:
+          - '*'
+      ManagedPolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'moodle-policy'] ]
+      Users:
+        - !Ref SmartMediaS3User
 # Lambda permissions.
 # Theses are specific permissions used to allow services and resources
 # To invoke Lambda functions.
@@ -470,40 +509,6 @@ Resources:
     Type: AWS::IAM::User
     Properties:
       UserName: !Join [ '', [!Ref 'AWS::StackName', 'SmartMediaS3User'] ]
-      Policies:
-       - PolicyName: !Join [ '', [!Ref 'AWS::StackName', 'SmartMediaS3UserPolicy'] ]
-         PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-            - Effect: Allow
-              Action:
-              - s3:ListBucket
-              Resource:
-              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '*'] ]
-              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '*'] ]
-            - Effect: Allow
-              Action:
-              - s3:GetObject
-              - s3:PutObject
-              - s3:DeleteObject
-              Resource:
-              - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
-              - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
-            - Effect: Allow
-              Action:
-              - sqs:ReceiveMessage
-              - sqs:DeleteMessage
-              Resource: !GetAtt SqsQueue.Arn
-            - Effect: Allow
-              Action:
-              - pricing:*
-              Resource:
-              - '*'
-            - Effect: Allow
-              Action:
-              - elastictranscoder:ReadPreset
-              Resource:
-              - '*'
   SmartMediaS3UserAccessKey:
     Type: AWS::IAM::AccessKey
     Properties:
