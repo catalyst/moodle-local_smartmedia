@@ -1510,6 +1510,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $file1 = $fs->create_file_from_string($filerecord1, 'I am the first video.');
         $file2 = $fs->create_file_from_string($filerecord2, 'I am the second video.');
 
+        // Cheat and delete the folder records that are too recent.
+        $DB->delete_records('files', ['filename' => '.', 'component' => 'mod_label']);
+
         // Create file metadata records.
         $metadatarecord1 = new \stdClass();
         $metadatarecord1->contenthash = $file1->get_contenthash();

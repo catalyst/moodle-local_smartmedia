@@ -413,9 +413,46 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         global $DB, $CFG;
         set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
 
+        $fs = get_file_storage();
+        set_config('convertfrom', 604800, 'local_smartmedia');
+        $hdfilerec = array(
+            'contextid' => 1461,
+            'component' => 'mod_label',
+            'filearea' => 'intro',
+            'itemid' => 0,
+            'filepath' => '/',
+            'filename' => 'video1.mp4',
+            'timecreated' => 1575095000);
+
+        $sdfilerec = array(
+            'contextid' => 1461,
+            'component' => 'mod_label',
+            'filearea' => 'intro',
+            'itemid' => 1,
+            'filepath' => '/',
+            'filename' => 'video2.mp4',
+            'timecreated' => 1575095000);
+
+        $audiofilerec = array(
+            'contextid' => 1461,
+            'component' => 'mod_label',
+            'filearea' => 'intro',
+            'itemid' => 2,
+            'filepath' => '/',
+            'filename' => 'video3.mp4',
+            'timecreated' => 1575095000);
+
+        // For this test it doesn't actually matter these are not real multimedia files.
+        $hdfile = $fs->create_file_from_string($hdfilerec, 'I am the first video.');
+        $sdfile = $fs->create_file_from_string($sdfilerec, 'I am the second video.');
+        $audiofile = $fs->create_file_from_string($audiofilerec, 'I am the third video.');
+
+        // Cheat and delete the folder records that are too recent.
+        $DB->delete_records('files', ['filename' => '.', 'component' => 'mod_label']);
+
         // Create a high definition metadata record.
         $metadatarecord = new \stdClass();
-        $metadatarecord->contenthash = '353e7803284d4735030e079a8047bc4e6e3fdf47';
+        $metadatarecord->contenthash = $hdfile->get_contenthash();
         $metadatarecord->duration = 600;
         $metadatarecord->bitrate = 150000;
         $metadatarecord->size = 1000000;
@@ -430,7 +467,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         // Create a standard definition file metadata record.
         $metadatarecord = new \stdClass();
-        $metadatarecord->contenthash = '3f51b74477d9c6c23fd363fec4de4be021785663';
+        $metadatarecord->contenthash = $sdfile->get_contenthash();
         $metadatarecord->duration = 600;
         $metadatarecord->bitrate = 780000;
         $metadatarecord->size = 750000;
@@ -445,7 +482,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         // Create an audio metadata record.
         $metadatarecord = new \stdClass();
-        $metadatarecord->contenthash = '01ebfc70983b8a0ee2b4fa090d1f17ef90eca708';
+        $metadatarecord->contenthash = $audiofile->get_contenthash();
         $metadatarecord->duration = 600;
         $metadatarecord->bitrate = 128001;
         $metadatarecord->size = 725240;
@@ -536,8 +573,8 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         // Add a conversion record.
         $conversionrecord = new \stdClass();
-        $conversionrecord->contenthash = '353e7803284d4735030e079a8047bc4e6e3fdf47';
-        $conversionrecord->pathnamehash = '353e7803284d4735030e079a8047bc4e6e3fdf47';
+        $conversionrecord->contenthash = $hdfile->get_contenthash();
+        $conversionrecord->pathnamehash = $hdfile->get_pathnamehash();
         $conversionrecord->status = 200;
         $conversionrecord->transcoder_status = 200;
         $conversionrecord->rekog_label_status = 200;

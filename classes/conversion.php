@@ -360,7 +360,7 @@ class conversion {
      * @param \moodle_url $href Plugin file url to extract from.
      * @return \stored_file || bool $file The Moodle file object or false if file not found.
      */
-    private function get_file_from_url(\moodle_url $href) {
+    public function get_file_from_url(\moodle_url $href) {
         // Extract the elements we need from the Moodle URL.
         $argumentsstring = $href->get_path(true);
         $rawarguments = explode('/', $argumentsstring);
@@ -1245,12 +1245,23 @@ class conversion {
         $convertfrom = time() - (int)get_config('local_smartmedia', 'convertfrom');
 
         $limit = self::MAX_FILES;
+        // We need to do a nasty hack for conversion time, by examining not on the file itself, but its directory time.
+        // This catches cases of duplicated files in which the time fields remain the same as the old file.
         $sql = "SELECT DISTINCT (lsd.pathnamehash)
                   FROM {local_smartmedia_data} lsd
              LEFT JOIN {local_smartmedia_conv} lsc ON lsd.contenthash = lsc.contenthash
              LEFT JOIN {files} f ON lsd.contenthash = f.contenthash
-                 WHERE lsc.contenthash IS NULL AND f.timecreated > ?";
-        $pathnamehashes = $DB->get_records_sql($sql, array($convertfrom), 0, $limit);
+                 WHERE lsc.contenthash IS NULL
+                   AND (f.timecreated > ? OR
+                       (SELECT f2.timecreated
+                          FROM {files} f2
+                         WHERE f2.contextid = f.contextid
+                           AND f2.filepath = f.filepath
+                           AND f2.component = f.component
+                           AND f2.filearea = f.filearea
+                           AND f2.itemid = f.itemid
+                           AND f2.filename = '.') > ?)";
+        $pathnamehashes = $DB->get_records_sql($sql, [$convertfrom, $convertfrom], 0, $limit);
 
         return $pathnamehashes;
 
