@@ -1245,23 +1245,13 @@ class conversion {
         $convertfrom = time() - (int)get_config('local_smartmedia', 'convertfrom');
 
         $limit = self::MAX_FILES;
-        // We need to do a nasty hack for conversion time, by examining not on the file itself, but its directory time.
-        // This catches cases of duplicated files in which the time fields remain the same as the old file.
         $sql = "SELECT DISTINCT (lsd.pathnamehash)
                   FROM {local_smartmedia_data} lsd
              LEFT JOIN {local_smartmedia_conv} lsc ON lsd.contenthash = lsc.contenthash
              LEFT JOIN {files} f ON lsd.contenthash = f.contenthash
                  WHERE lsc.contenthash IS NULL
-                   AND (f.timecreated > ? OR
-                       (SELECT f2.timecreated
-                          FROM {files} f2
-                         WHERE f2.contextid = f.contextid
-                           AND f2.filepath = f.filepath
-                           AND f2.component = f.component
-                           AND f2.filearea = f.filearea
-                           AND f2.itemid = f.itemid
-                           AND f2.filename = '.') > ?)";
-        $pathnamehashes = $DB->get_records_sql($sql, [$convertfrom, $convertfrom], 0, $limit);
+                   AND f.timecreated > ?";
+        $pathnamehashes = $DB->get_records_sql($sql, [$convertfrom], 0, $limit);
 
         return $pathnamehashes;
 
