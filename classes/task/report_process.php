@@ -522,16 +522,6 @@ class report_process extends scheduled_task {
         if (!$pricingcalculator->has_presets()) {
             $total = null;
         } else {
-            $timesqlchunk = " AND (f.timecreated > ?
-                               OR (SELECT f2.timecreated
-                                     FROM {files} f2
-                                    WHERE f2.contextid = f.contextid
-                                      AND f2.filepath = f.filepath
-                                      AND f2.component = f.component
-                                      AND f2.filearea = f.filearea
-                                      AND f2.itemid = f.itemid
-                                      AND f2.filename = '.') > ?)";
-
             // Get the duration of media type content (in seconds), zero if there is no media of type.
             $highdefinitionsql = 'SELECT COALESCE(SUM(d.duration), 0) as duration
                                     FROM {local_smartmedia_data} d
@@ -539,8 +529,9 @@ class report_process extends scheduled_task {
                                LEFT JOIN {files} f ON d.contenthash = f.contenthash
                                    WHERE d.height >= ?
                                      AND d.videostreams > 0
-                                     AND c.contenthash IS NULL' . $timesqlchunk;
-            $highdefinition = $DB->get_record_sql($highdefinitionsql, [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT, $convertfrom, $convertfrom]);
+                                     AND c.contenthash IS NULL
+                                     AND f.timecreated > ?';
+            $highdefinition = $DB->get_record_sql($highdefinitionsql, [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT, $convertfrom]);
 
             $standarddefinitionsql = 'SELECT COALESCE(SUM(d.duration), 0) as duration
                                         FROM {local_smartmedia_data} d
@@ -549,7 +540,8 @@ class report_process extends scheduled_task {
                                        WHERE (d.height < ?)
                                              AND (height > 0)
                                              AND d.videostreams > 0
-                                             AND c.contenthash IS NULL' . $timesqlchunk;
+                                             AND c.contenthash IS NULL
+                                             AND f.timecreated > ?';
             $standarddefinition = $DB->get_record_sql($standarddefinitionsql, [LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT, $convertfrom, $convertfrom]);
 
             $audiosql = 'SELECT COALESCE(SUM(d.duration), 0) as duration
@@ -558,7 +550,8 @@ class report_process extends scheduled_task {
                       LEFT JOIN {files} f ON d.contenthash = f.contenthash
                           WHERE ((d.height = 0) OR (d.height IS NULL))
                                 AND d.audiostreams > 0
-                                AND c.contenthash IS NULL' . $timesqlchunk;
+                                AND c.contenthash IS NULL
+                                AND f.timecreated > ?';
             $audio = $DB->get_record_sql($audiosql, [$convertfrom, $convertfrom]);
 
             $totalhdcost = $pricingcalculator->calculate_transcode_cost(LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT,
