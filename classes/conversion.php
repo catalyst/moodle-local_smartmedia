@@ -1250,7 +1250,7 @@ class conversion {
              LEFT JOIN {local_smartmedia_conv} lsc ON lsd.contenthash = lsc.contenthash
              LEFT JOIN (SELECT * FROM {files} ORDER BY timecreated DESC) f ON lsd.contenthash = f.contenthash
                  WHERE lsc.contenthash IS NULL
-                   AND f.timecreated > ?;
+                   AND f.timecreated > ?";
         $pathnamehashes = $DB->get_records_sql($sql, [$convertfrom], 0, $limit);
 
         return $pathnamehashes;
