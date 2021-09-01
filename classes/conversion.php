@@ -393,6 +393,18 @@ class conversion {
         $fs = get_file_storage();
         $file = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
 
+        // If there is a resolution failure, try getting all area files and matching on filename.
+        // There are edge cases where the provided itemid may not direct match to the DB itemid.
+        if (!$file) {
+            $files = $fs->get_area_files($contextid, $component, $filearea);
+            foreach ($files as $file) {
+                if ($file->get_filename() === $filename) {
+                    return $file;
+                }
+            }
+            return false;
+        }
+
         return $file;
     }
 
