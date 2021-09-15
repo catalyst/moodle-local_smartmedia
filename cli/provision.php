@@ -36,6 +36,7 @@ list($options, $unrecognized) = cli_get_params(
         'help'              => false,
         'region'            => false,
         'set-config'        => false,
+        'identifier'        => false,
     ),
     array(
         'h' => 'help'
@@ -58,6 +59,7 @@ Options:
                           e.g. ap-southeast-2
 --set-config              Will update the plugin configuration with the resources
                           created by this script.
+--identifier              The stack resource identifier prefix
 
 -h, --help                Print out this help
 
@@ -66,7 +68,8 @@ Example:
 --keyid=QKIAIVYPO6FXJESSW4HQ \
 --secret=CzI0r0FvPf/TqPwCoiPOdhztEkvkyULbWike1WqA \
 --region=ap-southeast-2 \
---set-config
+--set-config \
+--identifier=prod
 ";
 
     echo $help;
@@ -80,11 +83,13 @@ $provisioner = new \local_smartmedia\provision(
     );
 $now = time();
 
+$identifier = $options['identifier'] ? $options['identifier'] : $now;
+
 // Resource stack name.
-$stackname = 'smr'. $now;
+$stackname = 'smr-'. $identifier;
 
 // Transcoder stack name.
-$transcoderstackname = 'smt'. $now;
+$transcoderstackname = 'smt-'. $identifier;
 
 // Create S3 resource bucket.
 cli_heading(get_string('provision:creatings3', 'local_smartmedia'));
