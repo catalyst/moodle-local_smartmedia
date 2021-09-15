@@ -1188,24 +1188,28 @@ class conversion {
     private function update_completion_status(\stdClass $updatedrecord, $handler=null) : \stdClass {
         global $DB;
 
+        $completion = ($updatedrecord->transcoder_status == self::CONVERSION_FINISHED)
+        && ($updatedrecord->rekog_label_status == self::CONVERSION_FINISHED
+            || $updatedrecord->rekog_label_status == self::CONVERSION_NOT_FOUND)
+        && ($updatedrecord->rekog_moderation_status == self::CONVERSION_FINISHED
+            || $updatedrecord->rekog_moderation_status == self::CONVERSION_NOT_FOUND)
+        && ($updatedrecord->rekog_face_status == self::CONVERSION_FINISHED
+            || $updatedrecord->rekog_face_status == self::CONVERSION_NOT_FOUND)
+        && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED
+            || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND)
+        && ($updatedrecord->transcribe_status == self::CONVERSION_FINISHED
+            || $updatedrecord->transcribe_status == self::CONVERSION_NOT_FOUND)
+        && ($updatedrecord->detect_sentiment_status == self::CONVERSION_FINISHED
+            || $updatedrecord->detect_sentiment_status == self::CONVERSION_NOT_FOUND)
+        && ($updatedrecord->detect_phrases_status == self::CONVERSION_FINISHED
+            || $updatedrecord->detect_phrases_status == self::CONVERSION_NOT_FOUND)
+        && ($updatedrecord->detect_entities_status == self::CONVERSION_FINISHED
+            || $updatedrecord->detect_entities_status == self::CONVERSION_NOT_FOUND);
+
+        $timeout = $updatedrecord->timemodified < (time() - DAYSECS);
+
         // Only set the final completion status if all other processes are finished.
-        if (($updatedrecord->transcoder_status == self::CONVERSION_FINISHED)
-            && ($updatedrecord->rekog_label_status == self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_label_status == self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_moderation_status == self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_moderation_status == self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_face_status == self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_face_status == self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED
-                || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->transcribe_status == self::CONVERSION_FINISHED
-                || $updatedrecord->transcribe_status == self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->detect_sentiment_status == self::CONVERSION_FINISHED
-                || $updatedrecord->detect_sentiment_status == self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->detect_phrases_status == self::CONVERSION_FINISHED
-                || $updatedrecord->detect_phrases_status == self::CONVERSION_NOT_FOUND)
-            && ($updatedrecord->detect_entities_status == self::CONVERSION_FINISHED
-                || $updatedrecord->detect_entities_status == self::CONVERSION_NOT_FOUND)) {
+        if ($completion || $timeout) {
 
                 $updatedrecord->status = self::CONVERSION_FINISHED;
                 $updatedrecord->timemodified = time();
