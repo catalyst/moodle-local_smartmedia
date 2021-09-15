@@ -67,14 +67,14 @@ foreach ($presets as $preset) {
             $width = $presetdata['Video']['MaxWidth'];
             $height = $presetdata['Video']['MaxHeight'];
 
-            // Now get the approximate filesize from the duration and bitrate.
-            $size = $record->duration * (int) $presetdata['Video']['BitRate'];
+            // Now get the approximate filesize from the duration x (bitrate (kbps) / 8 = kBps x 1000 = Bps).
+            $size = $record->duration * (((int) $presetdata['Video']['BitRate'] / 8) * 1000);
             $formattedsize = display_size($size);
 
             $outputs[] = "{$codec}: {$width} X {$height} - {$formattedsize} ";
         } else {
             // This is only audio, just output codec and size.
-            $size = $record->duration * (int) $presetdata['Audio']['BitRate'];
+            $size = $record->duration * (((int) $presetdata['Audio']['BitRate']  / 8) * 1000);
             $formattedsize = display_size($size);
             $outputs[] = $presetdata['Audio']['Codec'] . ' - ' . $formattedsize;
         }
