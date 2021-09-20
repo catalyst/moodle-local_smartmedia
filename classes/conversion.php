@@ -575,6 +575,8 @@ class conversion {
             // If URL doesn't correspond to a real file in Moodle return early.
             return $smartmedia;
         }
+        // Keep a hold of the context so we know where we are targeting the file.
+        $smartmedia['context'] = \context::instance_by_id($file->get_contextid());
 
         // Query conversion table for status.
         $conversionstatuses = $this->get_conversion_statuses($file);
