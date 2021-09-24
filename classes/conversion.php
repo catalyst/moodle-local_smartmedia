@@ -1208,7 +1208,11 @@ class conversion {
         && ($updatedrecord->detect_entities_status == self::CONVERSION_FINISHED
             || $updatedrecord->detect_entities_status == self::CONVERSION_NOT_FOUND);
 
-        $timeout = $updatedrecord->timemodified < (time() - DAYSECS);
+        if (!empty($updatedrecord->timemodified)) {
+            $timeout = $updatedrecord->timemodified < (time() - DAYSECS);
+        } else {
+            $timeout = false;
+        }
 
         // Only set the final completion status if all other processes are finished.
         if ($completion || $timeout) {

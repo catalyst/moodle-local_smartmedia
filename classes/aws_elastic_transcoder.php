@@ -113,6 +113,14 @@ class aws_elastic_transcoder {
         '1351620000001-100070' // System preset: Facebook, SmugMug, Vimeo, YouTube.
     );
 
+    public const HLS_AUDIO = array(
+        '1351620000001-200060'  // System preset: HLS v3 and v4 Audio, 160 k
+    );
+
+    public const MPD_AUDIO = array(
+        '1351620000001-500060' // System preset: MPEG-DASH Audio 128 k
+    );
+
     /**
      * aws_ets_pricing_client constructor.
      *
@@ -156,19 +164,38 @@ class aws_elastic_transcoder {
 
         // Collate enabled presets.
         if (!empty($pluginconfig->quality_low)) {
-            $presetids = array_merge(self::LOW_PRESETS, $presetids);
+            $presetids = array_merge(
+                self::LOW_PRESETS,
+                self::HLS_AUDIO,
+                self::MPD_AUDIO,
+                $presetids
+            );
         }
 
         if (!empty($pluginconfig->quality_medium)) {
-            $presetids = array_merge(self::MEDIUM_PRESETS, $presetids);
+            $presetids = array_merge(
+                self::MEDIUM_PRESETS,
+                self::HLS_AUDIO,
+                self::MPD_AUDIO,
+                $presetids
+            );
         }
 
         if (!empty($pluginconfig->quality_high)) {
-            $presetids = array_merge(self::HIGH_PRESETS, $presetids);
+            $presetids = array_merge(
+                self::HIGH_PRESETS,
+                self::HLS_AUDIO,
+                self::MPD_AUDIO,
+                $presetids
+            );
         }
 
         if (!empty($pluginconfig->quality_extrahigh)) {
-            $presetids = array_merge(self::EXTRA_HIGH_PRESETS, $presetids);
+            $presetids = array_merge(
+                self::EXTRA_HIGH_PRESETS,
+                self::MPD_AUDIO,
+                $presetids
+            );
         }
 
         if (!empty($pluginconfig->audio_output)) {
@@ -194,9 +221,7 @@ class aws_elastic_transcoder {
         if (empty($pluginconfig->audio_output) && $pluginconfig->transcribe) {
             $presetids = array_merge(self::AUDIO_PRESETS, $presetids);
         }
-
-        return $presetids;
-
+        return array_unique($presetids);
     }
 
     /**

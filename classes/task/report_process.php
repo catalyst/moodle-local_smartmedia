@@ -290,7 +290,7 @@ class report_process extends scheduled_task {
         // This transforms the status code (200, 404) to a boolean status for this process.
         // 200 is true, the process completed, the rest is false.
         $record = array_map(function($el) {
-            return $el === \local_smartmedia\conversion::CONVERSION_FINISHED;
+            return (int) $el === \local_smartmedia\conversion::CONVERSION_FINISHED;
         }, (array) $record);
 
         return (object) $record;
@@ -563,9 +563,12 @@ class report_process extends scheduled_task {
 
             // Now add on the rekognition analysis on the transcoded video size only. Audio is not passed to rekog.
             $totalsdcost += $pricingcalculator->calculate_rekog_cost($standarddefinition->duration);
+            $totalhdcost += $pricingcalculator->calculate_rekog_cost($highdefinition->duration);
 
             // Now check Audio against the transcribe pricing.
             $totalaudiocost += $pricingcalculator->calculate_transcribe_cost($audio->duration);
+            $totalsdcost += $pricingcalculator->calculate_transcribe_cost($standarddefinition->duration);
+            $totalhdcost += $pricingcalculator->calculate_transcribe_cost($highdefinition->duration);
 
             $total = $totalhdcost + $totalsdcost + $totalaudiocost;
         }
