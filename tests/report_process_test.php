@@ -350,7 +350,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $this->assertEquals('1920 X 1080', $record->resolution);
         $this->assertEquals('599.000', $record->duration);
         $this->assertEquals('3900000', $record->filesize);
-        $this->assertEquals('1.752', $record->cost);
+        $this->assertEquals('2.092', $record->cost);
         $this->assertEquals('Finished', $record->status);
         $this->assertEquals(3, $record->files);
 
@@ -611,6 +611,6 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
             $mocktranscoder
         ); // Get result of invoked method.
 
-        $this->assertEquals(2.7244, $result);
+        $this->assertEquals(3.4744, $result);
     }
 }

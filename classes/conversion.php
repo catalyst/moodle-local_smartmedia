@@ -220,7 +220,11 @@ class conversion {
 
         // If file is video only remove audio streams.
         if ($streams && $streams->audiostreams == 0) {
-            $audiostreams = aws_elastic_transcoder::AUDIO_PRESETS;
+            $audiostreams = array_merge(
+                aws_elastic_transcoder::AUDIO_PRESETS,
+                aws_elastic_transcoder::MPD_AUDIO,
+                aws_elastic_transcoder::HLS_AUDIO
+            );
             $presetids = array_diff($presetids, $audiostreams);
         }
 

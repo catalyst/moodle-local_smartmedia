@@ -189,17 +189,19 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
         set_config('quality_low', 1, 'local_smartmedia');
         set_config('quality_high', 1, 'local_smartmedia');
         $presetids = $transcoder->get_preset_ids();
-        $this->assertCount(4, $presetids);
+        $this->assertCount(6, $presetids);
         $this->assertContains('1351620000001-200015', $presetids);
         $this->assertContains('1351620000001-500030', $presetids);
         $this->assertContains('1351620000001-200045', $presetids);
         $this->assertContains('1351620000001-500050', $presetids);
+        $this->assertContains('1351620000001-200060', $presetids);
+        $this->assertContains('1351620000001-500060', $presetids);
         $this->assertNotContains('1351620000001-200035', $presetids);
         $this->assertNotContains('1351620000001-500040', $presetids);
 
         set_config('quality_medium', 1, 'local_smartmedia');
         $presetids = $transcoder->get_preset_ids();
-        $this->assertCount(6, $presetids);
+        $this->assertCount(8, $presetids);
         $this->assertContains('1351620000001-200015', $presetids);
         $this->assertContains('1351620000001-500030', $presetids);
         $this->assertContains('1351620000001-200045', $presetids);

@@ -417,6 +417,44 @@ return array(
                 ),
                 'Type' => 'System',
             )
+        ),
+        'System preset: HLS Audio - 160k' => array(
+            'Preset' => array(
+                'Id' => '1351620000001-200060',
+                'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-200060',
+                'Name' => 'System preset: HLS Audio - 160k',
+                'Description' => 'System Preset: HLS Audio 160 kilobits/second',
+                'Container' => 'ts',
+                'Audio' => array(
+                    'Codec' => 'AAC',
+                    'SampleRate' => '44100',
+                    'BitRate' => '160',
+                    'Channels' => '2',
+                    'CodecOptions' => array(
+                        'Profile' => 'AAC-LC'
+                    )
+                ),
+                'Type' => 'System'
+            )
+        ),
+        'System preset: MPEG-Dash Audio - 128k' => array(
+            'Preset' => array(
+                'Id' => '1351620000001-500060',
+                'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-500060',
+                'Name' => 'System preset: MPEG-Dash Audio - 128k',
+                'Description' => 'System preset: MPEG-Dash Audio - 128k',
+                'Container' => 'fmp4',
+                'Audio' => array(
+                    'Codec' => 'AAC',
+                    'SampleRate' => '48000',
+                    'BitRate' => '128',
+                    'Channels' => '2',
+                    'CodecOptions' => array(
+                        'Profile' => 'AAC-LC'
+                    )
+                ),
+                'Type' => 'System'
+            )
         )
     )
 );

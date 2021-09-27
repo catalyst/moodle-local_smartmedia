@@ -140,7 +140,6 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $conversion = new \local_smartmedia\conversion($transcoder);
-
         $smartmedia = $conversion->get_smart_media($moodleurl);
 
         $this->assertEmpty($smartmedia);
@@ -160,9 +159,14 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         // Converted media has the preset id in filename to make each filename unique across conversions.
         $presetid = '1351620000001-100180';
 
+        // Setup course and activity context for file.
+        $course = $this->getDataGenerator()->create_course();
+        $activity = $this->getDataGenerator()->create_module('forum', ['course' => $course->id]);
+        $context = \context_module::instance($activity->cmid);
+
         // Mock the initial file record from which conversions were made.
         $initialfilerecord = array (
-            'contextid' => 31,
+            'contextid' => $context->id,
             'component' => 'mod_forum',
             'filearea' => 'attachment',
             'itemid' => 2,
@@ -576,7 +580,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->rekog_label_status);
 
         $result = $DB->count_records('local_smartmedia_presets');
-        $this->assertEquals(5, $result);
+        $this->assertEquals(7, $result);
 
     }
 
@@ -658,7 +662,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             $presetids[] = $result->preset;
         }
 
-        $this->assertCount(6, $presetids);
+        $this->assertCount(8, $presetids);
         $this->assertContains('1351620000001-200015', $presetids);
         $this->assertContains('1351620000001-500030', $presetids);
         $this->assertContains('1351620000001-200045', $presetids);
@@ -685,7 +689,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             $presetids[] = $result->preset;
         }
 
-        $this->assertCount(1, $presetids);
+        $this->assertCount(3, $presetids);
         $this->assertContains('1351620000001-300020', $presetids);
 
     }
@@ -787,6 +791,12 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         }
         // Check that no medium quality fixture presets are present in the metadata.
         foreach ($this->fixture['readPreset']['quality_medium'] as $preset) {
+            // Ignore the audio track.
+            if (in_array($preset['Preset']['Id'], aws_elastic_transcoder::HLS_AUDIO)
+                    || in_array($preset['Preset']['Id'], aws_elastic_transcoder::MPD_AUDIO)) {
+                continue;
+            }
+
             if (method_exists($this, 'assertStringNotContainsString')) {
                 $this->assertStringNotContainsString($preset['Preset']['Id'], $result['presets']);
             } else {
