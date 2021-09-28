@@ -146,8 +146,8 @@ class provision {
 
         if (!$this->usesdkcreds) {
             $connectionoptions['credentials'] = [
-                'key' => $this->config->api_key,
-                'secret' => $this->config->api_secret
+                'key' => $this->keyid,
+                'secret' => $this->secret
             ];
         }
 
@@ -315,8 +315,8 @@ class provision {
 
         if (!$this->usesdkcreds) {
             $connectionoptions['credentials'] = [
-                'key' => $this->config->api_key,
-                'secret' => $this->config->api_secret
+                'key' => $this->keyid,
+                'secret' => $this->secret
             ];
         }
 
@@ -458,8 +458,8 @@ class provision {
 
         if (!$this->usesdkcreds) {
             $connectionoptions['credentials'] = [
-                'key' => $this->config->api_key,
-                'secret' => $this->config->api_secret
+                'key' => $this->keyid,
+                'secret' => $this->secret
             ];
         }
 
