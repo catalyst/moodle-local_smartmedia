@@ -142,7 +142,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $conversion = new \local_smartmedia\conversion($transcoder);
         $smartmedia = $conversion->get_smart_media($moodleurl);
 
-        $this->assertEmpty($smartmedia);
+        // Check for just the null context index.
+        $this->assertEquals(1, count($smartmedia));
+        $this->assertEmpty($smartmedia['context']);
     }
 
     /**
