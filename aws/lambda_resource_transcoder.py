@@ -22,8 +22,8 @@ import botocore
 import json
 import os
 import logging
+import urllib3
 from botocore.exceptions import ClientError
-from botocore.vendored import requests
 
 et_client = boto3.client('elastictranscoder')
 logger = logging.getLogger()
@@ -120,14 +120,17 @@ def send_response(event, status, actiondata):
 
     jsonrequest = json.dumps(request)
     headers = {
-        'content-type': '',
+        'content-type': 'application/json',
         'content-length': str(len(jsonrequest))
     }
 
     try:
-        response = requests.put(event['ResponseURL'],
-                                data=jsonrequest,
+        http = urllib3.PoolManager()
+        response = http.request('PUT',
+                                event['ResponseURL'],
+                                body=jsonrequest,
                                 headers=headers)
+
         logger.info("CloudFormation returned status code: {}".format(response.reason))
     except Exception as e:
         logger.error("Failed sending request, error received: {}".format(e))
