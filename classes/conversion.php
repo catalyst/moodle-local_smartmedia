@@ -569,7 +569,7 @@ class conversion {
      *                      ['media' => [\stored_file $file1, ...], 'data' => [\stored_file $file2, ...]]
      */
     public function get_smart_media(\moodle_url $href, bool $triggerconversion = false, bool $rawfiles = false) : array {
-        $smartmedia = array();
+        $smartmedia = array('context' => null);
         $viewconversion = (bool)get_config('local_smartmedia', 'viewconversion');
 
         // Get the file record from the Moodle URL.
