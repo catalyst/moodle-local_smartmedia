@@ -484,7 +484,16 @@ class conversion {
             }
         }
 
-        return $mediafiles;
+        $sort = array_values($mediafiles);
+        usort($sort, function($a, $b){
+            // Move non-mpds to the back using boolean int trickery.
+            $a = (int) preg_match('/\_mpegdash_playlist\.mpd/', $a->get_filename());
+            $b = (int) preg_match('/\_mpegdash_playlist\.mpd/', $b->get_filename());
+
+            return ($a + $b);
+        });
+
+        return $sort;
     }
 
     /**
