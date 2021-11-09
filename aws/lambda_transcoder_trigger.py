@@ -107,7 +107,7 @@ def submit_transcode_jobs(s3key, pipeline_id, presets):
 
         # Add output to appropriate playlist if the preset outputs fragmented media.
         if container == 'fmp4' or container == 'ts' :
-            output['SegmentDuration'] = '3' # Hard code segments to 3 seconds duration.
+            output['SegmentDuration'] = '6' # Hard code segments to 3 seconds duration.
             if container == 'fmp4' :
                 playlists['fmp4playlist']['OutputKeys'].append(output['Key'])
             if container == 'ts' :
@@ -181,4 +181,3 @@ def lambda_handler(event, context):
         presets = get_presets(key, bucket, metadata)
 
         submit_transcode_jobs(key, pipeline_id, presets)
-

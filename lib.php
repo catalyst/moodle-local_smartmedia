@@ -57,6 +57,7 @@ define('LOCAL_SMARTMEDIA_PRESET_OUTPUT_CONTAINER_TYPES',
  * @return bool False if the file not found, just send the file otherwise and do not return anything.
  */
 function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options=array()) {
+    global $DB;
 
     // Make sure the filearea is one of those used by the plugin.
     if ($filearea !== 'media' && $filearea !== 'metadata') {
@@ -68,26 +69,52 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
     // back to Moodle from the VideoJS AJAX call.
     $utility = new \local_smartmedia\utility();
     $args = $utility->update_args($args);
+    $itemid = array_shift($args);
+    $filename = array_pop($args); // The last item in the $args array.
+    $lowlatency = get_config('local_smartmedia', 'lowlatency');
 
-    $itemid = $args[0];
+    if ($lowlatency) {
+        // Setup cache for content.
+        $cachekey = sha1($filename . sesskey());
+        $cache = cache::make('local_smartmedia', 'serve');
+        $cachedata = $cache->get($cachekey);
+        if ($cachedata) {
+            $url = new moodle_url('/local/smartmedia/serve.php', ['key' => $cachekey]);
+            // Set cache headers for this redirection, safe to cache in browser only.
+            @header('Expires: '. gmdate('D, d M Y H:i:s', time() + 3600) .' GMT');
+            @header_remove('Pragma');
+            @header('Cache-Control: private, max-age=3600');
+            @header($_SERVER['SERVER_PROTOCOL'] . ' 302 Found');
+            @header('Location: '.$url->out());
+            exit;
+        }
+    }
 
     // Make sure the user is logged in and has access to the module.
-    require_login($course);
+    require_login();
 
     // The id passed to the $options array is the id in the file table for the original source file.
     // We get this file to make sure:
     // - It is a valid file.
     // - It is the correct source file for the requested smartmedia file.
     // - The user is allowed to access the source file (which means they can access this smartmedia file.
-    $fileid = array_shift($args);
+    $contenthash = $args[0];
     $fs = get_file_storage();
-    $sourcefile = $fs->get_file_by_id($fileid);
-    if (!$sourcefile) {
-        return false; // Return early if sourcefile id is invalid.
+    $sourceids = $DB->get_fieldset_select('files', 'id', 'contenthash = ?', [$contenthash]);
+    $valid = false;
+    foreach ($sourceids as $source) {
+        $sourcefile = $fs->get_file_by_id($source);
+        if ($sourcefile) {
+            // Now we need to check the containing  context, and check that atleast a login is valid for that context.
+            $valid = true;
+            break;
+        }
+    }
+    if (!$valid) {
+        send_file_not_found();
     }
 
-    // Extract the filename / filepath from the $args array.
-    $filename = array_pop($args); // The last item in the $args array.
+    // Extract the filepath from the $args array.
     if (!$args) {
         $filepath = '/'; // If $args is empty the path is '/'.
     } else {
@@ -115,7 +142,9 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
         return false; // Source file doesn't match smart file.
     }
 
-    // TODO: add check to make sure user can access source file. (MDL-66006).
+    if ($lowlatency) {
+        $cache->set($cachekey, $smartfile);
+    }
 
     // We can now send the file back to the browser - in this case with a cache lifetime of 1 day and no filtering.
     send_stored_file($smartfile, 86400, 0, $forcedownload, $options);
