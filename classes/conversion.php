@@ -682,8 +682,9 @@ class conversion {
     private function map_files_to_urls($files, int $fileid) : array {
         $urls = [];
         foreach ($files as $file) {
+            // Build the custom serve URL.
             $url = moodle_url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
-                $fileid, $file->get_filepath(), $file->get_filename());
+                    $fileid, $file->get_filepath(), $file->get_filename());
             $urls[] = $url;
         }
         return $urls;
@@ -1002,8 +1003,7 @@ class conversion {
      */
     private function replace_playlist_urls_with_pluginfile_urls($filecontent, string $contenthash) : string {
 
-        $pluginfilepath = "pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
-
+        $pluginfilepath = "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
         // Replace all matching content hashes with the plugin file path for smartmedia with this content.
         $updatedcontent = preg_replace('/' . $contenthash . '_/', $pluginfilepath, $filecontent);
 

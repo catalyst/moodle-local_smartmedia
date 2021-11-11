@@ -15,19 +15,17 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version and other meta-data are defined here.
+ * Definition of Smartmedia caches.
  *
- * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   local_smartmedia
+ * @category  cache
+ * @copyright 2021 Peter Burnett <peterburnett@catalyst-au.net>
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component = 'local_smartmedia';
-$plugin->release = 2021111000;
-$plugin->version = 2021111000;
-$plugin->requires = 2018051700;
-$plugin->dependencies = array(
-    'local_aws' => 2020061500
-);
+$definitions = [
+    'serve' => [
+        'mode' => cache_store::MODE_APPLICATION,
+        'ttl' => 3600,
+        'staticacceleration' => true
+    ]
+];
