@@ -614,12 +614,15 @@ class report_process extends scheduled_task {
         $videofiles = $this->get_video_file_count(); // Get count of video files in files table.
         $this->update_report_data('videofiles', $videofiles);
 
+        mtrace('local_smartmedia: Identifying unique media files');
         $uniquemultimediaobjects = $this->get_unique_multimedia_objects(); // Get count of multimedia objects files table.
         $this->update_report_data('uniquemultimediaobjects', $uniquemultimediaobjects);
 
+        mtrace('local_smartmedia: Discovering media metadata');
         $metadataprocessedfiles = $this->get_metadata_processed_files(); // Get count of processed multimedia files.
         $this->update_report_data('metadataprocessedfiles', $metadataprocessedfiles);
 
+        mtrace('local_smartmedia: Discovering transcoded files');
         $transcodedfiles = $this->get_transcoded_files(); // Get count of transcoded multimedia files.
         $this->update_report_data('transcodedfiles', $transcodedfiles);
 
@@ -633,6 +636,8 @@ class report_process extends scheduled_task {
             $transcribepricingclient,
             $transcoder
         );
+
+        mtrace('local_smartmedia: Writing report data');
         $this->update_report_data('totalcost', $totalcost);
     }
 
