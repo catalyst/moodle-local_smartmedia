@@ -47,7 +47,7 @@ class report_table extends table_sql implements renderable {
      *
      * @var string
      */
-    const FIELDS = 'f.filename, ro.id, ro.type, ro.cost, ro.status,
+    const FIELDS = 'f.filename, ro.contenthash, ro.id, ro.type, ro.cost, ro.status,
         ro.files, ro.timecreated, ro.timecompleted, conv.id as convid';
 
     /**
@@ -126,7 +126,7 @@ class report_table extends table_sql implements renderable {
      * @return string html used to display the filename field.
      */
     public function col_filename($row) {
-        return \html_writer::link(new \moodle_url('/local/smartmedia/report_details.php', ['id' => $row->id]), $row->filename);
+        return \html_writer::link(new \moodle_url('/local/smartmedia/report_details.php', ['hash' => $row->contenthash]), $row->filename);
     }
 
     /**

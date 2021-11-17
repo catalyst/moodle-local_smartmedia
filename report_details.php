@@ -25,7 +25,7 @@ require_once('../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 require_once($CFG->libdir . '/tablelib.php');
 
-$id = required_param('id', PARAM_INT);
+$hash= required_param('hash', PARAM_TEXT);
 
 // Calls require_login and performs permissions checks for admin pages.
 admin_externalpage_setup('local_smartmedia_report', '', null, '',
@@ -49,8 +49,8 @@ $sql = "SELECT f.filename, ro.type, ro.format, ro.resolution, ro.duration, ro.fi
           FROM {local_smartmedia_report_over} ro
           JOIN {local_smartmedia_conv} conv ON ro.contenthash = conv.contenthash
           JOIN {files} f ON f.contenthash = conv.contenthash AND f.pathnamehash = conv.pathnamehash
-         WHERE ro.id = :id";
-$record = $DB->get_record_sql($sql, ['id' => $id]);
+         WHERE ro.contenthash = :contenthash";
+$record = $DB->get_record_sql($sql, ['contenthash' => $hash]);
 
 // Get the preset ids being used for the conversion.
 $select = 'convid = ?';
