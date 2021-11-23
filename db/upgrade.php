@@ -342,5 +342,20 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2021031000, 'local', 'smartmedia');
     }
 
+    if ($oldversion < 2021111001) {
+
+        // Define key contenthash (foreign-unique) to be added to local_smartmedia_conv.
+        $table = new xmldb_table('local_smartmedia_conv');
+        $key = new xmldb_key('contenthash', XMLDB_KEY_FOREIGN_UNIQUE, ['contenthash'], 'local_smartmedia_data', ['contenthash']);
+
+        // Launch add key contenthash.
+        if (!$table->getKey($key->getName())) {
+            $dbman->add_key($table, $key);
+        }
+
+        // Smartmedia savepoint reached.
+        upgrade_plugin_savepoint(true, 2021111001, 'local', 'smartmedia');
+    }
+
     return true;
 }
