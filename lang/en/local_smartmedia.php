@@ -27,6 +27,7 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['pluginname'] = 'Smart Media';
 
+$string['cachedef_serve'] = 'Low latency file serve cache';
 $string['ffprobe:invalidpath'] = 'Invalid FFProbe path';
 $string['privacy:metadata:local_smartmedia:externalpurpose'] = 'This information is sent to AWS API in order the file to be converted to an alternative format. The file is temporarily kept in an AWS S3 bucket and gets deleted after the conversion is done.';
 $string['privacy:metadata:local_smartmedia:filecontent'] = 'The content of the file.';
