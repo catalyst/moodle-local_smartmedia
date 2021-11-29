@@ -92,7 +92,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const EXTRA_HIGH_PRESETS = array(
-        '1351620000001-500020' // System preset: MPEG-Dash Video - 4.8M
+        '1351620000001-500020', // System preset: MPEG-Dash Video - 4.8M
     );
 
     /**
@@ -221,6 +221,13 @@ class aws_elastic_transcoder {
         if (empty($pluginconfig->audio_output) && $pluginconfig->transcribe) {
             $presetids = array_merge(self::AUDIO_PRESETS, $presetids);
         }
+
+        // Now we want to add any custom presets enabled for the account.
+        if (!empty($pluginconfig->usecustompresets)) {
+            $custompresets = explode(',', str_replace(' ', '', $pluginconfig->custompresets));
+            $presetids = array_merge($custompresets, $presetids);
+        }
+
         return array_unique($presetids);
     }
 

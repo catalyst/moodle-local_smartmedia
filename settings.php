@@ -118,6 +118,14 @@ if ($hassiteconfig) {
         get_string('settings:output:download_files', 'local_smartmedia'),
         get_string('settings:output:download_files_help', 'local_smartmedia'), 1));
 
+    $settings->add(new admin_setting_configcheckbox('local_smartmedia/usecustompresets',
+        get_string('settings:output:usecustompresets', 'local_smartmedia'),
+        get_string('settings:output:usecustompresets_help', 'local_smartmedia'), 0));
+
+    $settings->add(new admin_setting_configtextarea('local_smartmedia/custompresets',
+        get_string('settings:output:custompresets', 'local_smartmedia'),
+        get_string('settings:output:usecustompresets_help', 'local_smartmedia'), '', PARAM_TEXT));
+
     // Processing settings.
     $settings->add(new admin_setting_heading('processingheader',
         get_string('settings:processing:header', 'local_smartmedia'),
