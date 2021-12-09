@@ -315,11 +315,10 @@ class conversion {
         // This is OK and expected, we will handle the error.
         try {
             $convid = $DB->insert_record('local_smartmedia_conv', $cnvrec);
-
-        } catch (\dml_write_exception $e) {
+        } catch (\dml_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,
             // so re-throw the error.
-            if (!strpos($e->getMessage(), 'locasmarconv_pat_uix') && !strpos($e->getMessage(), 'locasmarconv_con_uix')) {
+            if (strpos($e->getMessage(), 'locasmarconv_pat_uix') === false && strpos($e->getMessage(), 'locasmarconv_con_uix') === false) {
                 throw $e;
             }
         }
@@ -1308,7 +1307,12 @@ class conversion {
                 // If file not found, remove this element from hash array.
                 unset($pathnamehashes[$key]);
             } else {
-                $this->create_conversion($file);
+                try {
+                    $this->create_conversion($file);
+                } catch (\dml_exception $e) {
+                    // Likely duplicate record, unset and move on.
+                    unset($pathnamehashes[$key]);
+                }
             }
         }
 
