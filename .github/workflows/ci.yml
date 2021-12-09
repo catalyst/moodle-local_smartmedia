@@ -81,7 +81,7 @@ jobs:
         run: moodle-plugin-ci add-plugin catalyst/moodle-local_aws
 
       - name: Install ffmpeg
-        run: sudo apt-get install -y ffmpeg
+        run: sudo apt update && sudo apt-get install -y ffmpeg
 
       - name: Install moodle-plugin-ci
         # Need explicit IP to stop mysql client fail on attempt to use unix socket.

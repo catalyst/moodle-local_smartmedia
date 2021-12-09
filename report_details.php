@@ -25,7 +25,7 @@ require_once('../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 require_once($CFG->libdir . '/tablelib.php');
 
-$hash= required_param('hash', PARAM_TEXT);
+$hash = required_param('hash', PARAM_TEXT);
 
 // Calls require_login and performs permissions checks for admin pages.
 admin_externalpage_setup('local_smartmedia_report', '', null, '',
@@ -74,7 +74,7 @@ foreach ($presets as $preset) {
             $outputs[] = "{$codec}: {$width} X {$height} - {$formattedsize} ";
         } else {
             // This is only audio, just output codec and size.
-            $size = $record->duration * (((int) $presetdata['Audio']['BitRate']  / 8) * 1000);
+            $size = $record->duration * (((int) $presetdata['Audio']['BitRate'] / 8) * 1000);
             $formattedsize = display_size($size);
             $outputs[] = $presetdata['Audio']['Codec'] . ' - ' . $formattedsize;
         }

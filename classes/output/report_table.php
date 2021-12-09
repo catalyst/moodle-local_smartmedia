@@ -126,7 +126,8 @@ class report_table extends table_sql implements renderable {
      * @return string html used to display the filename field.
      */
     public function col_filename($row) {
-        return \html_writer::link(new \moodle_url('/local/smartmedia/report_details.php', ['hash' => $row->contenthash]), $row->filename);
+        $url = new \moodle_url('/local/smartmedia/report_details.php', ['hash' => $row->contenthash]);
+        return \html_writer::link($url, $row->filename);
     }
 
     /**

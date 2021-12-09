@@ -22,6 +22,8 @@
  * @copyright 2021 Peter Burnett <peterburnett@catalyst-au.net>
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+defined('MOODLE_INTERNAL') || die();
+
 $definitions = [
     'serve' => [
         'mode' => cache_store::MODE_APPLICATION,

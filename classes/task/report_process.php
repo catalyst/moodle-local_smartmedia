@@ -76,11 +76,7 @@ class report_process extends scheduled_task {
         'video/x-sgi-movie',
     );
 
-    /**
-     * Cache holder for the pricing clients.
-     *
-     * @var array
-     */
+    /** @var array - Cache holder for the pricing clients. */
     private $pricing;
 
     public function __construct() {
@@ -325,20 +321,17 @@ class report_process extends scheduled_task {
         if (empty($this->pricing)) {
             // Get the location pricing for the AWS region set.
             $location = get_config('local_smartmedia', 'api_region');
-            $transcodelocationpricing = $transcodepricingclient->get_location_pricing($location);
-            $rekoglocationpricing = $rekogpricingclient->get_location_pricing($location);
-            $transcribelocationpricing = $transcribepricingclient->get_location_pricing($location);
 
             $this->pricing = [
-                'transcode' => $transcodelocationpricing,
-                'rekog' => $rekoglocationpricing,
-                'transcribe' => $transcribelocationpricing
+                'transcode' => $transcodepricingclient->get_location_pricing($location),
+                'rekog' => $rekogpricingclient->get_location_pricing($location),
+                'transcribe' => $transcribepricingclient->get_location_pricing($location)
             ];
-        } else {
-            $transcodelocationpricing = $this->pricing['transcode'];
-            $rekoglocationpricing = $this->pricing['rekog'];
-            $transcribelocationpricing = $this->pricing['transcribe'];
         }
+
+        $transcodelocationpricing = $this->pricing['transcode'];
+        $rekoglocationpricing = $this->pricing['rekog'];
+        $transcribelocationpricing = $this->pricing['transcribe'];
 
         // Get the preset ids for this conversion.
         $presetids = $this->get_conversion_presets($record->id);
@@ -520,20 +513,17 @@ class report_process extends scheduled_task {
         if (empty($this->pricing)) {
             // Get the location pricing for the AWS region set.
             $location = get_config('local_smartmedia', 'api_region');
-            $transcodelocationpricing = $transcodepricingclient->get_location_pricing($location);
-            $rekoglocationpricing = $rekogpricingclient->get_location_pricing($location);
-            $transcribelocationpricing = $transcribepricingclient->get_location_pricing($location);
 
             $this->pricing = [
-                'transcode' => $transcodelocationpricing,
-                'rekog' => $rekoglocationpricing,
-                'transcribe' => $transcribelocationpricing
+                'transcode' => $transcodepricingclient->get_location_pricing($location),
+                'rekog' => $rekogpricingclient->get_location_pricing($location),
+                'transcribe' => $transcribepricingclient->get_location_pricing($location)
             ];
-        } else {
-            $transcodelocationpricing = $this->pricing['transcode'];
-            $rekoglocationpricing = $this->pricing['rekog'];
-            $transcribelocationpricing = $this->pricing['transcribe'];
         }
+
+        $transcodelocationpricing = $this->pricing['transcode'];
+        $rekoglocationpricing = $this->pricing['rekog'];
+        $transcribelocationpricing = $this->pricing['transcribe'];
 
         // Get the Elastic Transcoder presets which have been set.
         $presets = $transcoder->get_presets();

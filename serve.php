@@ -33,7 +33,7 @@ $cache = cache::make('local_smartmedia', 'serve');
 $cachedata = $cache->get($cachekey);
 
 if ($cachedata) {
-    // If there is something that is not a stored file, its likely malformed or false
+    // If there is something that is not a stored file, its likely malformed or false.
     if ($cachedata instanceof \stored_file) {
         send_stored_file($cachedata, 86400);
     }

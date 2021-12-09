@@ -92,7 +92,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const EXTRA_HIGH_PRESETS = array(
-        '1351620000001-500020', // System preset: MPEG-Dash Video - 4.8M
+        '1351620000001-500020', // System preset: MPEG-Dash Video - 4.8M.
     );
 
     /**
@@ -114,11 +114,11 @@ class aws_elastic_transcoder {
     );
 
     public const HLS_AUDIO = array(
-        '1351620000001-200060'  // System preset: HLS v3 and v4 Audio, 160 k
+        '1351620000001-200060'  // System preset: HLS v3 and v4 Audio, 160 k.
     );
 
     public const MPD_AUDIO = array(
-        '1351620000001-500060' // System preset: MPEG-DASH Audio 128 k
+        '1351620000001-500060' // System preset: MPEG-DASH Audio 128 k.
     );
 
     /**
