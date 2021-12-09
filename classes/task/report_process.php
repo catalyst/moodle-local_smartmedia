@@ -77,6 +77,17 @@ class report_process extends scheduled_task {
     );
 
     /**
+     * Cache holder for the pricing clients.
+     *
+     * @var array
+     */
+    private $pricing;
+
+    public function __construct() {
+        $this->pricing = [];
+    }
+
+    /**
      * Get a descriptive name for this task (shown to admins).
      *
      * @return string
@@ -305,16 +316,29 @@ class report_process extends scheduled_task {
      * @return float $cost The calculated transcoding cost.
      */
     private function get_file_cost(
-        aws_ets_pricing_client $transcodepricingclient,
-        aws_rekog_pricing_client $rekogpricingclient,
-        aws_transcribe_pricing_client $transcribepricingclient,
-        \local_smartmedia\aws_elastic_transcoder $transcoder,  \stdClass $record) : float {
+            aws_ets_pricing_client $transcodepricingclient,
+            aws_rekog_pricing_client $rekogpricingclient,
+            aws_transcribe_pricing_client $transcribepricingclient,
+            \local_smartmedia\aws_elastic_transcoder $transcoder,  \stdClass $record) : float {
 
-        // Get the location pricing for the AWS region set.
-        $location = get_config('local_smartmedia', 'api_region');
-        $transcodelocationpricing = $transcodepricingclient->get_location_pricing($location);
-        $rekoglocationpricing = $rekogpricingclient->get_location_pricing($location);
-        $transcribelocationpricing = $transcribepricingclient->get_location_pricing($location);
+        // Check if we have already cached the pricing.
+        if (empty($this->pricing)) {
+            // Get the location pricing for the AWS region set.
+            $location = get_config('local_smartmedia', 'api_region');
+            $transcodelocationpricing = $transcodepricingclient->get_location_pricing($location);
+            $rekoglocationpricing = $rekogpricingclient->get_location_pricing($location);
+            $transcribelocationpricing = $transcribepricingclient->get_location_pricing($location);
+
+            $this->pricing = [
+                'transcode' => $transcodelocationpricing,
+                'rekog' => $rekoglocationpricing,
+                'transcribe' => $transcribelocationpricing
+            ];
+        } else {
+            $transcodelocationpricing = $this->pricing['transcode'];
+            $rekoglocationpricing = $this->pricing['rekog'];
+            $transcribelocationpricing = $this->pricing['transcribe'];
+        }
 
         // Get the preset ids for this conversion.
         $presetids = $this->get_conversion_presets($record->id);
@@ -492,11 +516,25 @@ class report_process extends scheduled_task {
 
         $convertfrom = time() - (int)get_config('local_smartmedia', 'convertfrom');
 
-        // Get the location pricing for the AWS region set.
-        $location = get_config('local_smartmedia', 'api_region');
-        $transcodelocationpricing = $transcodepricingclient->get_location_pricing($location);
-        $rekoglocationpricing = $rekogpricingclient->get_location_pricing($location);
-        $transcribelocationpricing = $transcribepricingclient->get_location_pricing($location);
+        // Check if we have already cached the pricing.
+        if (empty($this->pricing)) {
+            // Get the location pricing for the AWS region set.
+            $location = get_config('local_smartmedia', 'api_region');
+            $transcodelocationpricing = $transcodepricingclient->get_location_pricing($location);
+            $rekoglocationpricing = $rekogpricingclient->get_location_pricing($location);
+            $transcribelocationpricing = $transcribepricingclient->get_location_pricing($location);
+
+            $this->pricing = [
+                'transcode' => $transcodelocationpricing,
+                'rekog' => $rekoglocationpricing,
+                'transcribe' => $transcribelocationpricing
+            ];
+        } else {
+            $transcodelocationpricing = $this->pricing['transcode'];
+            $rekoglocationpricing = $this->pricing['rekog'];
+            $transcribelocationpricing = $this->pricing['transcribe'];
+        }
+
         // Get the Elastic Transcoder presets which have been set.
         $presets = $transcoder->get_presets();
         // Get enrichment settings for rekog.
