@@ -74,7 +74,7 @@ class aws_transcribe_pricing_client extends aws_base_pricing_client {
         ];
         $products = $this->get_products([$locationfilter, $transcribefilter], 'transcribe');
 
-        // Filter for the usagetype that has no extras (medical, custom models, etc...)
+        // Filter for the usagetype that has no extras (medical, custom models, etc...).
         foreach ($products as $product) {
             if (strpos($product->get_usagetype(), '-TranscribeAudio') !== false) {
                 $locationpricing->set_transcribe_pricing($product->get_cost());

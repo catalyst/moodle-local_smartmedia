@@ -227,7 +227,7 @@ class queue_process {
     public function process_queue() : int {
         $this->create_client();
 
-        $messages = $this->get_queue_messages(); // Get current messages from queue
+        $messages = $this->get_queue_messages(); // Get current messages from queue.
         $this->store_messages($messages); // Store messages in database.
         $this->delete_queue_messages($messages); // Remove messages from queue.
 
