@@ -1270,25 +1270,35 @@ class conversion {
     }
 
     /**
-     * Get the pathnamehashes for files that have metadata extracted,
+     * Get the fileids for files that have metadata extracted,
      * but that do not have conversion records.
      *
-     * @return array $pathnamehashes Array of pathnamehashes.
+     * @return array $fileids Array of File IDs.
      */
-    private function get_pathnamehashes() : array {
+    private function get_fileids() : array {
         global $DB;
         $convertfrom = time() - (int)get_config('local_smartmedia', 'convertfrom');
 
         $limit = self::MAX_FILES;
-        $sql = "SELECT DISTINCT (lsd.pathnamehash)
+        $sql = "SELECT MAX(f.id) AS id, lsd.contenthash
                   FROM {local_smartmedia_data} lsd
              LEFT JOIN {local_smartmedia_conv} lsc ON lsd.contenthash = lsc.contenthash
              LEFT JOIN (SELECT * FROM {files} ORDER BY timecreated DESC) f ON lsd.contenthash = f.contenthash
                  WHERE lsc.contenthash IS NULL
-                   AND f.timecreated > ?";
-        $pathnamehashes = $DB->get_records_sql($sql, [$convertfrom], 0, $limit);
+                   AND f.timecreated > ?
+                   AND f.component <> ?
+                   AND f.filearea <> ?
+                   AND f.filename <> ?
+              GROUP BY lsd.contenthash";
+        $params = [
+            $convertfrom,
+            'local_smartmedia',
+            'draft',
+            '.',
+        ];
+        $fileids = $DB->get_records_sql($sql, $params, 0, $limit);
 
-        return $pathnamehashes;
+        return $fileids;
 
     }
 
@@ -1299,25 +1309,25 @@ class conversion {
      * @return array
      */
     public function create_conversions() : array {
-        $pathnamehashes = $this->get_pathnamehashes(); // Get pathnamehashes for conversions.
+        $fileids = $this->get_fileids(); // Get File ids for conversions.
         $fs = get_file_storage();
 
-        foreach ($pathnamehashes as $key => $pathnamehash) {
-            $file = $fs->get_file_by_hash($pathnamehash->pathnamehash);
+        foreach ($fileids as $key => $id) {
+            $file = $fs->get_file_by_id($id->id);
             if ($file === false) {
                 // If file not found, remove this element from hash array.
-                unset($pathnamehashes[$key]);
+                unset($fileids[$key]);
             } else {
                 try {
                     $this->create_conversion($file);
                 } catch (\dml_exception $e) {
                     // Likely duplicate record, unset and move on.
-                    unset($pathnamehashes[$key]);
+                    unset($fileids[$key]);
                 }
             }
         }
 
-        return $pathnamehashes;
+        return $fileids;
     }
 
     /**
