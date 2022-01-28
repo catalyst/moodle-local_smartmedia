@@ -1376,9 +1376,9 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
     }
 
     /**
-     * Test getting pathnamehashes for new conversion records.
+     * Test getting fileids for new conversion records.
      */
-    public function test_get_pathnamehashes() {
+    public function test_get_fileids() {
         $this->resetAfterTest(true);
         global $DB;
 
@@ -1477,21 +1477,21 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $conversion = new \local_smartmedia\conversion($transcoder);
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_pathnamehashes');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_fileids');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion);
 
         $this->assertCount(2, $result);
-        $this->assertArrayHasKey($file1->get_pathnamehash(), $result);
-        $this->assertArrayHasKey($file2->get_pathnamehash(), $result);
-        $this->assertArrayNotHasKey($file3->get_pathnamehash(), $result);
+        $this->assertArrayHasKey($file1->get_id(), $result);
+        $this->assertArrayHasKey($file2->get_id(), $result);
+        $this->assertArrayNotHasKey($file3->get_id(), $result);
 
     }
 
     /**
-     * Test getting pathnamehashes for new conversion records with date restriction.
+     * Test getting fileids for new conversion records with date restriction.
      */
-    public function test_get_pathnamehashes_date() {
+    public function test_get_fileids_date() {
         $this->resetAfterTest(true);
         global $DB;
 
@@ -1557,17 +1557,17 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $conversion = new \local_smartmedia\conversion($transcoder);
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_pathnamehashes');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_fileids');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion);
 
         $this->assertCount(1, $result);
-        $this->assertArrayHasKey($file1->get_pathnamehash(), $result);
-        $this->assertArrayNotHasKey($file2->get_pathnamehash(), $result);
+        $this->assertArrayHasKey($file1->get_id(), $result);
+        $this->assertArrayNotHasKey($file2->get_id(), $result);
 
     }
     /**
-     * Test getting pathnamehashes for new conversion records.
+     * Test getting fileids for new conversion records.
      */
     public function test_check_smartmedia_file() {
         $this->resetAfterTest(true);
