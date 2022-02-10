@@ -52,7 +52,7 @@ class renderer extends plugin_renderer_base {
      * @throws \moodle_exception
      */
     private function render_report_table(string $baseurl, int $page = 0, int $perpage = 50, string $download = '') {
-        $renderable = new report_table('local_smartmedia', $baseurl, $perpage, $page, $download);
+        $renderable = new report_table('local_smartmedia', $baseurl, $page, $perpage, $download);
         ob_start();
         $renderable->out($renderable->pagesize, true);
         $output = ob_get_contents();
