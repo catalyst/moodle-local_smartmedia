@@ -108,8 +108,7 @@ class report_table extends table_sql implements renderable {
         // Setup pagination.
         $this->currpage = $page;
         $this->pagesize = $perpage;
-        $this->sortable(true);
-        $this->sort_default_column = 'timecreated DESC';
+        $this->sortable(true, 'timecreated', SORT_DESC);
         $this->set_sql(self::FIELDS, self::FROM, self::DEFAULT_WHERE);
 
         // Setup a transcoder to get all preset information and store it.
