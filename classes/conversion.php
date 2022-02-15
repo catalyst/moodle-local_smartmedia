@@ -953,6 +953,7 @@ class conversion {
 
         // Then we iterate over that list and get all the files available.
         $fs = get_file_storage();
+        $requestdir = make_request_directory();
         foreach ($availableobjects->get('Contents') as $availableobject) {
             $filename = basename($availableobject['Key']);
             $filerecord = array(
@@ -963,32 +964,41 @@ class conversion {
                 'filepath' => '/' . $conversionrecord->contenthash . '/conversions/',
                 'filename' => $filename,
             );
-
             $downloadparams = array(
                 'Bucket' => $this->config->s3_output_bucket, // Required.
                 'Key' => $availableobject['Key'], // Required.
             );
 
-            $getobject = $s3client->getObject($downloadparams);
-            $filecontent = $getobject->get('Body');
-
-            // The playlist files (including iframe playlists) created in s3 transcoding contain
-            // relative file paths to Variant Streams for adaptive bitsteaming media, these need to be amended
-            // to have Moodle plugin filepaths.
-            if ($this->is_file_playlist($filename)) {
-                $filecontent = $this->replace_playlist_urls_with_pluginfile_urls($filecontent, $conversionrecord->contenthash);
-            }
-
             try {
-                $trancodedfile = $fs->create_file_from_string($filerecord, $filecontent);
+                // The playlist files (including iframe playlists) created in s3 transcoding contain
+                // relative file paths to Variant Streams for adaptive bitsteaming media, these need to be amended
+                // to have Moodle plugin filepaths.
+                if ($this->is_file_playlist($filename)) {
+                    // This is small enough that we can just pull direct to memory.
+                    $result = $s3client->getObject($downloadparams);
+                    $filecontent = $result->get('Body');
+                    $filecontent = $this->replace_playlist_urls_with_pluginfile_urls($filecontent, $conversionrecord->contenthash);
+
+                    $transcodedfile = $fs->create_file_from_string($filerecord, $filecontent);
+
+                } else {
+                    // Video file handling. Might be too big for memory, write to disk first.
+                    $filetarget = $requestdir . '/' . $filename;
+                    $downloadparams['SaveAs'] = $filetarget;
+                    $s3client->getObject($downloadparams);
+
+                    $transcodedfile = $fs->create_file_from_pathname($filerecord, $filetarget);
+                    if (file_exists($filetarget)) {
+                        unlink($filetarget);
+                    }
+                }
             } catch (\moodle_exception $e) {
                 // This file may already exist. Perhaps a reprocessed queue message.
                 // Either way, there isn't anything we can do about it.
                 // Move on.
                 continue;
             }
-
-            $transcodedfiles[] = $trancodedfile;
+            $transcodedfiles[] = $transcodedfile;
         }
         return $transcodedfiles;
     }
