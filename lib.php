@@ -26,8 +26,6 @@
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
 
-defined('MOODLE_INTERNAL') || die();
-
 // Minimum height above which media is considered high definition.
 define('LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT', 720);
 define('LOCAL_SMARTMEDIA_MINIMUM_SD_HEIGHT', 1);

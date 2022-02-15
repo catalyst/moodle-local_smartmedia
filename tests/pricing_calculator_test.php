@@ -22,8 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 use local_smartmedia\aws_ets_preset;
 use local_smartmedia\pricing\location_transcode_pricing;
 use local_smartmedia\pricing\location_rekog_pricing;

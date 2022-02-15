@@ -25,8 +25,6 @@ namespace local_smartmedia\task;
 
 use core\task\scheduled_task;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Task to extract metadata from mediafiles.
  * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>

@@ -29,8 +29,6 @@ use local_smartmedia\pricing\location_rekog_pricing;
 use local_smartmedia\pricing\location_transcode_pricing;
 use local_smartmedia\pricing\location_transcribe_pricing;
 
-defined('MOODLE_INTERNAL') || die;
-
 /**
  * Pricing Calculator for determining media transcoding costs.
  *

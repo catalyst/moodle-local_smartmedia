@@ -21,8 +21,6 @@
  * @copyright   2020 Peter Burnett <peterburnett@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Updates the convertfrom config item to a duration, by taking the current timestamp config, rounding to the nearest day,
  * And updating the duration to the period from now.
