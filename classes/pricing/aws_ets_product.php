@@ -25,8 +25,6 @@
 
 namespace local_smartmedia\pricing;
 
-defined('MOODLE_INTERNAL') || die;
-
 /**
  * An AWS Elastic Transcode Service product.
  *

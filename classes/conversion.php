@@ -23,8 +23,6 @@
  */
 namespace local_smartmedia;
 
-defined('MOODLE_INTERNAL') || die();
-
 use Aws\S3\Exception\S3Exception;
 use moodle_url;
 

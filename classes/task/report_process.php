@@ -29,8 +29,6 @@ use \local_smartmedia\pricing\aws_rekog_pricing_client;
 use local_smartmedia\pricing\aws_transcribe_pricing_client;
 use stdClass;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * A scheduled task to gather data usee in plugin dashboards and reports.
  *

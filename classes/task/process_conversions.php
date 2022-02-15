@@ -27,8 +27,6 @@ use core\task\scheduled_task;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Task to process conversions of mediafiles.
  * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>

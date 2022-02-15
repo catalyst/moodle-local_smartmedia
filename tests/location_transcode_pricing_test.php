@@ -23,8 +23,6 @@
  * @group      local_smartmedia
  */
 
-defined('MOODLE_INTERNAL') || die();
-
 use local_smartmedia\pricing\location_transcode_pricing;
 
 /**

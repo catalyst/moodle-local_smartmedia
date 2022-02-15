@@ -25,8 +25,6 @@
 
 namespace local_smartmedia\output;
 
-defined('MOODLE_INTERNAL') || die;
-
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
 use table_sql;

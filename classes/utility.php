@@ -23,8 +23,6 @@
  */
 namespace local_smartmedia;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Class for smart media utility operations.
  *
