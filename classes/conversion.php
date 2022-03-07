@@ -367,6 +367,10 @@ class conversion {
         $argumentsstring = $href->get_path(true);
         $rawarguments = explode('/', $argumentsstring);
         $pluginfileposition = array_search('pluginfile.php', $rawarguments);
+        // Not a normalised pluginfile.php URL.
+        if ($pluginfileposition === false) {
+            return false;
+        }
         $hrefarguments = array_slice($rawarguments, ($pluginfileposition + 1));
         $argumentcount = count($hrefarguments);
 

@@ -445,6 +445,22 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $this->assertEquals($filepathnamehash3, $result3->get_pathnamehash());
         $this->assertEquals($filepathnamehash4, $result4->get_pathnamehash());
         $this->assertEquals($filepathnamehash5, $result5->get_pathnamehash());
+
+        // Lets test a pluginfile-like URL that is incompatible.
+        $urlstr = implode('/', [
+            'tokenpluginfile.php',
+            'mycooltoken',
+            $file1->get_contextid(),
+            $file1->get_component(),
+            $file1->get_filearea(),
+            $file1->get_itemid()
+        ]);
+        // Now append the filepath and name without extra strings.
+        $urlstr .= $file1->get_filepath() . $file1->get_filename();
+        $tokenurl = new moodle_url($urlstr);
+
+        // This should return false.
+        $this->assertFalse($method->invoke($conversion, $tokenurl));
     }
 
     /**
