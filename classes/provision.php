@@ -83,11 +83,6 @@ class provision {
     private $lambdaclient;
 
     /**
-     * @var bool Whether to use the moodle proxy.
-     */
-    private $useproxy;
-
-    /**
      * @var bool Whether to use the AWS default credential provider chain.
      */
     private $usesdkcreds;
@@ -104,7 +99,6 @@ class provision {
         $this->secret = $secret;
         $this->region = $region;
 
-        $this->useproxy = get_config('local_smartmedia', 'useproxy');
         $this->usesdkcreds = get_config('local_smartmedia', 'usesdkcreds');
     }
 
@@ -151,11 +145,6 @@ class provision {
             ];
         }
 
-        // If use proxy is configured, add to args.
-        if ($this->useproxy) {
-            $connectionoptions['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
-        }
-
         // Allow handler overriding for testing.
         if ($handler != null) {
             $connectionoptions['handler'] = $handler;
@@ -163,7 +152,9 @@ class provision {
 
         // Only create client if it hasn't already been done.
         if ($this->s3client == null) {
-            $this->s3client = new S3Client($connectionoptions);
+            $client = new S3Client($connectionoptions);
+            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
+            $this->s3client = $client;
         }
 
         return $this->s3client;
@@ -320,11 +311,6 @@ class provision {
             ];
         }
 
-        // If use proxy is configured, add to args.
-        if ($this->useproxy) {
-            $connectionoptions['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
-        }
-
         // Allow handler overriding for testing.
         if ($handler != null) {
             $connectionoptions['handler'] = $handler;
@@ -332,7 +318,9 @@ class provision {
 
         // Only create client if it hasn't already been done.
         if ($this->cloudformationclient == null) {
-            $this->cloudformationclient = new CloudFormationClient($connectionoptions);
+            $client = new CloudFormationClient($connectionoptions);
+            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
+            $this->cloudformationclient = $client;
         }
 
         return $this->cloudformationclient;
@@ -463,11 +451,6 @@ class provision {
             ];
         }
 
-        // If use proxy is configured, add to args.
-        if ($this->useproxy) {
-            $connectionoptions['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
-        }
-
         // Allow handler overriding for testing.
         if ($handler != null) {
             $connectionoptions['handler'] = $handler;
@@ -475,7 +458,9 @@ class provision {
 
         // Only create client if it hasn't already been done.
         if ($this->lambdaclient == null) {
-            $this->lambdaclient = new LambdaClient($connectionoptions);
+            $client = new LambdaClient($connectionoptions);
+            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
+            $this->lambdaclient = $client;
         }
 
         return $this->lambdaclient;

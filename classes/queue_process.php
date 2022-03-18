@@ -72,7 +72,7 @@ class queue_process {
      * @param \GuzzleHttp\Handler $handler Optional handler.
      * @return \Aws\Sqs\SqsClient
      */
-    public function create_client($handler=null) {
+    public function create_client($handler = null) {
         $connectionoptions = array(
             'version' => 'latest',
             'region' => $this->config->api_region
@@ -86,19 +86,16 @@ class queue_process {
             ];
         }
 
-        // If use proxy is configured, add to args.
-        if ($this->config->useproxy) {
-            $connectionoptions['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
-        }
-
-        // Allow handler overriding for testing.
-        if ($handler != null) {
+        // We should use the test handler if provided.
+        if (isset($handler)) {
             $connectionoptions['handler'] = $handler;
         }
 
         // Only create client if it hasn't already been done.
-        if ($this->client == null) {
-            $this->client = new SqsClient($connectionoptions);
+        if (!isset($this->client)) {
+            $client = new SqsClient($connectionoptions);
+            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
+            $this->client = $client;
         }
 
         return $this->client;

@@ -130,7 +130,6 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
         $CFG->proxyuser = 'user';
         $CFG->proxypassword = 'password';
         $CFG->proxyport = '1337';
-        set_config('useproxy', 1, 'local_smartmedia');
 
         $api = new aws_api();
         $pricingclient = $api->create_pricing_client();

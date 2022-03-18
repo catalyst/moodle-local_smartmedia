@@ -87,11 +87,6 @@ class aws_s3 {
             ];
         }
 
-        // If use proxy is configured, add to args.
-        if ($this->config->useproxy) {
-            $connectionoptions['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
-        }
-
         // Allow handler overriding for testing.
         if ($handler != null) {
             $connectionoptions['handler'] = $handler;
@@ -99,7 +94,9 @@ class aws_s3 {
 
         // Only create client if it hasn't already been done.
         if ($this->client == null) {
-            $this->client = new S3Client($connectionoptions);
+            $client = new S3Client($connectionoptions);
+            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
+            $this->client = $client;
         }
 
         return $this->client;
