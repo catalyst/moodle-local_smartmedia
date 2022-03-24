@@ -81,10 +81,6 @@ if ($hassiteconfig) {
         '',
         PARAM_URL));
 
-    $settings->add(new admin_setting_configcheckbox('local_smartmedia/useproxy',
-        get_string('settings:useproxy', 'local_smartmedia'),
-        get_string('settings:useproxy_help', 'local_smartmedia'), 0));
-
     $settings->add(new admin_setting_configcheckbox('local_smartmedia/lowlatency',
         get_string('settings:lowlatency', 'local_smartmedia'),
         get_string('settings:lowlatency_help', 'local_smartmedia'), 0));

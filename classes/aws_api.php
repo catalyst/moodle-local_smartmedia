@@ -72,18 +72,12 @@ class aws_api {
     private $transcoderclient;
 
     /**
-     * @var bool whether the Moodle proxy should be used.
-     */
-    private $useproxy;
-
-    /**
      * aws_api constructor.
      *
      * @throws \dml_exception
      */
     public function __construct() {
         $this->region = get_config('local_smartmedia', 'api_region');
-        $this->useproxy = get_config('local_smartmedia', 'useproxy');
         $this->set_credentials(
             get_config('local_smartmedia', 'api_key'),
             get_config('local_smartmedia', 'api_secret'));
@@ -131,11 +125,6 @@ class aws_api {
             $args['credentials'] = $this->credentials;
         }
 
-        // If use proxy is configured, add to args.
-        if ($this->useproxy) {
-            $args['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
-        }
-
         // Allow handler overriding for testing.
         if ($handler != null) {
             $args['handler'] = $handler;
@@ -143,7 +132,9 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->pricingclient == null) {
-            $this->pricingclient = new PricingClient($args);
+            $client = new PricingClient($args);
+            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
+            $this->pricingclient = $client;
         }
 
         return $this->pricingclient;
@@ -170,11 +161,6 @@ class aws_api {
             $args['credentials'] = $this->credentials;
         }
 
-        // If use proxy is configured, add to args.
-        if ($this->useproxy) {
-            $args['http'] = ['proxy' => \local_aws\local\aws_helper::get_proxy_string()];
-        }
-
         // Allow handler overriding for testing.
         if ($handler != null) {
             $args['handler'] = $handler;
@@ -182,7 +168,9 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->transcoderclient == null) {
-            $this->transcoderclient = new ElasticTranscoderClient($args);
+            $client = new ElasticTranscoderClient($args);
+            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
+            $this->transcoderclient = $client;
         }
 
         return $this->transcoderclient;

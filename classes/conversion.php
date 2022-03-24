@@ -316,8 +316,8 @@ class conversion {
         } catch (\dml_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,
             // so re-throw the error.
-            if (strpos($e->getMessage(), 'locasmarconv_pat_uix') === false
-                    && strpos($e->getMessage(), 'locasmarconv_con_uix') === false) {
+            // Postgres / Mysql error messages.
+            if (stripos($e->getMessage(), 'duplicate') === false) {
                 throw $e;
             }
         }
