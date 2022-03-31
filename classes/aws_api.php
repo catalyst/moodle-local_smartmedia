@@ -132,9 +132,7 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->pricingclient == null) {
-            $client = new PricingClient($args);
-            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
-            $this->pricingclient = $client;
+            $this->pricingclient = \local_aws\local\client_factory::get_client('\Aws\Pricing\PricingClient', $args);
         }
 
         return $this->pricingclient;
@@ -168,9 +166,7 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->transcoderclient == null) {
-            $client = new ElasticTranscoderClient($args);
-            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
-            $this->transcoderclient = $client;
+            $this->transcoderclient = \local_aws\local\client_factory::get_client('\Aws\ElasticTranscoder\ElasticTranscoderClient', $args);
         }
 
         return $this->transcoderclient;
