@@ -152,9 +152,7 @@ class provision {
 
         // Only create client if it hasn't already been done.
         if ($this->s3client == null) {
-            $client = new S3Client($connectionoptions);
-            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
-            $this->s3client = $client;
+            $this->s3client = \local_aws\local\client_factory::get_client('\Aws\S3\S3Client', $connectionoptions);
         }
 
         return $this->s3client;
@@ -318,9 +316,7 @@ class provision {
 
         // Only create client if it hasn't already been done.
         if ($this->cloudformationclient == null) {
-            $client = new CloudFormationClient($connectionoptions);
-            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
-            $this->cloudformationclient = $client;
+            $this->cloudformationclient = \local_aws\local\client_factory::get_client('\Aws\CloudFormation\CloudFormationClient', $connectionoptions);
         }
 
         return $this->cloudformationclient;
@@ -458,9 +454,7 @@ class provision {
 
         // Only create client if it hasn't already been done.
         if ($this->lambdaclient == null) {
-            $client = new LambdaClient($connectionoptions);
-            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
-            $this->lambdaclient = $client;
+            $this->lambdaclient = \local_aws\local\client_factory::get_client('\Aws\Lambda\LambdaClient', $connectionoptions);
         }
 
         return $this->lambdaclient;

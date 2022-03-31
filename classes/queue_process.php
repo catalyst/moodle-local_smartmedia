@@ -93,9 +93,7 @@ class queue_process {
 
         // Only create client if it hasn't already been done.
         if (!isset($this->client)) {
-            $client = new SqsClient($connectionoptions);
-            $client = \local_aws\local\aws_helper::configure_client_proxy($client);
-            $this->client = $client;
+            $this->client = \local_aws\local\client_factory::get_client('\Aws\Sqs\SqsClient', $connectionoptions);
         }
 
         return $this->client;
