@@ -126,7 +126,7 @@ class conversion {
      *
      * @var array
      */
-    private const SERVICE_MAPPING = array(
+    public const SERVICE_MAPPING = array(
         'elastic_transcoder' => array('transcoder_status'),
         'StartLabelDetection' => array('rekog_label_status', 'Labels'),
         'StartContentModeration' => array('rekog_moderation_status', 'ModerationLabels'),
@@ -668,7 +668,9 @@ class conversion {
                   rekog_label_status, rekog_moderation_status, rekog_face_status, rekog_person_status,
                   detect_sentiment_status, detect_phrases_status, detect_entities_status';
 
-        $filerecords = $DB->get_records('local_smartmedia_conv', $conditions, '', $fields, 0, $limit);
+        // We should check forwards back, and prioritise immediate latency on new small files.
+        // If something is taking a long time, we can clear many small newer files without blocking the queue.
+        $filerecords = $DB->get_records('local_smartmedia_conv', $conditions, 'timecreated DESC', $fields, 0, $limit);
 
         return $filerecords;
     }
@@ -939,7 +941,7 @@ class conversion {
      *
      * @return array $transcodedfiles Array of \stored_file objects.
      */
-    private function get_transcode_files(\stdClass $conversionrecord, $handler=null) : array {
+    public function get_transcode_files(\stdClass $conversionrecord, $handler=null) : array {
         $awss3 = new \local_smartmedia\aws_s3();
         $s3client = $awss3->create_client($handler);
         $transcodedfiles = [];
@@ -963,7 +965,7 @@ class conversion {
                 'component' => 'local_smartmedia',
                 'filearea' => 'media',
                 'itemid' => 0,
-                'filepath' => '/' . $conversionrecord->contenthash . '/conversions/',
+                'filepath' => '/' . $ ->contenthash . '/conversions/',
                 'filename' => $filename,
             );
             $downloadparams = array(
@@ -1104,7 +1106,7 @@ class conversion {
      * @param string $process The process to get the file for.
      * @param \Aws\MockHandler|null $handler Optional handler.
      */
-    private function get_data_file(\stdClass $conversionrecord, string $process, $handler=null) {
+    public function get_data_file(\stdClass $conversionrecord, string $process, $handler=null) {
         $awss3 = new \local_smartmedia\aws_s3();
         $s3client = $awss3->create_client($handler);
 
@@ -1125,7 +1127,12 @@ class conversion {
                 'Key' => $conversionrecord->contenthash . '/metadata/' . $objectkey . '.json', // Required.
         );
 
-        $getobject = $s3client->getObject($downloadparams);
+        try {
+            $getobject = $s3client->getObject($downloadparams);
+        } catch (\Aws\S3\Exception\S3Exception $e) {
+            // This key must not exist, or similar. Handle and return false.
+            return false;
+        }
 
         $tmpfile = tmpfile();
         fwrite($tmpfile, $getobject['Body']);
@@ -1138,9 +1145,10 @@ class conversion {
             // Either way, there isn't anything we can do about it.
             // Move on.
             fclose($tmpfile);
-            return;
+            return false;
         }
         fclose($tmpfile);
+        return true;
     }
 
     /**
@@ -1212,7 +1220,7 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return \stdClass $updatedrecord The updated completion record.
      */
-    private function update_completion_status(\stdClass $updatedrecord, $handler=null) : \stdClass {
+    public function update_completion_status(\stdClass $updatedrecord, $handler=null) : \stdClass {
         global $DB;
 
         $completion = ($updatedrecord->transcoder_status == self::CONVERSION_FINISHED)
