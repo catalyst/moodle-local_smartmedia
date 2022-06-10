@@ -965,7 +965,7 @@ class conversion {
                 'component' => 'local_smartmedia',
                 'filearea' => 'media',
                 'itemid' => 0,
-                'filepath' => '/' . $ ->contenthash . '/conversions/',
+                'filepath' => '/' . $conversionrecord->contenthash . '/conversions/',
                 'filename' => $filename,
             );
             $downloadparams = array(
@@ -1106,7 +1106,7 @@ class conversion {
      * @param string $process The process to get the file for.
      * @param \Aws\MockHandler|null $handler Optional handler.
      */
-    public function get_data_file(\stdClass $conversionrecord, string $process, $handler=null) {
+    public function get_data_file(\stdClass $conversionrecord, string $process, $handler=null): bool {
         $awss3 = new \local_smartmedia\aws_s3();
         $s3client = $awss3->create_client($handler);
 
@@ -1129,8 +1129,9 @@ class conversion {
 
         try {
             $getobject = $s3client->getObject($downloadparams);
-        } catch (\Aws\S3\Exception\S3Exception $e) {
-            // This key must not exist, or similar. Handle and return false.
+        } catch (\Exception $e) {
+            // This key must not exist, or similar. Handle all exceptions and return false.
+            debugging("Failed getting specified data file {$downloadparams['Key']} from output bucket.");
             return false;
         }
 
@@ -1216,52 +1217,56 @@ class conversion {
      * Overall conversion record is finished when all the individual conversions are finished.
      *
      *
-     * @param \stdClass $updatedrecord The record to check the completion status for.
+     * @param \stdClass $record The record to check the completion status for.
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return \stdClass $updatedrecord The updated completion record.
      */
-    public function update_completion_status(\stdClass $updatedrecord, $handler=null) : \stdClass {
+    public function update_completion_status(\stdClass $record, $handler=null) : \stdClass {
         global $DB;
 
-        $completion = ($updatedrecord->transcoder_status == self::CONVERSION_FINISHED)
-        && ($updatedrecord->rekog_label_status == self::CONVERSION_FINISHED
-            || $updatedrecord->rekog_label_status == self::CONVERSION_NOT_FOUND)
-        && ($updatedrecord->rekog_moderation_status == self::CONVERSION_FINISHED
-            || $updatedrecord->rekog_moderation_status == self::CONVERSION_NOT_FOUND)
-        && ($updatedrecord->rekog_face_status == self::CONVERSION_FINISHED
-            || $updatedrecord->rekog_face_status == self::CONVERSION_NOT_FOUND)
-        && ($updatedrecord->rekog_person_status == self::CONVERSION_FINISHED
-            || $updatedrecord->rekog_person_status == self::CONVERSION_NOT_FOUND)
-        && ($updatedrecord->transcribe_status == self::CONVERSION_FINISHED
-            || $updatedrecord->transcribe_status == self::CONVERSION_NOT_FOUND)
-        && ($updatedrecord->detect_sentiment_status == self::CONVERSION_FINISHED
-            || $updatedrecord->detect_sentiment_status == self::CONVERSION_NOT_FOUND)
-        && ($updatedrecord->detect_phrases_status == self::CONVERSION_FINISHED
-            || $updatedrecord->detect_phrases_status == self::CONVERSION_NOT_FOUND)
-        && ($updatedrecord->detect_entities_status == self::CONVERSION_FINISHED
-            || $updatedrecord->detect_entities_status == self::CONVERSION_NOT_FOUND);
+        $completionfields = [
+            'transcoder_status',
+            'transcribe_status',
+            'rekog_label_status',
+            'rekog_moderation_status',
+            'rekog_face_status',
+            'rekog_person_status',
+            'detect_sentiment_status',
+            'detect_phrases_status',
+            'detect_entities_status',
+        ];
 
-        if (!empty($updatedrecord->timemodified)) {
-            $timeout = $updatedrecord->timemodified < (time() - DAYSECS);
+        $completionstatus = true;
+        // Assume completion is true. Iterate through every field.
+        // Errors or finished, either way the record is no longer pending.
+        foreach ($completionfields as $field) {
+            $completionstatus &= (
+                $record->$field == self::CONVERSION_FINISHED ||
+                $record->$field == self::CONVERSION_NOT_FOUND ||
+                $record->$field == self::CONVERSION_ERROR
+            );
+        }
+
+        if (!empty($record->timemodified)) {
+            $timeout = $record->timemodified < (time() - DAYSECS);
         } else {
             $timeout = false;
         }
 
         // Only set the final completion status if all other processes are finished.
-        if ($completion || $timeout) {
+        if ($completionstatus || $timeout) {
+            $record->status = self::CONVERSION_FINISHED;
+            $record->timemodified = time();
+            $record->timecompleted = time();
 
-                $updatedrecord->status = self::CONVERSION_FINISHED;
-                $updatedrecord->timemodified = time();
-                $updatedrecord->timecompleted = time();
+            // Update the database with the modified conversion record.
+            $DB->update_record('local_smartmedia_conv', $record);
 
-                // Update the database with the modified conversion record.
-                $DB->update_record('local_smartmedia_conv', $updatedrecord);
-
-                // Delete the related files from AWS.
-                $this->cleanup_aws_files($updatedrecord->contenthash, $handler);
+            // Delete the related files from AWS.
+            $this->cleanup_aws_files($record->contenthash, $handler);
         }
 
-        return $updatedrecord;
+        return $record;
     }
 
     /**

@@ -17,79 +17,55 @@
 /**
  * A scheduled task.
  *
- * @package    local_smartmedia
- * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     local_smartmedia
+ * @author      Peter Burnett <peterburnett@catalyst-au.net>
+ * @copyright   2022 Catalyst IT
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 namespace local_smartmedia\task;
 
 use core\task\scheduled_task;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
+use \local_smartmedia\conversion;
 
 class poll_stale_conversions extends scheduled_task {
 
+    /**
+     * Name getter for task.
+     *
+     * @return string
+     */
     public function get_name() {
         return get_string('task:poll_conversions', 'local_smartmedia');
     }
 
+    /**
+     * Scheduled task entry point.
+     */
     public function execute() {
         mtrace('Starting to poll stale conversions...');
 
         $records = self::get_stale_conversions();
-        mtrace("Found {count($records)} stale conversions to poll");
+        $count = count($records);
+        mtrace("Found $count stale conversions to poll");
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $conversion = new \local_smartmedia\conversion($transcoder);
 
         foreach ($records as $record) {
-            // Here we should attempt to pull files, as if we had a completion message from a service.
-            if ($record->transcoder_status == \local_smartmedia\conversion::CONVERSION_IN_PROGRESS ||
-                    $record->transcoder_status == \local_smartmedia\conversion::CONVERSION_ACCEPTED) {
-
-                // Get Elastic Transcoder files. If we found some, this was a win.
-                $files = $conversion->get_transcode_files($record);
-
-                $record->transcoder_status = $files > 0
-                    ? \local_smartmedia\conversion::CONVERSION_FINISHED
-                    :\local_smartmedia\conversion::CONVERSION_ERROR;
-            }
-
-            $services = [
-                'transcribe_status' => 'TranscribeComplete',
-                'rekog_label_status' => 'StartLabelDetection',
-                'rekog_moderation_status' => 'StartContentModeration',
-                'rekog_face_status' => 'StartFaceDetection',
-                'rekog_person_status' => 'StartPersonTracking',
-                'detect_sentiment_status' => 'SentimentComplete',
-                'detect_phrases_status' => 'PhrasesComplete',
-                'detect_entities_status' => 'EntitiesComplete'
-            ];
-            // Now we want to check all of the pending enrichment types.
-            foreach ($services as $service => $filecode) {
-                if ($record->$service == \local_smartmedia\conversion::CONVERSION_IN_PROGRESS ||
-                    $record->$service == \local_smartmedia\conversion::CONVERSION_ACCEPTED) {
-
-                // Get Elastic Transcoder files. If we found some, this was a win.
-                $success = $conversion->get_data_file($record, $filecode);
-
-                $statusfield = \local_smartmedia\conversion::SERVICE_MAPPING[$filecode][0];
-                $record->$statusfield = $success
-                    ? \local_smartmedia\conversion::CONVERSION_FINISHED
-                    :\local_smartmedia\conversion::CONVERSION_ERROR;
-                }
-            }
-
-            // And now, the status of all pending is completed, mark finished.
-            $conversion->update_completion_status($record);
-
-            mtrace("Finished polling stale conversion {$record->contenthash}");
+            self::poll_conversion_status($record, $conversion);
         }
 
         mtrace("Finished polling stale conversions");
     }
 
+    /**
+     * Get all conversions eligible for polling.
+     *
+     * @return array
+     */
     private function get_stale_conversions(): array {
         global $DB;
 
@@ -98,7 +74,6 @@ class poll_stale_conversions extends scheduled_task {
         list($in, $inparams) = $DB->get_in_or_equal($endstatus, SQL_PARAMS_NAMED);
         $sql = "SELECT *
                   FROM {local_smartmedia_conv} conv
-                      msg.objectkey
                  WHERE conv.timecreated < :timeboundary
                    AND conv.status = :status
                    AND (
@@ -110,10 +85,61 @@ class poll_stale_conversions extends scheduled_task {
 
         $params = array_merge($inparams, [
             'timeboundary' => time() - 7 * DAYSECS,
-            'status' => \local_smartmedia\conversion::CONVERSION_IN_PROGRESS
+            'status' => conversion::CONVERSION_IN_PROGRESS
         ]);
 
         return $DB->get_records_sql($sql, $params, 0, 1000);
+    }
+
+    /**
+     * Attempt to match a given conversion record with files remaining in S3.
+     *
+     * @param \stdClass $record the conversion record to check.
+     * @param conversion $conversion Conversion handler to use.
+     * @param $handler Optional AWS handler. Used for mocking in tests.
+     */
+    private function poll_conversion_status(\stdClass $record, conversion $conversion, $handler = null) {
+        // Here we should attempt to pull files, as if we had a completion message from a service.
+        if ($record->transcoder_status == conversion::CONVERSION_IN_PROGRESS ||
+                $record->transcoder_status == conversion::CONVERSION_ACCEPTED) {
+
+            // Get Elastic Transcoder files. If we found some, this was a win.
+            $files = $conversion->get_transcode_files($record, $handler);
+
+            $record->transcoder_status = count($files) > 0
+                ? conversion::CONVERSION_FINISHED
+                : conversion::CONVERSION_ERROR;
+        }
+
+        $services = [
+            'transcribe_status' => 'TranscribeComplete',
+            'rekog_label_status' => 'StartLabelDetection',
+            'rekog_moderation_status' => 'StartContentModeration',
+            'rekog_face_status' => 'StartFaceDetection',
+            'rekog_person_status' => 'StartPersonTracking',
+            'detect_sentiment_status' => 'SentimentComplete',
+            'detect_phrases_status' => 'PhrasesComplete',
+            'detect_entities_status' => 'EntitiesComplete'
+        ];
+        // Now we want to check all of the pending enrichment types.
+        foreach ($services as $service => $filecode) {
+            if ($record->$service == conversion::CONVERSION_IN_PROGRESS ||
+                $record->$service == conversion::CONVERSION_ACCEPTED) {
+
+                // Get Elastic Transcoder files. If we found some, this was a win.
+                $success = $conversion->get_data_file($record, $filecode, $handler);
+
+                $statusfield = conversion::SERVICE_MAPPING[$filecode][0];
+                $record->$statusfield = $success
+                    ? conversion::CONVERSION_FINISHED
+                    : conversion::CONVERSION_ERROR;
+            }
+        }
+
+        // And now, the status of all pending is completed, mark finished.
+        $conversion->update_completion_status($record, $handler);
+
+        mtrace("Finished polling stale conversion {$record->contenthash}");
     }
 
 }

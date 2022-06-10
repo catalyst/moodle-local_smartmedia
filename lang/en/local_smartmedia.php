@@ -177,3 +177,4 @@ $string['test:bucketnotexists'] = 'The {$a} bucket does not exist.';
 $string['test:fileuploaded'] = 'Test file uploaded';
 $string['test:uploadfile'] = 'Uploading test file';
 $string['task:reportprocess'] = 'Smartmedia: extract report data.';
+$string['task:poll_conversions'] = 'Check stale conversions';
