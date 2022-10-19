@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/smartmedia/db" VERSION="20210310" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
+<XMLDB PATH="local/smartmedia/db" VERSION="20221018" COMMENT="XMLDB file for Moodle local/smartmedia to track smart media conversions"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -83,6 +83,7 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="messagehash" UNIQUE="true" FIELDS="messagehash"/>
+        <INDEX NAME="objectkey" UNIQUE="false" FIELDS="objectkey"/>
       </INDEXES>
     </TABLE>
     <TABLE NAME="local_smartmedia_reports" COMMENT="Various data used in smartmedia reports">

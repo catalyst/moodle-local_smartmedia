@@ -355,5 +355,20 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2021111001, 'local', 'smartmedia');
     }
 
+    if ($oldversion < 2022101800) {
+
+        // Define index objectkey (not unique) to be added to local_smartmedia_queue_msgs.
+        $table = new xmldb_table('local_smartmedia_queue_msgs');
+        $index = new xmldb_index('objectkey', XMLDB_INDEX_NOTUNIQUE, ['objectkey']);
+
+        // Conditionally launch add index objectkey.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Smartmedia savepoint reached.
+        upgrade_plugin_savepoint(true, 2022101800, 'local', 'smartmedia');
+    }
+
     return true;
 }

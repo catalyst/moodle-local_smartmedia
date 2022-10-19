@@ -14,20 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Plugin version and other meta-data are defined here.
- *
- * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+abstract class smartmedia_testcase extends advanced_testcase {
 
-defined('MOODLE_INTERNAL') || die();
-
-$plugin->component = 'local_smartmedia';
-$plugin->release = 2022101800;
-$plugin->version = 2022101800;
-$plugin->requires = 2018051700;
-$plugin->dependencies = array(
-    'local_aws' => 2022011301
-);
+    /** @var float Allowed numerical distance between two values to consider them equal */
+    const PRECISION_DELTA = 0.000001;
+}
