@@ -14,14 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit test for \local_smartmedia\location_transcode_pricing class.
- *
- * @package    local_smartmedia
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @group      local_smartmedia
- */
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/local/smartmedia/tests/smartmedia_testcase.php');
 
 use local_smartmedia\pricing\location_transcode_pricing;
 
@@ -31,8 +27,9 @@ use local_smartmedia\pricing\location_transcode_pricing;
  * @package    local_smartmedia
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @group      local_smartmedia
  */
-class local_smartmedia_location_transcode_pricing_testcase extends advanced_testcase {
+class local_smartmedia_location_transcode_pricing_testcase extends smartmedia_testcase {
 
     public function setUp() {
         $this->resetAfterTest();
@@ -67,7 +64,7 @@ class local_smartmedia_location_transcode_pricing_testcase extends advanced_test
             $locationpricing->set_hd_pricing($hdpricing);
         }
         $actual = $locationpricing->calculate_high_definition_cost($duration);
-        $this->assertEquals($expected, $actual);
+        $this->assertEqualsWithDelta($expected, $actual, smartmedia_testcase::PRECISION_DELTA);
     }
 
     /**
@@ -86,7 +83,7 @@ class local_smartmedia_location_transcode_pricing_testcase extends advanced_test
             $locationpricing->set_sd_pricing($sdpricing);
         }
         $actual = $locationpricing->calculate_standard_definition_cost($duration);
-        $this->assertEquals($expected, $actual);
+        $this->assertEqualsWithDelta($expected, $actual, smartmedia_testcase::PRECISION_DELTA);
     }
 
     /**
@@ -105,6 +102,6 @@ class local_smartmedia_location_transcode_pricing_testcase extends advanced_test
             $locationpricing->set_audio_pricing($audiopricing);
         }
         $actual = $locationpricing->calculate_audio_cost($duration);
-        $this->assertEquals($expected, $actual);
+        $this->assertEqualsWithDelta($expected, $actual, smartmedia_testcase::PRECISION_DELTA);
     }
 }

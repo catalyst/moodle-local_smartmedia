@@ -14,13 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit test for \local_smartmedia\location_transcode_pricing class.
- *
- * @package    local_smartmedia
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/local/smartmedia/tests/smartmedia_testcase.php');
 
 use local_smartmedia\aws_ets_preset;
 use local_smartmedia\pricing\location_transcode_pricing;
@@ -36,7 +33,7 @@ use local_smartmedia\pricing_calculator;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
+class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
 
     /**
      * @var array of json objects representing the expected API response from \Aws\ElasticTranscoder
@@ -191,7 +188,7 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
         );
         $actual = $pricingcalculator->calculate_transcode_cost($height, $duration, $videostreams, $audiostreams);
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEqualsWithDelta($expected, $actual, smartmedia_testcase::PRECISION_DELTA);
     }
 
     /**
@@ -285,7 +282,7 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
         );
         $actual = $pricingcalculator->calculate_rekog_cost($duration);
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEqualsWithDelta($expected, $actual, smartmedia_testcase::PRECISION_DELTA);
     }
 
     /**
@@ -331,7 +328,7 @@ class local_smartmedia_pricing_calculator_testcase extends advanced_testcase {
         );
         $actual = $pricingcalculator->calculate_transcribe_cost($duration);
 
-        $this->assertEquals($expected, $actual);
+        $this->assertEqualsWithDelta($expected, $actual, smartmedia_testcase::PRECISION_DELTA);
     }
 
 }
