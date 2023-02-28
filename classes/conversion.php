@@ -452,16 +452,33 @@ class conversion {
      * @return array $mediafiles
      */
     private function get_media_files(string $contenthash, int $filter=self::FILTER_PLAYLIST) : array {
+        global $DB;
 
         // Get all media files for this source file.
         $fs = get_file_storage();
-        $files = $fs->get_area_files(1, 'local_smartmedia', 'media', 0);
-        $mediafilepath = '/' . $contenthash . '/conversions/';
-        $mediafiles = $this->filter_files_by_filepath($files, $mediafilepath);
+
+        // This is basically the fetch used by file_storage:get_area_files() except it also includes
+        // a filepath filter which should drastically reduce the number of records loaded into memory.
+        // When the number of media files start to exceed 100,000, this extra filter is required to
+        // reduce page loading times.
+        $sql = "SELECT " . self::instance_sql_fields() . "
+                  FROM {files} f
+             LEFT JOIN {files_reference} r
+                    ON f.referencefileid = r.id
+                 WHERE f.contextid = 1
+                   AND f.component = 'local_smartmedia'
+                   AND f.filearea = 'media'
+                   AND f.itemid = 0
+                   AND f.filepath = ?";
+        $filepath = "/$contenthash/conversions/";
+        $filerecords = $DB->get_records_sql($sql, [$filepath]);
+        $mediafiles = [];
+        foreach ($filerecords as $filerecord) {
+            $mediafiles[$filerecord->pathnamehash] = $fs->get_file_instance($filerecord);
+        }
 
         if ($filter == self::FILTER_PLAYLIST) {
             $mediafiles = array_filter($mediafiles, array($this, 'filter_file_playlist'));
-
         } else if ($filter == self::FILTER_DOWNLOAD) {
             $mediafiles = array_filter($mediafiles, array($this, 'filter_file_download'));
         }
@@ -1389,4 +1406,38 @@ class conversion {
 
     }
 
+    /**
+     * Taken from \file_storage.
+     *
+     * Get the sql formated fields for a file instance to be created from a
+     * {files} and {files_refernece} join.
+     *
+     * @param string $filesprefix the table prefix for the {files} table
+     * @param string $filesreferenceprefix the table prefix for the {files_reference} table
+     * @return string the sql to go after a SELECT
+     */
+    private static function instance_sql_fields(string $filesprefix = 'f', string $filesreferenceprefix = 'r') {
+        // Note, these fieldnames MUST NOT overlap between the two tables,
+        // else problems like MDL-33172 occur.
+        $filefields = array('contenthash', 'pathnamehash', 'contextid', 'component', 'filearea',
+            'itemid', 'filepath', 'filename', 'userid', 'filesize', 'mimetype', 'status', 'source',
+            'author', 'license', 'timecreated', 'timemodified', 'sortorder', 'referencefileid');
+
+        $referencefields = array('repositoryid' => 'repositoryid',
+            'reference' => 'reference',
+            'lastsync' => 'referencelastsync');
+
+        // id is specifically named to prevent overlapping between the two tables.
+        $fields = array();
+        $fields[] = $filesprefix.'.id AS id';
+        foreach ($filefields as $field) {
+            $fields[] = "{$filesprefix}.{$field}";
+        }
+
+        foreach ($referencefields as $field => $alias) {
+            $fields[] = "{$filesreferenceprefix}.{$field} AS {$alias}";
+        }
+
+        return implode(', ', $fields);
+    }
 }
