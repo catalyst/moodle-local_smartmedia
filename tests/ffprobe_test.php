@@ -37,7 +37,7 @@ class local_smartmedia_ffprobe_testcase extends advanced_testcase {
      */
     public $fixture;
 
-    public function setUp() {
+    public function setUp(): void {
         $this->resetAfterTest();
         global $CFG;
 

@@ -32,7 +32,7 @@
  */
 class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
 
-    public function setUp() {
+    public function setUp(): void {
         $this->resetAfterTest();
 
         // Allow setting of FFProbe via Env Var or define
