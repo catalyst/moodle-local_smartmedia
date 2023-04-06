@@ -1215,7 +1215,7 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
             $result = $method->invoke($conversion, $playlistcontent, $contenthash);
 
             $needle = "pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
-            $this->assertContains($needle, $result);
+            $this->assertStringContainsString($needle, $result);
         }
     }
 
@@ -1816,12 +1816,12 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $filecontent, $fileid);
 
-        $this->assertNotContains('media/0/13ed14cef7', $result);
-        $this->assertContains('media/1391/13ed14cef7', $result);
-        $this->assertNotContains('conversions/1351620000001-500030.fmp4', $result);
-        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500030.fmp4', $result);
-        $this->assertNotContains('conversions/1351620000001-500050.fmp4', $result);
-        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500050.fmp4', $result);
+        $this->assertStringNotContainsString('media/0/13ed14cef7', $result);
+        $this->assertStringContainsString('media/1391/13ed14cef7', $result);
+        $this->assertStringNotContainsString('conversions/1351620000001-500030.fmp4', $result);
+        $this->assertStringContainsString('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500030.fmp4', $result);
+        $this->assertStringNotContainsString('conversions/1351620000001-500050.fmp4', $result);
+        $this->assertStringContainsString('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500050.fmp4', $result);
     }
 
     /**
@@ -1841,12 +1841,12 @@ class local_smartmedia_conversion_testcase extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $filecontent, $fileid);
 
-        $this->assertNotContains('media/0/13ed14cef7', $result);
-        $this->assertContains('media/1391/13ed14cef7', $result);
-        $this->assertNotContains('conversions/1351620000001-200015_v4.m3u8', $result);
-        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200015_v4.m3u8', $result);
-        $this->assertNotContains('conversions/1351620000001-200045_v4.m3u8', $result);
-        $this->assertContains('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200045_v4.m3u8', $result);
+        $this->assertStringNotContainsString('media/0/13ed14cef7', $result);
+        $this->assertStringContainsString('media/1391/13ed14cef7', $result);
+        $this->assertStringNotContainsString('conversions/1351620000001-200015_v4.m3u8', $result);
+        $this->assertStringContainsString('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200015_v4.m3u8', $result);
+        $this->assertStringNotContainsString('conversions/1351620000001-200045_v4.m3u8', $result);
+        $this->assertStringContainsString('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200045_v4.m3u8', $result);
     }
 
     /**
