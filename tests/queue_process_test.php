@@ -51,7 +51,7 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
     /*
      * Set up method for this test suite.
      */
-    public function setUp() {
+    public function setUp(): void {
         global $CFG;
 
         set_config('api_key', 'key', 'local_smartmedia');

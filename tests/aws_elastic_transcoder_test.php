@@ -76,7 +76,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
      */
     public $apisecret;
 
-    public function setUp() {
+    public function setUp(): void {
         global $CFG;
 
         $this->resetAfterTest();

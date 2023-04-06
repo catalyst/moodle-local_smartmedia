@@ -40,7 +40,7 @@ class local_smartmedia_aws_ets_product_testcase extends advanced_testcase {
      */
     public $fixture;
 
-    public function setUp() {
+    public function setUp(): void {
         global $CFG;
 
         $this->resetAfterTest();
