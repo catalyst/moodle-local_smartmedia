@@ -38,7 +38,7 @@ require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
  */
 class local_smartmedia_report_summary_testcase extends advanced_testcase {
 
-    public function setUp() {
+    public function setUp(): void {
         $this->resetAfterTest();
     }
 

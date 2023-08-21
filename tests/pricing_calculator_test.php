@@ -66,7 +66,7 @@ class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
      */
     public $apisecret;
 
-    public function setUp() {
+    public function setUp(): void {
         global $CFG;
 
         $this->resetAfterTest();

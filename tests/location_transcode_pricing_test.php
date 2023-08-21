@@ -31,7 +31,7 @@ use local_smartmedia\pricing\location_transcode_pricing;
  */
 class local_smartmedia_location_transcode_pricing_testcase extends smartmedia_testcase {
 
-    public function setUp() {
+    public function setUp(): void {
         $this->resetAfterTest();
     }
 
