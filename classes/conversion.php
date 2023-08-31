@@ -1153,6 +1153,10 @@ class conversion {
         }
 
         $tmpfile = tmpfile();
+        if (empty($getobject['Body'])) {
+            // Null object received from S3... nothing to do here but return false.
+            return false;
+        }
         fwrite($tmpfile, $getobject['Body']);
         $tmppath = stream_get_meta_data($tmpfile)['uri'];
 
