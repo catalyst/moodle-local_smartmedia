@@ -14,15 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Class for converting files between different file formats using AWS.
- *
- * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace local_smartmedia;
 
+use stdClass;
 use Aws\S3\Exception\S3Exception;
 use core\aws\client_factory;
 
@@ -51,7 +45,7 @@ class aws_s3 {
     /**
      * Class constructor
      *
-     * @param \stdClass|null $config Optional configuarion object to use.
+     * @param stdClass|null $config Optional configuarion object to use.
      */
     public function __construct($config=null) {
 
@@ -70,16 +64,16 @@ class aws_s3 {
      * @return \Aws\S3\S3Client
      */
     public function create_client($handler=null) {
-        $connectionoptions = array(
+        $connectionoptions = [
             'version' => 'latest',
-            'region' => $this->config->api_region
-        );
+            'region' => $this->config->api_region,
+        ];
 
         $usesdkcreds = get_config('local_smartmedia', 'usesdkcreds');
         if (!$usesdkcreds) {
             $connectionoptions['credentials'] = [
                 'key' => $this->config->api_key,
-                'secret' => $this->config->api_secret
+                'secret' => $this->config->api_secret,
             ];
         }
 
@@ -130,7 +124,7 @@ class aws_s3 {
      *
      * @return boolean $isset Is all configuration options set.
      */
-    private function is_config_set() : bool {
+    private function is_config_set(): bool {
         $isset = true;
 
         if (empty($this->config->api_key) ||
@@ -152,13 +146,13 @@ class aws_s3 {
      * @return object with success and message
      */
     public function is_bucket_accessible($bucket) {
-        $connection = new \stdClass();
+        $connection = new stdClass();
         $connection->success = true;
         $connection->message = '';
 
         try {
-            $result = $this->client->headBucket(array(
-                'Bucket' => $bucket));
+            $result = $this->client->headBucket([
+                'Bucket' => $bucket]);
 
             $connection->message = get_string('settings:connectionsuccess', 'local_smartmedia');
         } catch (S3Exception $e) {
@@ -178,15 +172,15 @@ class aws_s3 {
      * @return object with success and message properties
      */
     private function have_bucket_permissions($bucket) {
-        $permissions = new \stdClass();
+        $permissions = new stdClass();
         $permissions->success = true;
-        $permissions->messages = array();
+        $permissions->messages = [];
 
         try {
-            $result = $this->client->putObject(array(
+            $result = $this->client->putObject([
                 'Bucket' => $bucket,
                 'Key' => 'permissions_check_file',
-                'Body' => 'test content'));
+                'Body' => 'test content']);
         } catch (S3Exception $e) {
             $details = $this->get_exception_details($e);
             $permissions->messages[] = get_string('settings:writefailure', 'local_smartmedia') . $details;
@@ -194,9 +188,9 @@ class aws_s3 {
         }
 
         try {
-            $result = $this->client->getObject(array(
+            $result = $this->client->getObject([
                 'Bucket' => $bucket,
-                'Key' => 'permissions_check_file'));
+                'Key' => 'permissions_check_file']);
         } catch (S3Exception $e) {
             $errorcode = $e->getAwsErrorCode();
             // Write could have failed.
@@ -208,9 +202,9 @@ class aws_s3 {
         }
 
         try {
-            $result = $this->client->deleteObject(array(
+            $result = $this->client->deleteObject([
                 'Bucket' => $bucket,
-                'Key' => 'permissions_check_file'));
+                'Key' => 'permissions_check_file']);
             $permissions->messages[] = get_string('settings:deletesuccess', 'local_smartmedia');
         } catch (S3Exception $e) {
             $errorcode = $e->getAwsErrorCode();

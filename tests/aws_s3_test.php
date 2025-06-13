@@ -14,15 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-
-/**
- * PHPUnit tests for Libre Lambda file converter.
- *
- * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
+use local_smartmedia\aws_s3;
 use Aws\Result;
 use Aws\MockHandler;
 use Aws\CommandInterface;
@@ -36,13 +28,13 @@ use Aws\S3\Exception\S3Exception;
  * @copyright   2018 Matt Porritt <mattp@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class local_smartmedia_aws_s3_testcase extends advanced_testcase {
+final class aws_s3_test extends advanced_testcase {
 
     /**
      * Test is_config_set method with missing configuration.
      */
-    public function test_is_config_set_false() {
-        $awss3 = new \local_smartmedia\aws_s3();
+    public function test_is_config_set_false(): void {
+        $awss3 = new aws_s3();
 
         // Reflection magic as we are directly testing a private method.
         $method = new ReflectionMethod('\local_smartmedia\aws_s3', 'is_config_set');
@@ -55,7 +47,7 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
     /**
      * Test is_config_set method with missing configuration.
      */
-    public function test_is_config_set_true() {
+    public function test_is_config_set_true(): void {
         $this->resetAfterTest();
 
         set_config('api_key', 'key', 'local_smartmedia');
@@ -64,7 +56,7 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
         set_config('s3_output_bucket', 'bucket2', 'local_smartmedia');
         set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
 
-        $awss3 = new \local_smartmedia\aws_s3();
+        $awss3 = new aws_s3();
 
         // Reflection magic as we are directly testing a private method.
         $method = new ReflectionMethod('\local_smartmedia\aws_s3', 'is_config_set');
@@ -93,7 +85,7 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
             return new S3Exception('Mock exception', $cmd);
         });
 
-        $awss3 = new \local_smartmedia\aws_s3();
+        $awss3 = new aws_s3();
         $awss3->create_client($mock);
 
         // Reflection magic as we are directly testing a private method.
@@ -108,7 +100,7 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
      * Test the is bucket accessible method. Should return false.
      * We mock out the S3 client response as we are not trying to connect to the live AWS API.
      */
-    public function test_is_bucket_accessible_true() {
+    public function test_is_bucket_accessible_true(): void {
 
         $this->resetAfterTest();
 
@@ -120,9 +112,9 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
 
          // Set up the AWS mock.
          $mock = new MockHandler();
-         $mock->append(new Result(array()));
+         $mock->append(new Result([]));
 
-         $awss3 = new \local_smartmedia\aws_s3();
+         $awss3 = new aws_s3();
          $awss3->create_client($mock);
 
          // Reflection magic as we are directly testing a private method.
@@ -157,7 +149,7 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
             return new S3Exception('Mock exception', $cmd);
         });
 
-        $awss3 = new \local_smartmedia\aws_s3();
+        $awss3 = new aws_s3();
         $awss3->create_client($mock);
 
         // Reflection magic as we are directly testing a private method.
@@ -171,7 +163,7 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
     /**
      * Test bucket permissions method of converter class.
      */
-    public function test_have_bucket_permissions_true() {
+    public function test_have_bucket_permissions_true(): void {
         $this->resetAfterTest();
 
         set_config('api_key', 'key', 'local_smartmedia');
@@ -182,11 +174,11 @@ class local_smartmedia_aws_s3_testcase extends advanced_testcase {
 
         // Set up the AWS mock.
         $mock = new MockHandler();
-        $mock->append(new Result(array()));
-        $mock->append(new Result(array()));
-        $mock->append(new Result(array()));
+        $mock->append(new Result([]));
+        $mock->append(new Result([]));
+        $mock->append(new Result([]));
 
-        $awss3 = new \local_smartmedia\aws_s3();
+        $awss3 = new aws_s3();
         $awss3->create_client($mock);
 
         // Reflection magic as we are directly testing a private method.

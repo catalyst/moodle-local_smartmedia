@@ -14,14 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit test for \local_smartmedia\aws_ets_pricing_client class.
- *
- * @package    local_smartmedia
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
+use local_smartmedia\aws_api;
 use Aws\MockHandler;
 use Aws\Result;
 use local_smartmedia\pricing\aws_ets_pricing_client;
@@ -36,7 +29,7 @@ use local_smartmedia\pricing\location_transcode_pricing;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase {
+final class aws_ets_pricing_client_test extends advanced_testcase {
 
     /**
      * @var array of json objects representing the expected API response from \Aws\Pricing\PricingClient::getProducts
@@ -66,6 +59,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
 
     public function setUp(): void {
         global $CFG;
+        parent::setUp();
 
         $this->resetAfterTest();
 
@@ -96,7 +90,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
         $mockresult = new Result($mockdata);
         $mockhandler->append($mockresult);
 
-        $api = new local_smartmedia\aws_api();
+        $api = new aws_api();
         $mock = $api->create_pricing_client($mockhandler);
 
         return [$mock, $mockresult];
@@ -105,7 +99,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
     /**
      * Test that we can get all products for the AWS Elastic Transcode Service.
      */
-    public function test_get_products() {
+    public function test_get_products(): void {
 
         // Mock the pricing client so it returns fixture data.
         list($mock, $mockresult) = $this->create_mock_pricing_client($this->fixture['getProducts']);
@@ -128,7 +122,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
      * Test that we can get a description of the AmazonETS service.
      * @throws \dml_exception
      */
-    public function test_describe_service() {
+    public function test_describe_service(): void {
 
         // Mock the pricing client so it returns fixture data.
         list($mock, $mockresult) = $this->create_mock_pricing_client($this->fixture['describeServices']);
@@ -149,7 +143,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
     /**
      * Possible attribute names for test_get_attribute_values.
      */
-    public function get_attributes_provider() {
+    public static function get_attributes_provider(): array {
         return [
             ['productFamily'],
             ['transcodingResult'],
@@ -157,7 +151,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
             ['termType'],
             ['usageType'],
             ['location'],
-            ['videoResolution']
+            ['videoResolution'],
         ];
     }
 
@@ -170,7 +164,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
      *
      * @throws \dml_exception
      */
-    public function test_get_attribute_values($attribute) {
+    public function test_get_attribute_values($attribute): void {
 
         // Get the fixture for creating out mock.
         $fixture = $this->fixture['getAttributeValues'][$attribute];
@@ -195,7 +189,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
     /**
      * Possible region codes names for test_get_location_pricing.
      */
-    public function get_location_provider() {
+    public static function get_location_provider(): array {
         return [
             ['us-east-1'],
             ['us-west-1'],
@@ -204,7 +198,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
             ['ap-south-1'],
             ['ap-southeast-1'],
             ['ap-southeast-2'],
-            ['eu-west-1']
+            ['eu-west-1'],
         ];
     }
 
@@ -217,7 +211,7 @@ class local_smartmedia_aws_ets_pricing_client_testcase extends advanced_testcase
      *
      * @throws \dml_exception
      */
-    public function test_get_location_pricing($region) {
+    public function test_get_location_pricing($region): void {
 
         // Mock the pricing client so it returns fixture data.
         list($mock, $mockresult) = $this->create_mock_pricing_client($this->fixture['getProducts']);

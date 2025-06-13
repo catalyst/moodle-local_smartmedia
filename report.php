@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * A report to display a table of metadata for the multimedia assets in this Moodle instance.
  *
@@ -21,6 +22,10 @@
  * @copyright  2019 Catalyst IT
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+use core\url;
+use core\context\system;
+
 require_once('../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 require_once($CFG->libdir . '/tablelib.php');
@@ -32,13 +37,13 @@ $baseurl = $CFG->wwwroot . "/local/smartmedia/report.php";
 
 // Calls require_login and performs permissions checks for admin pages.
 admin_externalpage_setup('local_smartmedia_report', '', null, '',
-    array('pagelayout' => 'report'));
+    ['pagelayout' => 'report']);
 
 $title = get_string('pluginname', 'local_smartmedia');
-$url = new moodle_url($baseurl);
+$url = new url($baseurl);
 
 $PAGE->set_url($url);
-$PAGE->set_context(context_system::instance());
+$PAGE->set_context(system::instance());
 $PAGE->set_title($title);
 $PAGE->set_heading($title);
 

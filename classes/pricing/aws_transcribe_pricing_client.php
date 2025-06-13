@@ -14,15 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Service client for getting AWS pricing information for the Transcribe service.
- *
- * @package     local_smartmedia
- * @author      Peter Burnett <peterburnett@catalyst-au.net>
- * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia\pricing;
 
 use Aws\Pricing\PricingClient;
@@ -64,7 +55,7 @@ class aws_transcribe_pricing_client extends aws_base_pricing_client {
         $transcribefilter = [
             'Field' => 'productFamily',
             'Type' => self::DEFAULT_TYPE,
-            'Value' => 'Transcription Job'
+            'Value' => 'Transcription Job',
         ];
         $products = $this->get_products([$locationfilter, $transcribefilter], 'transcribe');
 

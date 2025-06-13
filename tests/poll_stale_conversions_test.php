@@ -41,9 +41,9 @@ use Psr\Http\Message\RequestInterface;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_poll_stale_conversions_testcase extends advanced_testcase {
+final class poll_stale_conversions_test extends advanced_testcase {
 
-    public function test_get_stale_conversions() {
+    public function test_get_stale_conversions(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -62,7 +62,7 @@ class local_smartmedia_poll_stale_conversions_testcase extends advanced_testcase
             'detect_entities_status'    => conversion::CONVERSION_NOT_FOUND,
             'timecreated'               => time(),
             'timemodified'              => time(),
-            'timecompleted'             => null
+            'timecompleted'             => null,
         ];
 
         // Setup a valid poll candidate. Old and in progress.
@@ -90,7 +90,7 @@ class local_smartmedia_poll_stale_conversions_testcase extends advanced_testcase
 
         // Now get records, and confirm only the valid record is selected.
         $task = new poll_stale_conversions();
-        $method = new \ReflectionMethod($task, 'get_stale_conversions');
+        $method = new ReflectionMethod($task, 'get_stale_conversions');
         $method->setAccessible(true);
         $results = $method->invoke($task);
 
@@ -132,11 +132,11 @@ class local_smartmedia_poll_stale_conversions_testcase extends advanced_testcase
 
         // Now get records, and confirm only the valid record is selected.
         $task = new poll_stale_conversions();
-        $method = new \ReflectionMethod($task, 'poll_conversion_status');
+        $method = new ReflectionMethod($task, 'poll_conversion_status');
         $method->setAccessible(true);
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $conversion = new \local_smartmedia\conversion($transcoder);
+        $conversion = new conversion($transcoder);
 
         $baserecord = [
             'pathnamehash'              => sha1('path'),
@@ -153,7 +153,7 @@ class local_smartmedia_poll_stale_conversions_testcase extends advanced_testcase
             'detect_entities_status'    => conversion::CONVERSION_NOT_FOUND,
             'timecreated'               => time(),
             'timemodified'              => time(),
-            'timecompleted'             => null
+            'timecompleted'             => null,
         ];
 
         // First we want to test a record with no files found for transcoder or status.
@@ -165,10 +165,10 @@ class local_smartmedia_poll_stale_conversions_testcase extends advanced_testcase
         // Append an empty list for all files, and a s3 exception for data file getting, and an exception for deleting.
         $mockhandler->append($mockgetempty);
         $mockhandler->append(function (CommandInterface $cmd, RequestInterface $req) {
-            return new S3Exception('Mock exception', $cmd, array('code' => 'FAIL'));
+            return new S3Exception('Mock exception', $cmd, ['code' => 'FAIL']);
         });
         $mockhandler->append(function (CommandInterface $cmd, RequestInterface $req) {
-            return new S3Exception('Mock exception', $cmd, array('code' => 'FAIL'));
+            return new S3Exception('Mock exception', $cmd, ['code' => 'FAIL']);
         });
         $mockhandler->append($mockgetempty);
 

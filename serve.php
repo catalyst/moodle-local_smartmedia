@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * Low overhead file serving for chunked smartmedia streaming.
  *
@@ -34,7 +35,7 @@ $cachedata = $cache->get($cachekey);
 
 if ($cachedata) {
     // If there is something that is not a stored file, its likely malformed or false.
-    if ($cachedata instanceof \stored_file) {
+    if ($cachedata instanceof stored_file) {
         send_stored_file($cachedata, 86400);
     }
 }

@@ -14,15 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * An AWS Elastic Transcode Service product.
- *
- * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia;
 
 defined('MOODLE_INTERNAL') || die;
@@ -206,7 +197,7 @@ class aws_ets_preset {
      *
      * @return string AWS preset id.
      */
-    public function get_id() : string {
+    public function get_id(): string {
         return $this->id;
     }
 
@@ -215,7 +206,7 @@ class aws_ets_preset {
      *
      * @return string AWS preset output file container type.
      */
-    public function get_container() : string {
+    public function get_container(): string {
         return $this->container;
     }
 
@@ -224,7 +215,7 @@ class aws_ets_preset {
      *
      * @return array the raw preset data array.
      */
-    public function get_data() : array {
+    public function get_data(): array {
         return $this->data;
     }
 }

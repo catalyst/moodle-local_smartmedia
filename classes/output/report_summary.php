@@ -14,21 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Renderable summary for the AWS Elastic Transcode report.
- *
- * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia\output;
 
+use core\output\templatable;
+use core\chart_series;
+use core\chart_pie;
+use core\chart_bar;
+use core\output\renderer_base;
 use renderable;
-use renderer_base;
 use stdClass;
-use templatable;
 
 /**
  * Renderable summary for the AWS Elastic Transcode report.
@@ -45,16 +39,16 @@ class report_summary implements renderable, templatable {
      *
      * @return array $totals The array of totals.
      */
-    private function get_file_summary_totals() : array {
+    private function get_file_summary_totals(): array {
         global $DB;
-        $totals = array();
+        $totals = [];
         $totalfiles = 0;
         $videofiles = 0;
         $audiofiles = 0;
         $otherfiles = 0;
 
         // Get values for chart from the database.
-        list($insql, $inparams) = $DB->get_in_or_equal(array('totalfiles', 'videofiles', 'audiofiles'));
+        list($insql, $inparams) = $DB->get_in_or_equal(['totalfiles', 'videofiles', 'audiofiles']);
         $select = "name $insql";
         $values = $DB->get_records_select('local_smartmedia_reports', $select, $inparams, '', 'name, value');
 
@@ -64,7 +58,7 @@ class report_summary implements renderable, templatable {
             $audiofiles = $values['audiofiles']->value;
 
             $otherfiles = $totalfiles - ($videofiles + $audiofiles);
-            $totals = array($otherfiles, $videofiles, $audiofiles);
+            $totals = [$otherfiles, $videofiles, $audiofiles];
         }
 
         return $totals;
@@ -76,15 +70,15 @@ class report_summary implements renderable, templatable {
      *
      * @return array $totals The array of totals.
      */
-    private function get_process_summary_totals() : array {
+    private function get_process_summary_totals(): array {
         global $DB;
-        $totals = array();
+        $totals = [];
         $uniquemultimediaobjects = 0;
         $metadataprocessedfiles = 0;
         $transcodedfiles = 0;
 
         // Get values for chart from the database.
-        $fields = array('uniquemultimediaobjects', 'metadataprocessedfiles', 'transcodedfiles');
+        $fields = ['uniquemultimediaobjects', 'metadataprocessedfiles', 'transcodedfiles'];
         list($insql, $inparams) = $DB->get_in_or_equal($fields);
         $select = "name $insql";
         $values = $DB->get_records_select('local_smartmedia_reports', $select, $inparams, '', 'name, value');
@@ -94,7 +88,7 @@ class report_summary implements renderable, templatable {
             $metadataprocessedfiles = $values['metadataprocessedfiles']->value;
             $transcodedfiles = $values['transcodedfiles']->value;
 
-            $totals = array($uniquemultimediaobjects, $metadataprocessedfiles, $transcodedfiles);
+            $totals = [$uniquemultimediaobjects, $metadataprocessedfiles, $transcodedfiles];
         }
 
         return $totals;
@@ -106,21 +100,21 @@ class report_summary implements renderable, templatable {
      *
      * @return $output The generated chart to be fed to a template.
      */
-    private function get_file_summary_chart() : string {
+    private function get_file_summary_chart(): string {
         global $OUTPUT;
 
         $values = $this->get_file_summary_totals();
 
         if (!empty(($values))) { // Handle case where there is no data in table.
 
-            $series = new \core\chart_series(get_string('report:summary:filesummary:total', 'local_smartmedia'), $values);
-            $labels = array(
+            $series = new chart_series(get_string('report:summary:filesummary:total', 'local_smartmedia'), $values);
+            $labels = [
                     get_string('report:summary:filesummary:otherfiles', 'local_smartmedia'),
                     get_string('report:summary:filesummary:videofiles', 'local_smartmedia'),
-                    get_string('report:summary:filesummary:audiofiles', 'local_smartmedia')
-            );
+                    get_string('report:summary:filesummary:audiofiles', 'local_smartmedia'),
+            ];
 
-            $chart = new \core\chart_pie();
+            $chart = new chart_pie();
             $chart->set_doughnut(true); // Calling set_doughnut(true) we display the chart as a doughnut.
             $chart->add_series($series);
             $chart->set_labels($labels);
@@ -139,22 +133,22 @@ class report_summary implements renderable, templatable {
      *
      * @return $output The generated chart to be fed to a template.
      */
-    private function get_process_summary_chart() : string {
+    private function get_process_summary_chart(): string {
         global $OUTPUT;
 
         $values = $this->get_process_summary_totals();
 
         if (!empty(($values))) { // Handle case where there is no data in table.
 
-            $series1 = new \core\chart_series(
+            $series1 = new chart_series(
                 get_string('report:summary:processsummary:uniquemultimediaobjects', 'local_smartmedia'), [$values[0]]);
-            $series2 = new \core\chart_series(
+            $series2 = new chart_series(
                 get_string('report:summary:processsummary:metadataprocessedfiles', 'local_smartmedia'), [$values[1]]);
-            $series3 = new \core\chart_series(
+            $series3 = new chart_series(
                 get_string('report:summary:processsummary:transcodedfiles', 'local_smartmedia'), [$values[2]]);
-            $labels = array(get_string('report:summary:totals', 'local_smartmedia'));
+            $labels = [get_string('report:summary:totals', 'local_smartmedia')];
 
-            $chart = new \core\chart_bar();
+            $chart = new chart_bar();
             $chart->add_series($series1);
             $chart->add_series($series2);
             $chart->add_series($series3);
@@ -177,7 +171,7 @@ class report_summary implements renderable, templatable {
     private function get_total_cost() {
         global $DB;
 
-        $total = $DB->get_field('local_smartmedia_reports', 'value', array('name' => 'totalcost'));
+        $total = $DB->get_field('local_smartmedia_reports', 'value', ['name' => 'totalcost']);
 
         return $total;
     }
@@ -190,7 +184,7 @@ class report_summary implements renderable, templatable {
     private function get_converted_cost() {
         global $DB;
 
-        $total = $DB->get_field('local_smartmedia_reports', 'value', array('name' => 'convertedcost'));
+        $total = $DB->get_field('local_smartmedia_reports', 'value', ['name' => 'convertedcost']);
 
         return $total;
     }
@@ -200,7 +194,7 @@ class report_summary implements renderable, templatable {
      * Export the renderer data in a format that is suitable for a
      * mustache template.
      *
-     * @param renderer_base $output Used to do a final render of any components that need to be rendered for export.
+     * @param \core\output\renderer_base $output Used to do a final render of any components that need to be rendered for export.
      *
      * @return stdClass $context for use in template rendering.
      * @throws \dml_exception

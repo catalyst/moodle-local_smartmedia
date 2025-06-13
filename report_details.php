@@ -13,6 +13,7 @@
 //
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+
 /**
  * A report to display a table of metadata for the multimedia assets in this Moodle instance.
  *
@@ -21,6 +22,10 @@
  * @copyright  2019 Catalyst IT
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+use local_smartmedia\aws_api;
+use local_smartmedia\aws_elastic_transcoder;
+
 require_once('../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 require_once($CFG->libdir . '/tablelib.php');
@@ -29,7 +34,7 @@ $hash = required_param('hash', PARAM_TEXT);
 
 // Calls require_login and performs permissions checks for admin pages.
 admin_externalpage_setup('local_smartmedia_report', '', null, '',
-    array('pagelayout' => 'report'));
+    ['pagelayout' => 'report']);
 
 $title = get_string('pluginname', 'local_smartmedia');
 
@@ -39,9 +44,9 @@ $PAGE->set_heading($title);
 $output = $PAGE->get_renderer('local_smartmedia');
 
 // Setup a transcoder to get all preset information and store it.
-$api = new \local_smartmedia\aws_api;
+$api = new aws_api;
 $transcoderclient = $api->create_elastic_transcoder_client();
-$transcoder = new \local_smartmedia\aws_elastic_transcoder($transcoderclient);
+$transcoder = new aws_elastic_transcoder($transcoderclient);
 $presets = $transcoder->get_all_presets();
 
 $sql = "SELECT f.filename, ro.type, ro.format, ro.resolution, ro.duration, ro.filesize, ro.cost, ro.status,
@@ -98,7 +103,7 @@ $context = [
     'size' => display_size($record->filesize),
     'transcodecost' => '$' . number_format($record->cost, 2),
     'files' => $record->files,
-    'returnurl' => '/local/smartmedia/report.php'
+    'returnurl' => '/local/smartmedia/report.php',
 ];
 
 echo $output->header();

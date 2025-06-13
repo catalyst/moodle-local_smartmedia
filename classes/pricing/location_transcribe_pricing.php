@@ -14,15 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Class describing the pricing for an AWS region.
- *
- * @package     local_smartmedia
- * @author      Peter Burnett <peterburnett@catalyst-au.net>
- * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia\pricing;
 
 defined('MOODLE_INTERNAL') || die;
@@ -81,7 +72,7 @@ class location_transcribe_pricing {
     /**
      * Set transcribe pricing per minute.
      *
-     * @param float $labeldetectionpricing the cost per minute for transcription.
+     * @param float $transcribepricing the cost per minute for transcription.
      */
     public function set_transcribe_pricing(float $transcribepricing): void {
         $this->transcribepricing = $transcribepricing;

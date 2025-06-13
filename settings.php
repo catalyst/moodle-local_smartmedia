@@ -59,7 +59,7 @@ if ($hassiteconfig) {
         ''));
 
     // These are the only regions that AWS Elastic Transcoder is available in.
-    $regionoptions = array(
+    $regionoptions = [
         'us-east-1'      => 'US East (N. Virginia)',
         'us-west-1'      => 'US West (N. California)',
         'us-west-2'      => 'US West (Oregon)',
@@ -68,7 +68,7 @@ if ($hassiteconfig) {
         'ap-southeast-1' => 'Asia Pacific (Singapore)',
         'ap-southeast-2' => 'Asia Pacific (Sydney)',
         'eu-west-1'      => 'EU (Ireland)',
-    );
+    ];
     $settings->add(new admin_setting_configselect('local_smartmedia/api_region',
         get_string('settings:aws:region', 'local_smartmedia'),
         get_string('settings:aws:region_help', 'local_smartmedia'),

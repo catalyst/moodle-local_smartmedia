@@ -14,20 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Renderable table for the AWS Elastic Transcode report.
- *
- * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia\output;
 
+use core_table\sql_table;
+use core\url;
+use core\output\html_writer;
+use stdClass;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
-use table_sql;
 use renderable;
 
 /**
@@ -38,7 +32,7 @@ use renderable;
  * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class report_table extends table_sql implements renderable {
+class report_table extends sql_table implements renderable {
 
     /**
      * The required fields from the DB for this report_table.
@@ -79,20 +73,20 @@ class report_table extends table_sql implements renderable {
 
         $this->set_attribute('id', 'local_smartmedia_report_table');
         $this->set_attribute('class', 'generaltable generalbox');
-        $this->show_download_buttons_at(array(TABLE_P_BOTTOM));
+        $this->show_download_buttons_at([TABLE_P_BOTTOM]);
         $this->is_downloading($download, 'smartmedia-report');
         $this->define_baseurl($baseurl);
         $this->define_columns(
-            array(
+            [
                 'filename',
                 'status',
                 'type',
                 'cost',
                 'files',
                 'timecreated',
-                'timecompleted'
-            ));
-        $this->define_headers(array(
+                'timecompleted',
+            ]);
+        $this->define_headers([
             get_string('filename', 'repository'),
             get_string('report:status', 'local_smartmedia'),
             get_string('report:type', 'local_smartmedia'),
@@ -100,7 +94,7 @@ class report_table extends table_sql implements renderable {
             get_string('report:files', 'local_smartmedia'),
             get_string('report:created', 'local_smartmedia'),
             get_string('report:completed', 'local_smartmedia'),
-        ));
+        ]);
         $this->column_class('cost', 'mdl-right');
         $this->column_class('files', 'mdl-right');
         // Setup pagination.
@@ -119,13 +113,13 @@ class report_table extends table_sql implements renderable {
     /**
      * Display filename with link to file details.
      *
-     * @param \stdClass $row
+     * @param stdClass $row
      *
      * @return string html used to display the filename field.
      */
     public function col_filename($row) {
-        $url = new \moodle_url('/local/smartmedia/report_details.php', ['hash' => $row->contenthash]);
-        return \html_writer::link($url, $row->filename);
+        $url = new url('/local/smartmedia/report_details.php', ['hash' => $row->contenthash]);
+        return html_writer::link($url, $row->filename);
     }
 
     /**
@@ -133,11 +127,11 @@ class report_table extends table_sql implements renderable {
      * We use `videostreams` field for sorting, requires `videostreams` and
      * `audiostreams` fields.
      *
-     * @param \stdClass $row
+     * @param stdClass $row
      *
      * @return string html used to display the video field.
      *
-     * @throws \moodle_exception
+     * @throws \core\exception\moodle_exception
      */
     public function col_type($row) {
         return $this->format_text($row->type);
@@ -148,7 +142,7 @@ class report_table extends table_sql implements renderable {
      * Calculated cost for transcoding of audio/video file.
      * Requires `height` and `duration` fields.
      *
-     * @param \stdClass $row
+     * @param stdClass $row
      *
      * @return string html used to display the column field.
      * @throws \coding_exception
@@ -161,7 +155,7 @@ class report_table extends table_sql implements renderable {
      * Get content for status column.
      * Displays the status of the smartmedia conversion.
      *
-     * @param \stdClass $row
+     * @param stdClass $row
      *
      * @return string html used to display the column field.
      */
@@ -173,7 +167,7 @@ class report_table extends table_sql implements renderable {
      * Get content for files column.
      * Displays how many Moodle file records relate to the conversion.
      *
-     * @param \stdClass $row
+     * @param stdClass $row
      *
      * @return string html used to display the column field.
      */
@@ -185,7 +179,7 @@ class report_table extends table_sql implements renderable {
      * Get content for created column.
      * Displays when the conversion was started
      *
-     * @param \stdClass $row
+     * @param stdClass $row
      *
      * @return string html used to display the column field.
      */
@@ -197,7 +191,7 @@ class report_table extends table_sql implements renderable {
     /**
      * Get content for completed column.
      * Displays when the conversion finished.
-     * @param \stdClass $row
+     * @param stdClass $row
      *
      * @return string html used to display the column field.
      */

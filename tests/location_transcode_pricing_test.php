@@ -29,9 +29,10 @@ use local_smartmedia\pricing\location_transcode_pricing;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_location_transcode_pricing_testcase extends smartmedia_testcase {
+final class location_transcode_pricing_test extends smartmedia_testcase {
 
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
     }
 
@@ -40,11 +41,11 @@ class local_smartmedia_location_transcode_pricing_testcase extends smartmedia_te
      *
      * @return array
      */
-    public function calculate_cost_provider() {
+    public static function calculate_cost_provider(): array {
         return [
             'No pricing set: null' => [null, 7200, null],
             'Valid pricing string: correct float answer' => ['0.035', '7200', 252],
-            'Valid pricing float/int: correct float answer' => [0.035, 7200, 252]
+            'Valid pricing float/int: correct float answer' => [0.035, 7200, 252],
         ];
     }
 
@@ -57,7 +58,7 @@ class local_smartmedia_location_transcode_pricing_testcase extends smartmedia_te
      *
      * @dataProvider calculate_cost_provider
      */
-    public function test_calculate_high_definition_cost($hdpricing, $duration, $expected) {
+    public function test_calculate_high_definition_cost($hdpricing, $duration, $expected): void {
 
         $locationpricing = new location_transcode_pricing('ap-southeast-2');
         if (!is_null($hdpricing)) {
@@ -76,7 +77,7 @@ class local_smartmedia_location_transcode_pricing_testcase extends smartmedia_te
      *
      * @dataProvider calculate_cost_provider
      */
-    public function test_calculate_standard_definition_cost($sdpricing, $duration, $expected) {
+    public function test_calculate_standard_definition_cost($sdpricing, $duration, $expected): void {
 
         $locationpricing = new location_transcode_pricing('ap-southeast-2');
         if (!is_null($sdpricing)) {
@@ -95,7 +96,7 @@ class local_smartmedia_location_transcode_pricing_testcase extends smartmedia_te
      *
      * @dataProvider calculate_cost_provider
      */
-    public function test_calculate_audio_cost($audiopricing, $duration, $expected) {
+    public function test_calculate_audio_cost($audiopricing, $duration, $expected): void {
 
         $locationpricing = new location_transcode_pricing('ap-southeast-2');
         if (!is_null($audiopricing)) {

@@ -14,6 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace local_smartmedia\task;
+
+use stdClass;
+use core\task\scheduled_task;
+use local_smartmedia\aws_api;
+use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\conversion;
+
 /**
  * A scheduled task.
  *
@@ -22,13 +30,6 @@
  * @copyright   2022 Catalyst IT
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-namespace local_smartmedia\task;
-
-use core\task\scheduled_task;
-use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
-use \local_smartmedia\conversion;
-
 class poll_stale_conversions extends scheduled_task {
 
     /**
@@ -52,7 +53,7 @@ class poll_stale_conversions extends scheduled_task {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $conversion = new \local_smartmedia\conversion($transcoder);
+        $conversion = new conversion($transcoder);
 
         foreach ($records as $record) {
             self::poll_conversion_status($record, $conversion);
@@ -85,7 +86,7 @@ class poll_stale_conversions extends scheduled_task {
 
         $params = array_merge($inparams, [
             'timeboundary' => time() - 7 * DAYSECS,
-            'status' => conversion::CONVERSION_IN_PROGRESS
+            'status' => conversion::CONVERSION_IN_PROGRESS,
         ]);
 
         return $DB->get_records_sql($sql, $params, 0, 1000);
@@ -94,11 +95,11 @@ class poll_stale_conversions extends scheduled_task {
     /**
      * Attempt to match a given conversion record with files remaining in S3.
      *
-     * @param \stdClass $record the conversion record to check.
+     * @param stdClass $record the conversion record to check.
      * @param conversion $conversion Conversion handler to use.
-     * @param $handler Optional AWS handler. Used for mocking in tests.
+     * @param mixed $handler Optional AWS handler. Used for mocking in tests.
      */
-    private function poll_conversion_status(\stdClass $record, conversion $conversion, $handler = null) {
+    private function poll_conversion_status(stdClass $record, conversion $conversion, $handler = null) {
         // Here we should attempt to pull files, as if we had a completion message from a service.
         if ($record->transcoder_status == conversion::CONVERSION_IN_PROGRESS ||
                 $record->transcoder_status == conversion::CONVERSION_ACCEPTED) {
@@ -119,7 +120,7 @@ class poll_stale_conversions extends scheduled_task {
             'rekog_person_status' => 'StartPersonTracking',
             'detect_sentiment_status' => 'SentimentComplete',
             'detect_phrases_status' => 'PhrasesComplete',
-            'detect_entities_status' => 'EntitiesComplete'
+            'detect_entities_status' => 'EntitiesComplete',
         ];
         // Now we want to check all of the pending enrichment types.
         foreach ($services as $service => $filecode) {

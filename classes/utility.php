@@ -14,13 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Class for smart media utility operations.
- *
- * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace local_smartmedia;
 
 /**
@@ -43,7 +36,7 @@ class utility {
      * @param array $args The array of arguments to check.
      * @return array $args The cleaned array of args.
      */
-    public function update_args(array $args) : array {
+    public function update_args(array $args): array {
 
         if (in_array('pluginfile.php', $args)) {
             // We need to clean up the args.

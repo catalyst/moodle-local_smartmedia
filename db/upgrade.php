@@ -54,10 +54,10 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
         $table->add_field('timecompleted', XMLDB_TYPE_INTEGER, '10', null, null, null, '0');
 
         // Adding keys to table local_smartmedia_report_over.
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
 
         // Adding indexes to table local_smartmedia_report_over.
-        $table->add_index('contenthash', XMLDB_INDEX_UNIQUE, array('contenthash'));
+        $table->add_index('contenthash', XMLDB_INDEX_UNIQUE, ['contenthash']);
 
         // Conditionally launch create table for local_smartmedia_report_over.
         if (!$dbman->table_exists($table)) {
@@ -154,7 +154,7 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         // Define index status (not unique) to be dropped form local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $index = new xmldb_index('status', XMLDB_INDEX_NOTUNIQUE, array('status'));
+        $index = new xmldb_index('status', XMLDB_INDEX_NOTUNIQUE, ['status']);
 
         // Conditionally launch drop index status.
         if ($dbman->index_exists($table, $index)) {
@@ -170,7 +170,7 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         // Define index status (not unique) to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $index = new xmldb_index('status', XMLDB_INDEX_NOTUNIQUE, array('status'));
+        $index = new xmldb_index('status', XMLDB_INDEX_NOTUNIQUE, ['status']);
 
         // Conditionally launch add index status.
         if (!$dbman->index_exists($table, $index)) {
@@ -278,11 +278,11 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
         $table->add_field('container', XMLDB_TYPE_CHAR, '20', null, XMLDB_NOTNULL, null, null);
 
         // Adding keys to table local_smartmedia_presets.
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
-        $table->add_key('convid', XMLDB_KEY_FOREIGN, array('convid'), 'local_smartmedia_conv', array('id'));
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('convid', XMLDB_KEY_FOREIGN, ['convid'], 'local_smartmedia_conv', ['id']);
 
         // Adding indexes to table local_smartmedia_presets.
-        $table->add_index('preset', XMLDB_INDEX_NOTUNIQUE, array('preset'));
+        $table->add_index('preset', XMLDB_INDEX_NOTUNIQUE, ['preset']);
 
         // Conditionally launch create table for local_smartmedia_presets.
         if (!$dbman->table_exists($table)) {
@@ -303,10 +303,10 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
         $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
 
         // Adding keys to table local_smartmedia_queue_msgs.
-        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
 
         // Adding indexes to table local_smartmedia_queue_msgs.
-        $table->add_index('messagehash', XMLDB_INDEX_UNIQUE, array('messagehash'));
+        $table->add_index('messagehash', XMLDB_INDEX_UNIQUE, ['messagehash']);
 
         // Conditionally launch create table for local_smartmedia_queue_msgs.
         if (!$dbman->table_exists($table)) {

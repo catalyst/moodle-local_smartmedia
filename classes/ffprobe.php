@@ -14,14 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Class for smart media metadata extraction operations.
- *
- * @package     local_smartmedia
- * @copyright   2018 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace local_smartmedia;
+
+use core\exception\moodle_exception;
+use stored_file;
 
 /**
  * Class for smart media metadata extraction operations.
@@ -40,7 +36,7 @@ class ffprobe {
 
         // Explode if we don't have a valid path to FFProbe.
         if (!file_exists($this->ffprobe_path) || is_dir($this->ffprobe_path) || !file_is_executable($this->ffprobe_path)) {
-            throw new \moodle_exception('ffprobe:invalidpath', 'local_smartmedia', '');
+            throw new moodle_exception('ffprobe:invalidpath', 'local_smartmedia', '');
         }
     }
 
@@ -51,12 +47,12 @@ class ffprobe {
      * @param array $resultobject Array of raw JSON from FFProbe.
      * @return array $metadata The metadata array with extracted media file data.
      */
-    private function decode_ffprobe_json($resultobject) : array {
-        $metadata = array(
+    private function decode_ffprobe_json($resultobject): array {
+        $metadata = [
             'status' => 'success',
             'reason' => 'FFProbe inspection succeeded',
-            'data' => array()
-        );
+            'data' => [],
+        ];
 
         // Format data.
         $formatname =
@@ -77,31 +73,31 @@ class ffprobe {
         $totalstreams = count($resultobject->streams);
         $totalvideostreams = 0;
         $totalaudiostreams = 0;
-        $metadata['data']['videostreams'] = array();
-        $metadata['data']['audiostreams'] = array();
+        $metadata['data']['videostreams'] = [];
+        $metadata['data']['audiostreams'] = [];
 
         // Grab data from the available streams.
         foreach ($resultobject->streams as $stream) {
             if ($stream->codec_type == 'video') {
                 $totalvideostreams++;
-                $metadata['data']['videostreams'][] = array(
+                $metadata['data']['videostreams'][] = [
                     'codecname' => !empty($stream->codec_name) ? $stream->codec_name : 0,
                     'width' => !empty($stream->width) ? $stream->width : 0,
                     'height' => !empty($stream->height) ? $stream->height : 0,
                     'aspectratio' => !empty($stream->display_aspect_ratio) ? $stream->display_aspect_ratio : 0,
                     'framerate' => !empty($stream->avg_frame_rate) ? $stream->avg_frame_rate : 0,
                     'bitrate' => !empty($stream->bit_rate) ? $stream->bit_rate : 0,
-                );
+                ];
             }
 
             if ($stream->codec_type == 'audio') {
                 $totalaudiostreams++;
-                $metadata['data']['audiostreams'][] = array(
+                $metadata['data']['audiostreams'][] = [
                     'codecname' => !empty($stream->codec_name) ? $stream->codec_name : 0,
                     'samplerate' => !empty($stream->sample_rate) ? $stream->sample_rate : 0,
                     'channels' => !empty($stream->channels) ? $stream->channels : 0,
                     'bitrate' => !empty($stream->bit_rate) ? $stream->bit_rate : 0,
-                );
+                ];
             }
 
         }
@@ -123,15 +119,15 @@ class ffprobe {
 
     /**
      * Given a Moodle stored file object, get the file metadata using FFProbe.
-     * @param \stored_file $file Moodle stored file object.
+     * @param stored_file $file Moodle stored file object.
      * @return array $metadata The metadata retrieved from the file.
      */
-    public function get_media_metadata(\stored_file $file) : array {
-        $metadata = array(
+    public function get_media_metadata(stored_file $file): array {
+        $metadata = [
             'status' => 'failed',
             'reason' => 'FFProbe inspection failed',
-            'data' => array()
-        );
+            'data' => [],
+        ];
         $rawresults = null;
         $jsonresults = null;
 

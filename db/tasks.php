@@ -27,41 +27,41 @@ defined('MOODLE_INTERNAL') || die();
 
 /* List of handlers */
 
-$tasks = array(
-    array(
+$tasks = [
+    [
         'classname' => 'local_smartmedia\task\extract_metadata',
         'blocking' => 0,
         'minute' => '*/15',
         'hour' => '*',
         'day' => '*',
         'dayofweek' => '*',
-        'month' => '*'
-    ),
-    array(
+        'month' => '*',
+    ],
+    [
         'classname' => 'local_smartmedia\task\process_conversions',
         'blocking' => 0,
         'minute' => '*/15',
         'hour' => '*',
         'day' => '*',
         'dayofweek' => '*',
-        'month' => '*'
-    ),
-    array(
+        'month' => '*',
+    ],
+    [
         'classname' => 'local_smartmedia\task\report_process',
         'blocking' => 0,
         'minute' => '45',
         'hour' => '*',
         'day' => '*',
         'dayofweek' => '*',
-        'month' => '*'
-    ),
-    array(
+        'month' => '*',
+    ],
+    [
         'classname' => 'local_smartmedia\task\poll_stale_conversions',
         'blocking' => 0,
         'minute' => 'R',
         'hour' => '0',
         'day' => '*',
         'dayofweek' => '*',
-        'month' => '*'
-    )
-);
+        'month' => '*',
+    ],
+];

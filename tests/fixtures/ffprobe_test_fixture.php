@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-return array(
+return [
     'fulloutput' => '{
     "streams": [
         {
@@ -196,5 +196,5 @@ return array(
             "encoder": "Chrome"
         }
     }
-}'
-);
+}',
+];

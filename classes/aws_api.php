@@ -14,17 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * API using the AWS PHP SDK to make service calls.
- *
- * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia;
 
+use dml_exception;
 use Aws\Credentials\Credentials;
 use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Pricing\PricingClient;
@@ -69,7 +61,7 @@ class aws_api {
     /**
      * aws_api constructor.
      *
-     * @throws \dml_exception
+     * @throws dml_exception
      */
     public function __construct() {
         $this->region = get_config('local_smartmedia', 'api_region');
@@ -94,7 +86,7 @@ class aws_api {
         try {
             $credentials = new Credentials($apikey, $apisecret);
             $this->credentials = $credentials;
-        } catch (\dml_exception $ex) {
+        } catch (dml_exception $ex) {
             debugging('No api_key and/or api_secret setting found for local_smartmedia plugin: '
                 . $ex->getMessage(), DEBUG_NORMAL);
         }
@@ -108,7 +100,7 @@ class aws_api {
      *
      * @return \Aws\Pricing\PricingClient
      */
-    public function create_pricing_client($handler = null, $version = '2017-10-15') : PricingClient {
+    public function create_pricing_client($handler = null, $version = '2017-10-15'): PricingClient {
 
         // Set up the minimum arguments required for client.
         $args = [
@@ -142,7 +134,7 @@ class aws_api {
      *
      * @return \Aws\ElasticTranscoder\ElasticTranscoderClient
      */
-    public function create_elastic_transcoder_client($handler = null, $version = '2012-09-25') : ElasticTranscoderClient {
+    public function create_elastic_transcoder_client($handler = null, $version = '2012-09-25'): ElasticTranscoderClient {
 
         // Set up the minimum arguments required for client.
         $args = [

@@ -20,42 +20,35 @@
  * @package    local_smartmedia
  * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-/**
- * Unit test for \local_smartmedia\output\report_summary class.
- *
- * @package    local_smartmedia
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_report_summary_testcase extends advanced_testcase {
+final class report_summary_test extends advanced_testcase {
 
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
     }
 
     /**
      * Test getting file totals used in the files sumamry chart
      */
-    public function test_get_file_summary_totals () {
+    public function test_get_file_summary_totals(): void {
         global $DB;
 
         // Setup the dta required for the test.
-        $record1 = new \stdClass();
+        $record1 = new stdClass();
         $record1->name = 'totalfiles';
         $record1->value = 100;
 
-        $record2 = new \stdClass();
+        $record2 = new stdClass();
         $record2->name = 'videofiles';
         $record2->value = 50;
 
-        $record3 = new \stdClass();
+        $record3 = new stdClass();
         $record3->name = 'audiofiles';
         $record3->value = 30;
 
-        $dataobjects = array($record1, $record2, $record3);
+        $dataobjects = [$record1, $record2, $record3];
 
         // Get a class instance without invoking the constructor,
         // this allows us to skip a lot of setup.

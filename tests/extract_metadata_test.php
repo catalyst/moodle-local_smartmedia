@@ -14,13 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit test for local_smartmedia task classes.
- *
- * @package    local_smartmedia
- * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+use local_smartmedia\task\extract_metadata;
 
 /**
  * Unit test for local_smartmedia extract metadata classes.
@@ -30,9 +24,10 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
+final class extract_metadata_test extends advanced_testcase {
 
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
 
         // Allow setting of FFProbe via Env Var or define
@@ -49,8 +44,8 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
     /**
      * Test getting supported mime types.
      */
-    public function test_get_supported_mime_types() {
-        $task = new \local_smartmedia\task\extract_metadata();
+    public function test_get_supported_mime_types(): void {
+        $task = new extract_metadata();
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'get_supported_mime_types');
@@ -66,43 +61,43 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
     /**
      * Test get files to process method.
      */
-    public function test_get_files_to_process() {
+    public function test_get_files_to_process(): void {
         global $DB;
 
         // Create some test files.
         $fs = get_file_storage();
 
-        $filerecord1 = array(
+        $filerecord1 = [
             'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 0,
             'filepath' => '/',
-            'filename' => 'video1.mp4');
+            'filename' => 'video1.mp4'];
 
-        $filerecord2 = array(
+        $filerecord2 = [
             'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 1,
             'filepath' => '/',
-            'filename' => 'video2.mp4');
+            'filename' => 'video2.mp4'];
 
-        $filerecord3 = array(
+        $filerecord3 = [
             'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 2,
             'filepath' => '/',
-            'filename' => 'video3.mp4');
+            'filename' => 'video3.mp4'];
 
-        $filerecord4 = array(
+        $filerecord4 = [
             'contextid' => 1461,
             'component' => 'local_smartmedia',
             'filearea' => 'media',
             'itemid' => 2,
             'filepath' => '/',
-            'filename' => 'video4.mp4');
+            'filename' => 'video4.mp4'];
 
         // For this test it doesn't actually matter these are not real multimedia files.
         $file1 = $fs->create_file_from_string($filerecord1, 'I am the first video.');
@@ -111,7 +106,7 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
         $file4 = $fs->create_file_from_string($filerecord4, 'I am some already converted media.');
 
         // Create an existing file metadata record.
-        $metadatarecord = new \stdClass();
+        $metadatarecord = new stdClass();
         $metadatarecord->contenthash = $file1->get_contenthash();
         $metadatarecord->pathnamehash = $file1->get_pathnamehash();
         $metadatarecord->duration = 3.123;
@@ -125,7 +120,7 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
 
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
-        $task = new \local_smartmedia\task\extract_metadata();
+        $task = new extract_metadata();
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'get_files_to_process');
@@ -142,7 +137,7 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
     /**
      * Test get files to process method.
      */
-    public function test_process_files() {
+    public function test_process_files(): void {
         global $CFG, $DB;
 
         // Skip if no valid FFProbe executable.
@@ -152,25 +147,25 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
 
         // Setup for testing.
         $fs = new file_storage();
-        $filerecord = array(
+        $filerecord = [
             'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 0,
             'filepath' => '/',
-            'filename' => 'SampleVideo1mb.mp4');
+            'filename' => 'SampleVideo1mb.mp4'];
         $pathname = $CFG->dirroot . '/local/smartmedia/tests/fixtures/SampleVideo1mb.mp4';
 
         $file = $fs->create_file_from_pathname($filerecord, $pathname);
-        $fileobject = new \stdClass();
+        $fileobject = new stdClass();
         $fileobject->pathnamehash = $file->get_pathnamehash();
         $fileobject->contenthash = $file->get_contenthash();
         $fileobject->timecreated = 1579485430;
-        $filehashes = array(
-            $file->get_pathnamehash() => $fileobject
-        );
+        $filehashes = [
+            $file->get_pathnamehash() => $fileobject,
+        ];
 
-        $task = new \local_smartmedia\task\extract_metadata();
+        $task = new extract_metadata();
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'process_files');
@@ -182,19 +177,19 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
         $this->assertEquals(1, $proxy['successcount']);
         $this->assertEquals(0, $proxy['failcount']);
 
-        $metadatarecord = $DB->get_record('local_smartmedia_data', array('contenthash' => $file->get_contenthash()));
+        $metadatarecord = $DB->get_record('local_smartmedia_data', ['contenthash' => $file->get_contenthash()]);
         $this->assertEquals(1280, $metadatarecord->width);
     }
 
     /**
      * Test getting metadata entries to remove.
      */
-    public function test_get_files_to_remove() {
+    public function test_get_files_to_remove(): void {
         global $DB;
         $contenthash = 'aaaaaaaaaaaaaaaa3255bfef95601890afd80709';
 
         // Create an existing file metadata record.
-        $metadatarecord = new \stdClass();
+        $metadatarecord = new stdClass();
         $metadatarecord->contenthash = $contenthash;
         $metadatarecord->duration = 3.123;
         $metadatarecord->bitrate = 1000;
@@ -207,7 +202,7 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
 
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
-        $task = new \local_smartmedia\task\extract_metadata();
+        $task = new extract_metadata();
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'get_files_to_remove');
@@ -220,12 +215,12 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
     /**
      * Test removing metadata entries.
      */
-    public function test_remove_metadata_records() {
+    public function test_remove_metadata_records(): void {
         global $DB;
         $contenthash = 'aaaaaaaaaaaaaaaa3255bfef95601890afd80709';
 
         // Create an existing file metadata record.
-        $metadatarecord = new \stdClass();
+        $metadatarecord = new stdClass();
         $metadatarecord->contenthash = $contenthash;
         $metadatarecord->duration = 3.123;
         $metadatarecord->bitrate = 1000;
@@ -238,20 +233,20 @@ class local_smartmedia_extract_metadata_testcase extends advanced_testcase {
 
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
-        $task = new \local_smartmedia\task\extract_metadata();
+        $task = new extract_metadata();
 
-        $metaobj = new \stdClass();
+        $metaobj = new stdClass();
         $metaobj->contenthash = 'aaaaaaaaaaaaaaaa3255bfef95601890afd80709';
-        $toremove = array(
-            'aaaaaaaaaaaaaaaa3255bfef95601890afd80709' => $metaobj
-        );
+        $toremove = [
+            'aaaaaaaaaaaaaaaa3255bfef95601890afd80709' => $metaobj,
+        ];
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\task\extract_metadata', 'remove_metadata_records');
         $method->setAccessible(true); // Allow accessing of private method.
         $proxy = $method->invoke($task, $toremove); // Get result of invoked method.
 
-        $result = $DB->record_exists('local_smartmedia_data', array('contenthash' => 'aaaaaaaaaaaaaaaa3255bfef95601890afd80709'));
+        $result = $DB->record_exists('local_smartmedia_data', ['contenthash' => 'aaaaaaaaaaaaaaaa3255bfef95601890afd80709']);
 
         $this->assertFalse($result);
     }

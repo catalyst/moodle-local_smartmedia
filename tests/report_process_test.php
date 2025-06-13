@@ -14,6 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+use local_smartmedia\task\report_process;
+use local_smartmedia\pricing\location_transcode_pricing;
+use local_smartmedia\pricing\aws_ets_pricing_client;
+use local_smartmedia\pricing\location_rekog_pricing;
+use local_smartmedia\pricing\aws_rekog_pricing_client;
+use local_smartmedia\pricing\location_transcribe_pricing;
+use local_smartmedia\pricing\aws_transcribe_pricing_client;
+use local_smartmedia\aws_ets_preset;
+use local_smartmedia\aws_elastic_transcoder;
+
 /**
  * Unit test for local_smartmedia task classes.
  *
@@ -21,7 +31,6 @@
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
 /**
  * Unit test for local_smartmedia extract metadata classes.
  *
@@ -30,12 +39,12 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_report_process_testcase extends advanced_testcase {
+final class report_process_test extends advanced_testcase {
 
     /**
      * Test getting start file id.
      */
-    public function test_update_report_data() {
+    public function test_update_report_data(): void {
         global $DB;
 
         $this->resetAfterTest();
@@ -43,7 +52,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $name = 'totalfiles';
         $value = 64;
 
-        $task = new \local_smartmedia\task\report_process();
+        $task = new report_process();
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'update_report_data');
@@ -51,7 +60,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $method->invoke($task, $name, $value); // Get result of invoked method.
         $method->invoke($task, $name, $value); // Get result of invoked method.
 
-        $record = $DB->get_record('local_smartmedia_reports', array('name' => $name));
+        $record = $DB->get_record('local_smartmedia_reports', ['name' => $name]);
 
         $this->assertEquals($name, $record->name);
         $this->assertEquals($value, $record->value);
@@ -60,17 +69,17 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
     /**
      * Test getting file type.
      */
-    public function test_get_file_type() {
+    public function test_get_file_type(): void {
         $this->resetAfterTest();
 
         // Create an existing file metadata record.
-        $record = new \stdClass();
+        $record = new stdClass();
         $record->contenthash = '8f3d12e28ecb231852436d5c905d2a3e6ee8e119';
         $record->videostreams = 1;
         $record->audiostreams = 1;
 
         // We're testing a private method, so we need to setup reflector magic.
-        $task = new \local_smartmedia\task\report_process();
+        $task = new report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'get_file_type');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($task, $record); // Get result of invoked method.
@@ -81,12 +90,12 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
     /**
      * Test getting file transcoding cost.
      */
-    public function test_get_file_cost() {
+    public function test_get_file_cost(): void {
         $this->resetAfterTest();
         global $CFG;
 
         // Create an existing file metadata record.
-        $record = new \stdClass();
+        $record = new stdClass();
         $record->contenthash = '8f3d12e28ecb231852436d5c905d2a3e6ee8e119';
         $record->duration = 599;
         $record->videostreams = 1;
@@ -95,27 +104,27 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $record->id = 1;
 
         // Setup pricing mock for test.
-        $transcodelocationpricing = new \local_smartmedia\pricing\location_transcode_pricing('ap-southeast-2');
+        $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');
         $transcodelocationpricing->set_hd_pricing(0.034);
         $transcodelocationpricing->set_sd_pricing(0.017);
         $transcodelocationpricing->set_audio_pricing(0.00522);
 
-        $mocktranscodepricing = $this->createMock(\local_smartmedia\pricing\aws_ets_pricing_client::class);
+        $mocktranscodepricing = $this->createMock(aws_ets_pricing_client::class);
         $mocktranscodepricing->method('get_location_pricing')->willReturn($transcodelocationpricing);
 
-        $rekoglocationpricing = new \local_smartmedia\pricing\location_rekog_pricing('ap-southeast-2');
+        $rekoglocationpricing = new location_rekog_pricing('ap-southeast-2');
         $rekoglocationpricing->set_face_detection_pricing(0.017);
         $rekoglocationpricing->set_label_detection_pricing(0.017);
         $rekoglocationpricing->set_content_moderation_pricing(0.017);
         $rekoglocationpricing->set_person_tracking_pricing(0.017);
 
-        $mockrekogpricing = $this->createMock(\local_smartmedia\pricing\aws_rekog_pricing_client::class);
+        $mockrekogpricing = $this->createMock(aws_rekog_pricing_client::class);
         $mockrekogpricing->method('get_location_pricing')->willReturn($rekoglocationpricing);
 
-        $transcribelocationpricing = new \local_smartmedia\pricing\location_transcribe_pricing('ap-southeast-2');
+        $transcribelocationpricing = new location_transcribe_pricing('ap-southeast-2');
         $transcribelocationpricing->set_transcribe_pricing(0.00125);
 
-        $mocktranscribepricing = $this->createMock(\local_smartmedia\pricing\aws_transcribe_pricing_client::class);
+        $mocktranscribepricing = $this->createMock(aws_transcribe_pricing_client::class);
         $mocktranscribepricing->method('get_location_pricing')->willReturn($transcribelocationpricing);
 
         // Get our fixture representing a response from the AWS Elastic Transcoder API.
@@ -124,14 +133,14 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         // Build presets dependency from fixture.
         $presets = [];
         foreach ($this->fixture['readPreset'] as $preset) {
-            $presets[] = new \local_smartmedia\aws_ets_preset($preset['Preset']);
+            $presets[] = new aws_ets_preset($preset['Preset']);
         }
 
-        $mocktranscoder = $this->createMock(\local_smartmedia\aws_elastic_transcoder::class);
+        $mocktranscoder = $this->createMock(aws_elastic_transcoder::class);
         $mocktranscoder->method('get_presets')->willReturn($presets);
 
         // We're testing a private method, so we need to setup reflector magic.
-        $task = new \local_smartmedia\task\report_process();
+        $task = new report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'get_file_cost');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke(
@@ -149,14 +158,14 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
     /**
      * Test getting file type.
      */
-    public function test_get_file_status() {
+    public function test_get_file_status(): void {
         $this->resetAfterTest();
 
         // Create an existing file metadata record.
         $code = 200;
 
         // We're testing a private method, so we need to setup reflector magic.
-        $task = new \local_smartmedia\task\report_process();
+        $task = new report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'get_file_status');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($task, $code); // Get result of invoked method.
@@ -167,47 +176,47 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
     /**
      * Test getting file count.
      */
-    public function test_get_file_count() {
+    public function test_get_file_count(): void {
         $this->resetAfterTest();
 
         // Setup the files for testing.
         $fs = new file_storage();
         $filecontent = 'some content to put into the file';
 
-        $filerecord1 = array(
+        $filerecord1 = [
             'contextid' => 31,
             'component' => 'mod_forum',
             'filearea' => 'attachment',
             'itemid' => 0,
             'filepath' => '/',
-            'filename' => 'myfile1.txt');
+            'filename' => 'myfile1.txt'];
 
         $file1 = $fs->create_file_from_string($filerecord1, $filecontent);
 
-        $filerecord2 = array(
+        $filerecord2 = [
             'contextid' => 1386,
             'component' => 'mod_folder',
             'filearea' => 'content',
             'itemid' => 2,
             'filepath' => '/',
-            'filename' => 'myfile2.txt');
+            'filename' => 'myfile2.txt'];
 
         $fs->create_file_from_string($filerecord2, $filecontent);
 
-        $filerecord3 = array(
+        $filerecord3 = [
             'contextid' => 1386,
             'component' => 'mod_folder',
             'filearea' => 'content',
             'itemid' => 45,
             'filepath' => '/a/b/c/',
-            'filename' => 'myfile3.txt');
+            'filename' => 'myfile3.txt'];
 
         $fs->create_file_from_string($filerecord3, $filecontent);
 
         $contenthash = $file1->get_contenthash();;
 
         // We're testing a private method, so we need to setup reflector magic.
-        $task = new \local_smartmedia\task\report_process();
+        $task = new report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'get_file_count');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($task, $contenthash); // Get result of invoked method.
@@ -218,7 +227,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
     /**
      * Test poplulating overview report.
      */
-    public function test_process_overview_report() {
+    public function test_process_overview_report(): void {
         $this->resetAfterTest();
         global $DB, $CFG;
         set_config('api_region', 'ap-southeast-2', 'local_smartmedia');
@@ -227,33 +236,33 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $fs = new file_storage();
         $filecontent = 'some content to put into the file';
 
-        $filerecord1 = array(
+        $filerecord1 = [
             'contextid' => 31,
             'component' => 'mod_forum',
             'filearea' => 'attachment',
             'itemid' => 0,
             'filepath' => '/',
-            'filename' => 'myfile1.txt');
+            'filename' => 'myfile1.txt'];
 
         $file1 = $fs->create_file_from_string($filerecord1, $filecontent);
 
-        $filerecord2 = array(
+        $filerecord2 = [
             'contextid' => 1386,
             'component' => 'mod_folder',
             'filearea' => 'content',
             'itemid' => 2,
             'filepath' => '/',
-            'filename' => 'myfile2.txt');
+            'filename' => 'myfile2.txt'];
 
         $fs->create_file_from_string($filerecord2, $filecontent);
 
-        $filerecord3 = array(
+        $filerecord3 = [
             'contextid' => 1386,
             'component' => 'mod_folder',
             'filearea' => 'content',
             'itemid' => 45,
             'filepath' => '/a/b/c/',
-            'filename' => 'myfile3.txt');
+            'filename' => 'myfile3.txt'];
 
         $fs->create_file_from_string($filerecord3, $filecontent);
 
@@ -261,7 +270,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $pathnamehash = $file1->get_pathnamehash();
 
         // Create an existing file metadata record.
-        $metadatarecord = new \stdClass();
+        $metadatarecord = new stdClass();
         $metadatarecord->contenthash = $contenthash;
         $metadatarecord->pathnamehash = $pathnamehash;
         $metadatarecord->duration = 599;
@@ -276,7 +285,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
         // Create existing conversion record.
-        $conversionrecord = new \stdClass();
+        $conversionrecord = new stdClass();
         $conversionrecord->contenthash = $contenthash;
         $conversionrecord->pathnamehash = $pathnamehash;
         $conversionrecord->status = 200;
@@ -291,27 +300,27 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $DB->insert_record('local_smartmedia_conv', $conversionrecord);
 
         // Setup pricing mocks for test.
-        $transcodelocationpricing = new \local_smartmedia\pricing\location_transcode_pricing('ap-southeast-2');
+        $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');
         $transcodelocationpricing->set_hd_pricing(0.034);
         $transcodelocationpricing->set_sd_pricing(0.017);
         $transcodelocationpricing->set_audio_pricing(0.00522);
 
-        $mocktranscodepricing = $this->createMock(\local_smartmedia\pricing\aws_ets_pricing_client::class);
+        $mocktranscodepricing = $this->createMock(aws_ets_pricing_client::class);
         $mocktranscodepricing->method('get_location_pricing')->willReturn($transcodelocationpricing);
 
-        $rekoglocationpricing = new \local_smartmedia\pricing\location_rekog_pricing('ap-southeast-2');
+        $rekoglocationpricing = new location_rekog_pricing('ap-southeast-2');
         $rekoglocationpricing->set_face_detection_pricing(0.017);
         $rekoglocationpricing->set_label_detection_pricing(0.017);
         $rekoglocationpricing->set_content_moderation_pricing(0.017);
         $rekoglocationpricing->set_person_tracking_pricing(0.017);
 
-        $mockrekogpricing = $this->createMock(\local_smartmedia\pricing\aws_rekog_pricing_client::class);
+        $mockrekogpricing = $this->createMock(aws_rekog_pricing_client::class);
         $mockrekogpricing->method('get_location_pricing')->willReturn($rekoglocationpricing);
 
-        $transcribelocationpricing = new \local_smartmedia\pricing\location_transcribe_pricing('ap-southeast-2');
+        $transcribelocationpricing = new location_transcribe_pricing('ap-southeast-2');
         $transcribelocationpricing->set_transcribe_pricing(0.00125);
 
-        $mocktranscribepricing = $this->createMock(\local_smartmedia\pricing\aws_transcribe_pricing_client::class);
+        $mocktranscribepricing = $this->createMock(aws_transcribe_pricing_client::class);
         $mocktranscribepricing->method('get_location_pricing')->willReturn($transcribelocationpricing);
 
         // Get our fixture representing a response from the AWS Elastic Transcoder API.
@@ -320,14 +329,14 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         // Build presets dependency from fixture.
         $presets = [];
         foreach ($this->fixture['readPreset'] as $preset) {
-            $presets[] = new \local_smartmedia\aws_ets_preset($preset['Preset']);
+            $presets[] = new aws_ets_preset($preset['Preset']);
         }
 
-        $mocktranscoder = $this->createMock(\local_smartmedia\aws_elastic_transcoder::class);
+        $mocktranscoder = $this->createMock(aws_elastic_transcoder::class);
         $mocktranscoder->method('get_presets')->willReturn($presets);
 
         // We're testing a private method, so we need to setup reflector magic.
-        $task = new \local_smartmedia\task\report_process();
+        $task = new report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'process_overview_report');
         $method->setAccessible(true); // Allow accessing of private method.
         $method->invoke(
@@ -357,12 +366,12 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
     /**
      * Test poplulating overview report.
      */
-    public function test_get_total_converted_cost() {
+    public function test_get_total_converted_cost(): void {
         $this->resetAfterTest();
         global $DB;
 
         // Create report overview records.
-        $reportrecord = new \stdClass();
+        $reportrecord = new stdClass();
         $reportrecord->contenthash = '8f3d12e28ecb231852436d5c905d2a3e6ee8e119';
         $reportrecord->type = 'Video';
         $reportrecord->format = 'avi';
@@ -377,7 +386,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         $DB->insert_record('local_smartmedia_report_over', $reportrecord);
 
-        $reportrecord = new \stdClass();
+        $reportrecord = new stdClass();
         $reportrecord->contenthash = '85be44230f22d78ec9187fbe3eb04ed4ae6d0807';
         $reportrecord->type = 'Video';
         $reportrecord->format = 'avi';
@@ -393,7 +402,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $DB->insert_record('local_smartmedia_report_over', $reportrecord);
 
         // We're testing a private method, so we need to setup reflector magic.
-        $task = new \local_smartmedia\task\report_process();
+        $task = new report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'get_total_converted_cost');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($task); // Get result of invoked method.
@@ -405,7 +414,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
      * Test that total cost is correctly calculated.
      *
      */
-    public function test_calculate_total_conversion_cost () {
+    public function test_calculate_total_conversion_cost(): void {
         $this->resetAfterTest();
 
         global $DB, $CFG;
@@ -413,32 +422,32 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
 
         $fs = get_file_storage();
         set_config('convertfrom', 604800, 'local_smartmedia');
-        $hdfilerec = array(
+        $hdfilerec = [
             'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 0,
             'filepath' => '/',
             'filename' => 'video1.mp4',
-            'timecreated' => 1575095000);
+            'timecreated' => 1575095000];
 
-        $sdfilerec = array(
+        $sdfilerec = [
             'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 1,
             'filepath' => '/',
             'filename' => 'video2.mp4',
-            'timecreated' => 1575095000);
+            'timecreated' => 1575095000];
 
-        $audiofilerec = array(
+        $audiofilerec = [
             'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 2,
             'filepath' => '/',
             'filename' => 'video3.mp4',
-            'timecreated' => 1575095000);
+            'timecreated' => 1575095000];
 
         // For this test it doesn't actually matter these are not real multimedia files.
         $hdfile = $fs->create_file_from_string($hdfilerec, 'I am the first video.');
@@ -449,7 +458,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $DB->delete_records('files', ['filename' => '.', 'component' => 'mod_label']);
 
         // Create a high definition metadata record.
-        $metadatarecord = new \stdClass();
+        $metadatarecord = new stdClass();
         $metadatarecord->contenthash = $hdfile->get_contenthash();
         $metadatarecord->duration = 600;
         $metadatarecord->bitrate = 150000;
@@ -464,7 +473,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
         // Create a standard definition file metadata record.
-        $metadatarecord = new \stdClass();
+        $metadatarecord = new stdClass();
         $metadatarecord->contenthash = $sdfile->get_contenthash();
         $metadatarecord->duration = 600;
         $metadatarecord->bitrate = 780000;
@@ -479,7 +488,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
         // Create an audio metadata record.
-        $metadatarecord = new \stdClass();
+        $metadatarecord = new stdClass();
         $metadatarecord->contenthash = $audiofile->get_contenthash();
         $metadatarecord->duration = 600;
         $metadatarecord->bitrate = 128001;
@@ -494,27 +503,27 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $DB->insert_record('local_smartmedia_data', $metadatarecord);
 
         // Setup pricing mocks for test.
-        $transcodelocationpricing = new \local_smartmedia\pricing\location_transcode_pricing('ap-southeast-2');
+        $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');
         $transcodelocationpricing->set_hd_pricing(0.034);
         $transcodelocationpricing->set_sd_pricing(0.017);
         $transcodelocationpricing->set_audio_pricing(0.00522);
 
-        $mocktranscodepricing = $this->createMock(\local_smartmedia\pricing\aws_ets_pricing_client::class);
+        $mocktranscodepricing = $this->createMock(aws_ets_pricing_client::class);
         $mocktranscodepricing->method('get_location_pricing')->willReturn($transcodelocationpricing);
 
-        $rekoglocationpricing = new \local_smartmedia\pricing\location_rekog_pricing('ap-southeast-2');
+        $rekoglocationpricing = new location_rekog_pricing('ap-southeast-2');
         $rekoglocationpricing->set_face_detection_pricing(0.017);
         $rekoglocationpricing->set_label_detection_pricing(0.017);
         $rekoglocationpricing->set_content_moderation_pricing(0.017);
         $rekoglocationpricing->set_person_tracking_pricing(0.017);
 
-        $mockrekogpricing = $this->createMock(\local_smartmedia\pricing\aws_rekog_pricing_client::class);
+        $mockrekogpricing = $this->createMock(aws_rekog_pricing_client::class);
         $mockrekogpricing->method('get_location_pricing')->willReturn($rekoglocationpricing);
 
-        $transcribelocationpricing = new \local_smartmedia\pricing\location_transcribe_pricing('ap-southeast-2');
+        $transcribelocationpricing = new location_transcribe_pricing('ap-southeast-2');
         $transcribelocationpricing->set_transcribe_pricing(0.00125);
 
-        $mocktranscribepricing = $this->createMock(\local_smartmedia\pricing\aws_transcribe_pricing_client::class);
+        $mocktranscribepricing = $this->createMock(aws_transcribe_pricing_client::class);
         $mocktranscribepricing->method('get_location_pricing')->willReturn($transcribelocationpricing);
 
         // Get our fixture representing a response from the AWS Elastic Transcoder API.
@@ -523,14 +532,14 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         // Build presets dependency from fixture.
         $presets = [];
         foreach ($this->fixture['readPreset'] as $preset) {
-            $presets[] = new \local_smartmedia\aws_ets_preset($preset['Preset']);
+            $presets[] = new aws_ets_preset($preset['Preset']);
         }
 
-        $mocktranscoder = $this->createMock(\local_smartmedia\aws_elastic_transcoder::class);
+        $mocktranscoder = $this->createMock(aws_elastic_transcoder::class);
         $mocktranscoder->method('get_presets')->willReturn($presets);
 
         // We're testing a private method, so we need to setup reflector magic.
-        $task = new \local_smartmedia\task\report_process();
+        $task = new report_process();
         $method = new ReflectionMethod('\local_smartmedia\task\report_process', 'calculate_total_conversion_cost');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke(
@@ -570,7 +579,7 @@ class local_smartmedia_report_process_testcase extends advanced_testcase {
         $this->assertEquals(3.0466, $result);
 
         // Add a conversion record.
-        $conversionrecord = new \stdClass();
+        $conversionrecord = new stdClass();
         $conversionrecord->contenthash = $hdfile->get_contenthash();
         $conversionrecord->pathnamehash = $hdfile->get_pathnamehash();
         $conversionrecord->status = 200;

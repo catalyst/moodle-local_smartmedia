@@ -14,14 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tests for local_smartmedia utility class.
- *
- * @package    local_smartmedia
- * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
+use local_smartmedia\utility;
 /**
  * Unit tests for local_smartmedia utility class.
  *
@@ -30,13 +23,13 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_utility_testcase extends advanced_testcase {
+final class utility_test extends advanced_testcase {
 
     /**
      * Test for updating arg array..
      */
-    public function test_update_args() {
-        $inputargs = array(
+    public function test_update_args(): void {
+        $inputargs = [
             '8',
             '8f3d12e28ecb231852436d5c905d2a3e6ee8e119',
             'conversions',
@@ -47,9 +40,9 @@ class local_smartmedia_utility_testcase extends advanced_testcase {
             '8',
             '8f3d12e28ecb231852436d5c905d2a3e6ee8e119',
             'conversions',
-            '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200045_v4.m3u8'
-        );
-        $utility = new \local_smartmedia\utility();
+            '8f3d12e28ecb231852436d5c905d2a3e6ee8e119_1351620000001-200045_v4.m3u8',
+        ];
+        $utility = new utility();
 
         $updatedargs = $utility->update_args($inputargs);
 

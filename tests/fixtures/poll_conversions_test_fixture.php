@@ -35,7 +35,7 @@ return [
         ],
         'TagCount' => 2,
         'VersionId' => 'null',
-        'Body' => '123abc'
+        'Body' => '123abc',
     ],
     'listObjects' => [
         'Name' => 'smt1566767930-output',
@@ -55,8 +55,8 @@ return [
                     'ID' => '355d884e01c713d418ec74ebbe1fd8db4694d97725b0f7016dfec6a0c9c886a1',
                 ],
                 'Size' => 1237366,
-            ]
-        ]
+            ],
+        ],
     ],
     'listObjectsEmpty' => [
         'Name' => 'smt1566767930-output',
@@ -65,11 +65,11 @@ return [
         'Marker' => '',
         'EncodingType' => 'url',
         'IsTruncated' => false,
-        'Contents' => []
+        'Contents' => [],
     ],
     'deleteObject' => [
         'DeleteMarker' => true,
         'RequestCharged' => 'requester',
         'VersionId' => '123',
-    ]
+    ],
 ];

@@ -14,17 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Class for smart media conversion operations.
- *
- * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace local_smartmedia;
 
+use stdClass;
+use stored_file;
+use dml_exception;
+use core\url;
+use context;
+use core\exception\moodle_exception;
+use Exception;
 use Aws\S3\Exception\S3Exception;
-use moodle_url;
 
 /**
  * Class for smart media conversion operations.
@@ -35,6 +34,9 @@ use moodle_url;
  */
 class conversion {
 
+    /**
+     * @var array Audio mimetypes
+     */
     private const AUDIO_MIMETYPES = [
         'audio/aac',
         'audio/au',
@@ -49,6 +51,9 @@ class conversion {
         'audio/x-matroska',
     ];
 
+    /**
+     * @var array Video mimetypes
+     */
     private const VIDEO_MIMETYPES = [
         'video/mp4',
         'video/mpeg',
@@ -115,28 +120,28 @@ class conversion {
      *
      * @var array
      */
-    private const SQS_MESSAGE_STATES = array(
+    private const SQS_MESSAGE_STATES = [
         'SUCCEEDED', // Rekognition success status.
         'COMPLETED', // Elastic Transcoder success status.
         'ERROR', // Elastic Transcoder error status.
-    );
+    ];
 
     /**
      * The mapping betweeen what AWS calls the service events and their corresponding DB field names.
      *
      * @var array
      */
-    public const SERVICE_MAPPING = array(
-        'elastic_transcoder' => array('transcoder_status'),
-        'StartLabelDetection' => array('rekog_label_status', 'Labels'),
-        'StartContentModeration' => array('rekog_moderation_status', 'ModerationLabels'),
-        'StartFaceDetection' => array('rekog_face_status', 'Faces'),
-        'StartPersonTracking' => array('rekog_person_status', 'Persons'),
-        'TranscribeComplete' => array('transcribe_status', 'transcription'),
-        'SentimentComplete' => array('detect_sentiment_status', 'sentiment'),
-        'PhrasesComplete' => array('detect_phrases_status', 'phrases'),
-        'EntitiesComplete' => array('detect_entities_status', 'entities'),
-    );
+    public const SERVICE_MAPPING = [
+        'elastic_transcoder' => ['transcoder_status'],
+        'StartLabelDetection' => ['rekog_label_status', 'Labels'],
+        'StartContentModeration' => ['rekog_moderation_status', 'ModerationLabels'],
+        'StartFaceDetection' => ['rekog_face_status', 'Faces'],
+        'StartPersonTracking' => ['rekog_person_status', 'Persons'],
+        'TranscribeComplete' => ['transcribe_status', 'transcription'],
+        'SentimentComplete' => ['detect_sentiment_status', 'sentiment'],
+        'PhrasesComplete' => ['detect_phrases_status', 'phrases'],
+        'EntitiesComplete' => ['detect_entities_status', 'entities'],
+    ];
 
     /**
      *
@@ -159,7 +164,7 @@ class conversion {
     private $config;
 
     /**
-     * @var \local_smartmedia\aws_elastic_transcoder the transcoder for accessing communicating with the
+     * @var aws_elastic_transcoder the transcoder for accessing communicating with the
      * AWS Elastic Transcoding Service.
      */
     private $transcoder;
@@ -167,9 +172,9 @@ class conversion {
     /**
      * Class constructor.
      *
-     * @param \local_smartmedia\aws_elastic_transcoder $transcoder
+     * @param aws_elastic_transcoder $transcoder
      *
-     * @throws \dml_exception
+     * @throws dml_exception
      */
     public function __construct(aws_elastic_transcoder $transcoder) {
         $this->config = get_config('local_smartmedia');
@@ -184,7 +189,7 @@ class conversion {
      * @param string $needle The value to check with.
      * @return bool $startswith True if haystack starts with needle.
      */
-    private function string_starts_with(string $haystack, string $needle) : bool {
+    private function string_starts_with(string $haystack, string $needle): bool {
         $startswith = false;
         $length = strlen($needle);
 
@@ -205,16 +210,16 @@ class conversion {
      *
      * @return array $presetrecords The preset records to insert into the Moodle database.
      *
-     * @throws \dml_exception
-     * @throws \moodle_exception
+     * @throws dml_exception
+     * @throws \core\exception\moodle_exception
      */
-    private function get_preset_records(int $convid, string $contenthash) : array {
+    private function get_preset_records(int $convid, string $contenthash): array {
         global $DB;
-        $presetrecords = array();
+        $presetrecords = [];
         $presetids = $this->transcoder->get_preset_ids();
 
         // Get metadata for file from database.
-        $streams = $DB->get_record('local_smartmedia_data', array('contenthash' => $contenthash), 'videostreams, audiostreams');
+        $streams = $DB->get_record('local_smartmedia_data', ['contenthash' => $contenthash], 'videostreams, audiostreams');
 
         // If file is video only remove audio streams.
         if ($streams && $streams->audiostreams == 0) {
@@ -244,7 +249,7 @@ class conversion {
         foreach ($presets as $preset) {
             // Only add records for presets which weren't filtered out based on stream data.
             if (in_array($preset->get_id(), $presetids)) {
-                $record = new \stdClass();
+                $record = new stdClass();
                 $record->convid = $convid;
                 $record->preset = $preset->get_id();
                 $record->container = $preset->get_container();
@@ -260,19 +265,19 @@ class conversion {
      * Create the smart media conversion record.
      * These records will be processed by a scheduled task.
      *
-     * @param \stored_file $file The file object to create the conversion for.
+     * @param stored_file $file The file object to create the conversion for.
      *
      * @throws \coding_exception
-     * @throws \dml_exception
+     * @throws dml_exception
      * @throws \dml_write_exception
-     * @throws \moodle_exception
+     * @throws \core\exception\moodle_exception
      */
-    private function create_conversion(\stored_file $file) : void {
+    private function create_conversion(stored_file $file): void {
         global $DB;
         $now = time();
         $convid = 0;
 
-        $cnvrec = new \stdClass();
+        $cnvrec = new stdClass();
         $cnvrec->pathnamehash = $file->get_pathnamehash();
         $cnvrec->contenthash = $file->get_contenthash();
 
@@ -282,7 +287,7 @@ class conversion {
         $cnvrec->transcoder_status = $this::CONVERSION_ACCEPTED;
 
         // Map the database schema to the plugin settings.
-        $settingsmap = array(
+        $settingsmap = [
                 'transcribe_status' => 'transcribe',
                 'rekog_label_status' => 'detectlabels',
                 'rekog_moderation_status' => 'detectmoderation',
@@ -291,7 +296,7 @@ class conversion {
                 'detect_sentiment_status' => 'detectsentiment',
                 'detect_phrases_status' => 'detectphrases',
                 'detect_entities_status' => 'detectentities',
-        );
+        ];
 
         // If this is an audio file, we must force disable all rekognition video API services.
         $audioonly = in_array($file->get_mimetype(), $this::AUDIO_MIMETYPES);
@@ -313,7 +318,7 @@ class conversion {
         // This is OK and expected, we will handle the error.
         try {
             $convid = $DB->insert_record('local_smartmedia_conv', $cnvrec);
-        } catch (\dml_exception $e) {
+        } catch (dml_exception $e) {
             // If error is anything else but a duplicate insert, this is unexected,
             // so re-throw the error.
             // Postgres / Mysql error messages.
@@ -333,21 +338,21 @@ class conversion {
     /**
      * Get the smart media conversion statuses for a given resource.
      *
-     * @param \stored_file $file The Moodle file object of the asset.
-     * @return \stdClass $result object containing the status of each conversion process.
+     * @param stored_file $file The Moodle file object of the asset.
+     * @return stdClass $result object containing the status of each conversion process.
      */
-    private function get_conversion_statuses(\stored_file $file) : \stdClass {
+    private function get_conversion_statuses(stored_file $file): stdClass {
         global $DB;
 
         $contenthash = $file->get_contenthash();
-        $conditions = array('contenthash' => $contenthash);
+        $conditions = ['contenthash' => $contenthash];
         $result = $DB->get_record('local_smartmedia_conv', $conditions,
             'status, transcoder_status, transcribe_status,
             rekog_label_status, rekog_moderation_status, rekog_face_status, rekog_person_status,
             detect_sentiment_status, detect_phrases_status, detect_entities_status');
 
         if (!$result) {
-            $result = new \stdClass();
+            $result = new stdClass();
             $result->status = self::CONVERSION_NOT_FOUND;
         }
 
@@ -359,10 +364,10 @@ class conversion {
      * and retreive the file object.
      * This requires some horrible reverse engineering.
      *
-     * @param \moodle_url $href Plugin file url to extract from.
+     * @param \core\url $href Plugin file url to extract from.
      * @return \stored_file || bool $file The Moodle file object or false if file not found.
      */
-    public function get_file_from_url(\moodle_url $href) {
+    public function get_file_from_url(url $href) {
         // Extract the elements we need from the Moodle URL.
         $argumentsstring = $href->get_path(true);
         $rawarguments = explode('/', $argumentsstring);
@@ -418,10 +423,10 @@ class conversion {
      * Helper function to filter array of smartmedia files
      * to playlists only.
      *
-     * @param \stored_file $mediafile The file object to check.
+     * @param stored_file $mediafile The file object to check.
      * @return bool
      */
-    private function filter_file_playlist(\stored_file $mediafile) : bool {
+    private function filter_file_playlist(stored_file $mediafile): bool {
         if ($mediafile->get_mimetype() == 'application/dash+xml' || $mediafile->get_mimetype() == 'application/x-mpegURL') {
             return true;
         } else {
@@ -433,10 +438,10 @@ class conversion {
      * Helper function to filter array of smartmedia files
      * to downloads only.
      *
-     * @param \stored_file $mediafile The file object to check.
+     * @param stored_file $mediafile The file object to check.
      * @return bool
      */
-    private function filter_file_download(\stored_file $mediafile) : bool {
+    private function filter_file_download(stored_file $mediafile): bool {
         if ($mediafile->get_mimetype() == 'video/mp4' || $mediafile->get_mimetype() == 'audio/mp3') {
             return true;
         } else {
@@ -451,7 +456,7 @@ class conversion {
      * @param int $filter
      * @return array $mediafiles
      */
-    private function get_media_files(string $contenthash, int $filter=self::FILTER_PLAYLIST) : array {
+    private function get_media_files(string $contenthash, int $filter=self::FILTER_PLAYLIST): array {
         global $DB;
 
         // Get all media files for this source file.
@@ -478,9 +483,9 @@ class conversion {
         }
 
         if ($filter == self::FILTER_PLAYLIST) {
-            $mediafiles = array_filter($mediafiles, array($this, 'filter_file_playlist'));
+            $mediafiles = array_filter($mediafiles, [$this, 'filter_file_playlist']);
         } else if ($filter == self::FILTER_DOWNLOAD) {
-            $mediafiles = array_filter($mediafiles, array($this, 'filter_file_download'));
+            $mediafiles = array_filter($mediafiles, [$this, 'filter_file_download']);
         }
 
         return $mediafiles;
@@ -494,7 +499,7 @@ class conversion {
      * @param array $mediafiles
      * @return array $mediafiles
      */
-    private function filter_playlists(array $mediafiles) : array {
+    private function filter_playlists(array $mediafiles): array {
         // Next filter the file list to only include: playlists, the mp4 and mp3 download files.
         foreach ($mediafiles as $key => $mediafile) {
             $match = preg_match('/\_hls_playlist\.m3u8|_mpegdash_playlist\.mpd|\.mp4|\.mp3/', $mediafile->get_filename());
@@ -522,8 +527,8 @@ class conversion {
      * @param int $id Item id to be used in replacement.
      * @return string $replacedcontent Updated file content.
      */
-    private function replace_urls(string $filecontent, int $id) : string {
-        $matches = array();
+    private function replace_urls(string $filecontent, int $id): string {
+        $matches = [];
         preg_match_all('/pluginfile\.php\/1\/local_smartmedia\/media\/(0)\/(.*)\/conversions\/(.*)\./',
             $filecontent, $matches, PREG_SET_ORDER);
 
@@ -552,7 +557,7 @@ class conversion {
      * @param int $fileid
      * @return array
      */
-    private function generate_playlists(array $mappedfiles, int $fileid) : array {
+    private function generate_playlists(array $mappedfiles, int $fileid): array {
         $fs = get_file_storage();
 
         // For each playlist try to get playlist.
@@ -563,7 +568,7 @@ class conversion {
                 $playlist = $fs->get_file(1, 'local_smartmedia', 'media', $fileid,
                     $mappedfile->get_filepath(), $mappedfile->get_filename());
                 if (!$playlist) {
-                    $filerecord = new \stdClass();
+                    $filerecord = new stdClass();
                     $filerecord->contextid = 1;
                     $filerecord->component = 'local_smartmedia';
                     $filerecord->filearea = 'media';
@@ -587,7 +592,7 @@ class conversion {
     /**
      * Get smart media for file.
      *
-     * @param \moodle_url $href the url of the file to find smart media for.
+     * @param \core\url $href the url of the file to find smart media for.
      * @param bool $triggerconversion true if conversion should be triggered by this method, false otherwise.
      * @param bool $rawfiles return the file objects instead of the download urls. Used for downloading metadata from smartmedia.
      * @return array $smartmedia 2D array of \stored_file objects for the smart media associated with the $href file,
@@ -596,8 +601,8 @@ class conversion {
      *                  Example:
      *                      ['media' => [\stored_file $file1, ...], 'data' => [\stored_file $file2, ...]]
      */
-    public function get_smart_media(\moodle_url $href, bool $triggerconversion = false, bool $rawfiles = false) : array {
-        $smartmedia = array('context' => null);
+    public function get_smart_media(url $href, bool $triggerconversion = false, bool $rawfiles = false): array {
+        $smartmedia = ['context' => null];
         $viewconversion = (bool)get_config('local_smartmedia', 'viewconversion');
 
         // Get the file record from the Moodle URL.
@@ -608,7 +613,7 @@ class conversion {
             return $smartmedia;
         }
         // Keep a hold of the context so we know where we are targeting the file.
-        $smartmedia['context'] = \context::instance_by_id($file->get_contextid());
+        $smartmedia['context'] = context::instance_by_id($file->get_contextid());
 
         // Query conversion table for status.
         $conversionstatuses = $this->get_conversion_statuses($file);
@@ -658,7 +663,7 @@ class conversion {
      *
      * @return array $filteredfiles of \stored_file objects in the $filepath.
      */
-    private function filter_files_by_filepath($files, $filepath) : array {
+    private function filter_files_by_filepath($files, $filepath): array {
 
         $filteredfiles = [];
 
@@ -676,10 +681,10 @@ class conversion {
      * @param int $status Status of records to get.
      * @return array $filerecords Records to process.
      */
-    private function get_conversion_records(int $status) : array {
+    private function get_conversion_records(int $status): array {
         global $DB;
 
-        $conditions = array('status' => $status);
+        $conditions = ['status' => $status];
         $limit = self::MAX_FILES;
         $fields = 'id, pathnamehash, contenthash, status, transcoder_status, transcribe_status,
                   rekog_label_status, rekog_moderation_status, rekog_face_status, rekog_person_status,
@@ -700,11 +705,11 @@ class conversion {
      *
      * @return array $urls of \moodle_url objects for the files.
      */
-    private function map_files_to_urls($files, int $fileid) : array {
+    private function map_files_to_urls($files, int $fileid): array {
         $urls = [];
         foreach ($files as $file) {
             // Build the custom serve URL.
-            $url = moodle_url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
+            $url = url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
                     $fileid, $file->get_filepath(), $file->get_filename());
             $urls[] = $url;
         }
@@ -715,12 +720,12 @@ class conversion {
      * Get the configured covnersion for this conversion record in a format that will
      * be sent to AWS for processing.
      *
-     * @param \stdClass $conversionrecord The conversion record to get the settings for.
+     * @param stdClass $conversionrecord The conversion record to get the settings for.
      * @return array $settings The conversion record settings.
      */
-    private function get_conversion_settings(\stdClass $conversionrecord) : array {
+    private function get_conversion_settings(stdClass $conversionrecord): array {
         global $CFG;
-        $settings = array();
+        $settings = [];
 
         // Metadata space per S3 object is limited so do some dirty encoding
         // of the processes we want to carry out on the file. These are
@@ -754,7 +759,7 @@ class conversion {
      *
      * @return string $metadata json encoded string.
      */
-    private function create_presets_metadata(array $presets) : string {
+    private function create_presets_metadata(array $presets): string {
         $presetarray = [];
 
         foreach ($presets as $preset) {
@@ -767,21 +772,21 @@ class conversion {
     /**
      * Send file for conversion processing in AWS.
      *
-     * @param \stored_file $file The file to upload for conversion.
+     * @param stored_file $file The file to upload for conversion.
      * @param array $settings Settings to be used for file conversion.
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return int $status The status code of the upload.
      */
-    private function send_file_for_processing(\stored_file $file, array $settings, $handler=null) : int {
-        $awss3 = new \local_smartmedia\aws_s3();
+    private function send_file_for_processing(stored_file $file, array $settings, $handler=null): int {
+        $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
 
-        $uploadparams = array(
+        $uploadparams = [
             'Bucket' => $this->config->s3_input_bucket, // Required.
             'Key' => $file->get_contenthash(), // Required.
             'Body' => $file->get_content_file_handle(), // Required.
-            'Metadata' => $settings
-        );
+            'Metadata' => $settings,
+        ];
 
         try {
             $s3client->putObject($uploadparams);
@@ -801,7 +806,7 @@ class conversion {
      *
      * @param array $results The result details to update the records.
      */
-    private function update_conversion_records(array $results) : void {
+    private function update_conversion_records(array $results): void {
         global $DB;
 
         // Check if we are going to be performing multiple inserts.
@@ -813,7 +818,7 @@ class conversion {
 
         // Update the records in the database.
         foreach ($results as $key => $result) {
-            $updaterecord = new \stdClass();
+            $updaterecord = new stdClass();
             $updaterecord->id = $key;
             $updaterecord->status = $result;
             $updaterecord->timemodified = time();
@@ -827,8 +832,8 @@ class conversion {
      *
      * @return array $results The results of the processing.
      */
-    public function process_conversions() : array {
-        $results = array();
+    public function process_conversions(): array {
+        $results = [];
         $fs = get_file_storage();
         $conversionrecords = $this->get_conversion_records(self::CONVERSION_ACCEPTED); // Get not yet started conversion records.
 
@@ -854,15 +859,15 @@ class conversion {
      * Only check for messages relating to configured conversions for this record that haven't
      * already succeed or failed.
      *
-     * @param \stdClass $conversionrecord The conversion record to get messages for.
+     * @param stdClass $conversionrecord The conversion record to get messages for.
      * @return array $queuemessages The matching queue messages.
      */
-    private function get_queue_messages(\stdClass $conversionrecord) : array {
+    private function get_queue_messages(stdClass $conversionrecord): array {
         global $DB;
 
         // Using the conversion record determine which services we are looking for messages from.
         // Only get messages for conversions that have not yet finished.
-        $services = array();
+        $services = [];
 
         if ($conversionrecord->transcoder_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->transcoder_status == self::CONVERSION_IN_PROGRESS) {
@@ -925,16 +930,16 @@ class conversion {
      * This is used in checking that the smartmedia file is OK to
      * send to an end user.
      *
-     * @param \stored_file $sourcefile The source file we want to check against.
-     * @param \stored_file $smartfile The smartmedia file we want to make sure is associated with the source.
+     * @param stored_file $sourcefile The source file we want to check against.
+     * @param stored_file $smartfile The smartmedia file we want to make sure is associated with the source.
      * @return bool True if the checks are valid, false otherwise.
      */
-    public function check_smartmedia_file(\stored_file $sourcefile, \stored_file $smartfile) : bool {
+    public function check_smartmedia_file(stored_file $sourcefile, stored_file $smartfile): bool {
         global $DB;
 
         // The contenthash of the source file should have a matching entry in the local_smartmedia_conv table.
         $select = 'contenthash = ? AND status <> ?';
-        $params = array($sourcefile->get_contenthash(), self::CONVERSION_ERROR);
+        $params = [$sourcefile->get_contenthash(), self::CONVERSION_ERROR];
         $sourcehashexists = $DB->record_exists_select('local_smartmedia_conv', $select, $params);
         if (!$sourcehashexists) {
             return false;
@@ -953,23 +958,23 @@ class conversion {
     /**
      * Get the transcoded media files from AWS S3,
      *
-     * @param \stdClass $conversionrecord The conversion record from the database.
+     * @param stdClass $conversionrecord The conversion record from the database.
      * @param \Aws\MockHandler|null $handler Optional handler.
      *
      * @return array $transcodedfiles Array of \stored_file objects.
      */
-    public function get_transcode_files(\stdClass $conversionrecord, $handler=null) : array {
-        $awss3 = new \local_smartmedia\aws_s3();
+    public function get_transcode_files(stdClass $conversionrecord, $handler=null): array {
+        $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
         $transcodedfiles = [];
 
         // Transcoding could have made many files, but the job only calls success when all files are generated.
         // So first we get a list of the files.
-        $listparams = array(
+        $listparams = [
                 'Bucket' => $this->config->s3_output_bucket,
                 'MaxKeys' => 1000,  // The maximum allowed before we need to page, we should NEVER have this many.
                 'Prefix' => $conversionrecord->contenthash . '/conversions/',  // Location in the S3 bucket where the files live.
-        );
+        ];
         $availableobjects = $s3client->listObjects($listparams);
 
         // Then we iterate over that list and get all the files available.
@@ -977,18 +982,18 @@ class conversion {
         $requestdir = make_request_directory();
         foreach ($availableobjects->get('Contents') as $availableobject) {
             $filename = basename($availableobject['Key']);
-            $filerecord = array(
+            $filerecord = [
                 'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
                 'component' => 'local_smartmedia',
                 'filearea' => 'media',
                 'itemid' => 0,
                 'filepath' => '/' . $conversionrecord->contenthash . '/conversions/',
                 'filename' => $filename,
-            );
-            $downloadparams = array(
+            ];
+            $downloadparams = [
                 'Bucket' => $this->config->s3_output_bucket, // Required.
                 'Key' => $availableobject['Key'], // Required.
-            );
+            ];
 
             try {
                 // The playlist files (including iframe playlists) created in s3 transcoding contain
@@ -1013,7 +1018,7 @@ class conversion {
                         unlink($filetarget);
                     }
                 }
-            } catch (\moodle_exception $e) {
+            } catch (moodle_exception $e) {
                 // This file may already exist. Perhaps a reprocessed queue message.
                 // Either way, there isn't anything we can do about it.
                 // Move on.
@@ -1032,7 +1037,7 @@ class conversion {
      *
      * @return string $updatedcontent The updated file content.
      */
-    private function replace_playlist_urls_with_pluginfile_urls($filecontent, string $contenthash) : string {
+    private function replace_playlist_urls_with_pluginfile_urls($filecontent, string $contenthash): string {
 
         $pluginfilepath = "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
         // Replace all matching content hashes with the plugin file path for smartmedia with this content.
@@ -1049,7 +1054,7 @@ class conversion {
      *
      * @return bool true if the file is playlist, false otherwise.
      */
-    private function is_file_playlist(string $filename) : bool {
+    private function is_file_playlist(string $filename): bool {
         $result = false;
 
         if (preg_match('/.m3u8|.mpd/', $filename)) {
@@ -1066,10 +1071,10 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return array $keys The keys (paths) of the deleted objects.
      */
-    private function cleanup_aws_files(string $key, $handler=null) : array {
-        $awss3 = new \local_smartmedia\aws_s3();
+    private function cleanup_aws_files(string $key, $handler=null): array {
+        $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
-        $keys = array();
+        $keys = [];
 
         // Delete original file from input bucket.
         try {
@@ -1088,13 +1093,13 @@ class conversion {
 
         // Get the keys.
         $objectlist = $s3client->listObjects([
-            'Bucket' => $this->config->s3_output_bucket
+            'Bucket' => $this->config->s3_output_bucket,
         ]);
 
         if (!empty($objectlist['Contents'])) {
             foreach ($objectlist['Contents'] as $object) {
                 if ($this->string_starts_with($object['Key'], $key)) { // Check if list key starts with the given has.
-                    $keys[] = array('Key' => $object['Key']);
+                    $keys[] = ['Key' => $object['Key']];
                 }
             }
         }
@@ -1105,8 +1110,8 @@ class conversion {
                 $s3client->deleteObjects([
                     'Bucket' => $this->config->s3_output_bucket,
                     'Delete' => [
-                        'Objects' => $keys
-                    ]
+                        'Objects' => $keys,
+                    ],
                 ]);
             } catch (S3Exception $e) {
                 debugging('local_smartmedia: Failed to delete objects with key: ' . $key . ' from output bucket.');
@@ -1119,34 +1124,34 @@ class conversion {
     /**
      * Get the file from AWS for a given conversion process.
      *
-     * @param \stdClass $conversionrecord The conversion record from the database.
+     * @param stdClass $conversionrecord The conversion record from the database.
      * @param string $process The process to get the file for.
      * @param \Aws\MockHandler|null $handler Optional handler.
      */
-    public function get_data_file(\stdClass $conversionrecord, string $process, $handler=null): bool {
-        $awss3 = new \local_smartmedia\aws_s3();
+    public function get_data_file(stdClass $conversionrecord, string $process, $handler=null): bool {
+        $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
 
         $objectkey = self::SERVICE_MAPPING[$process][1];
         $fs = get_file_storage();
 
-        $filerecord = array(
+        $filerecord = [
             'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
             'component' => 'local_smartmedia',
             'filearea' => 'metadata',
             'itemid' => 0,
             'filepath' => '/' . $conversionrecord->contenthash . '/metadata/',
-            'filename' => $objectkey . '.json'
-        );
+            'filename' => $objectkey . '.json',
+        ];
 
-        $downloadparams = array(
+        $downloadparams = [
                 'Bucket' => $this->config->s3_output_bucket, // Required.
                 'Key' => $conversionrecord->contenthash . '/metadata/' . $objectkey . '.json', // Required.
-        );
+        ];
 
         try {
             $getobject = $s3client->getObject($downloadparams);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             // This key must not exist, or similar. Handle all exceptions and return false.
             debugging("Failed getting specified data file {$downloadparams['Key']} from output bucket.");
             return false;
@@ -1162,7 +1167,7 @@ class conversion {
 
         try {
             $fs->create_file_from_pathname($filerecord, $tmppath);
-        } catch (\moodle_exception $e) {
+        } catch (moodle_exception $e) {
             // This data file may already exist. Perhaps a reprocessed queue message.
             // Either way, there isn't anything we can do about it.
             // Move on.
@@ -1176,12 +1181,12 @@ class conversion {
     /**
      * Process the conversion records and get the files from AWS.
      *
-     * @param \stdClass $conversionrecord The conversion record from the database.
+     * @param stdClass $conversionrecord The conversion record from the database.
      * @param array $queuemessages Queue messages from the database relating to this conversion record.
      * @param \Aws\MockHandler|null $handler Optional handler.
-     * @return \stdClass $conversionrecord The updated conversion record.
+     * @return stdClass $conversionrecord The updated conversion record.
      */
-    private function process_conversion(\stdClass $conversionrecord, array $queuemessages, $handler=null) : \stdClass {
+    private function process_conversion(stdClass $conversionrecord, array $queuemessages, $handler=null): stdClass {
         global $DB;
 
         // If there are no queue messages exit early.
@@ -1238,11 +1243,11 @@ class conversion {
      * Overall conversion record is finished when all the individual conversions are finished.
      *
      *
-     * @param \stdClass $record The record to check the completion status for.
+     * @param stdClass $record The record to check the completion status for.
      * @param \Aws\MockHandler|null $handler Optional handler.
-     * @return \stdClass $updatedrecord The updated completion record.
+     * @return stdClass $updatedrecord The updated completion record.
      */
-    public function update_completion_status(\stdClass $record, $handler=null) : \stdClass {
+    public function update_completion_status(stdClass $record, $handler=null): stdClass {
         global $DB;
 
         $completionfields = [
@@ -1295,8 +1300,8 @@ class conversion {
      *
      * @return array $results The results of the processing.
      */
-    public function update_pending_conversions() : array {
-        $results = array();
+    public function update_pending_conversions(): array {
+        $results = [];
         $conversionrecords = $this->get_conversion_records(self::CONVERSION_IN_PROGRESS); // Get pending conversion records.
 
         foreach ($conversionrecords as $conversionrecord) { // Itterate through pending records.
@@ -1321,7 +1326,7 @@ class conversion {
      *
      * @return array $fileids Array of File IDs.
      */
-    private function get_fileids() : array {
+    private function get_fileids(): array {
         global $DB;
         $convertfrom = time() - (int)get_config('local_smartmedia', 'convertfrom');
 
@@ -1354,7 +1359,7 @@ class conversion {
      *
      * @return array
      */
-    public function create_conversions() : array {
+    public function create_conversions(): array {
         $fileids = $this->get_fileids(); // Get File ids for conversions.
         $fs = get_file_storage();
 
@@ -1366,7 +1371,7 @@ class conversion {
             } else {
                 try {
                     $this->create_conversion($file);
-                } catch (\dml_exception $e) {
+                } catch (dml_exception $e) {
                     // Likely duplicate record, unset and move on.
                     unset($fileids[$key]);
                 }
@@ -1379,10 +1384,10 @@ class conversion {
     /**
      * Check if a given Moodle URL will be converted to smartmedia.
      *
-     * @param \moodle_url $href The Moodle URL to check.
+     * @param \core\url $href The Moodle URL to check.
      * @return int The status of the check.
      */
-    public function will_convert(\moodle_url $href) : int {
+    public function will_convert(url $href): int {
         // Get the file record from the Moodle URL.
         $file = $this->get_file_from_url($href);
 
@@ -1423,16 +1428,16 @@ class conversion {
     private static function instance_sql_fields(string $filesprefix = 'f', string $filesreferenceprefix = 'r') {
         // Note, these fieldnames MUST NOT overlap between the two tables,
         // else problems like MDL-33172 occur.
-        $filefields = array('contenthash', 'pathnamehash', 'contextid', 'component', 'filearea',
+        $filefields = ['contenthash', 'pathnamehash', 'contextid', 'component', 'filearea',
             'itemid', 'filepath', 'filename', 'userid', 'filesize', 'mimetype', 'status', 'source',
-            'author', 'license', 'timecreated', 'timemodified', 'sortorder', 'referencefileid');
+            'author', 'license', 'timecreated', 'timemodified', 'sortorder', 'referencefileid'];
 
-        $referencefields = array('repositoryid' => 'repositoryid',
+        $referencefields = ['repositoryid' => 'repositoryid',
             'reference' => 'reference',
-            'lastsync' => 'referencelastsync');
+            'lastsync' => 'referencelastsync'];
 
         // id is specifically named to prevent overlapping between the two tables.
-        $fields = array();
+        $fields = [];
         $fields[] = $filesprefix.'.id AS id';
         foreach ($filefields as $field) {
             $fields[] = "{$filesprefix}.{$field}";

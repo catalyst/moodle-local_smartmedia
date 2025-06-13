@@ -14,15 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Pricing Calculator for determining media transcoding costs.
- *
- * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia;
 
 use local_smartmedia\pricing\location_rekog_pricing;
@@ -77,8 +68,12 @@ class pricing_calculator {
     /**
      * pricing_calculator constructor.
      *
-     * @param location_transcode_pricing $locationpricing object containing pricing information for region.
+     * @param location_transcode_pricing $transcodelocationpricing object containing pricing information for region.
+     * @param location_rekog_pricing $rekoglocationpricing
+     * @param location_transcribe_pricing $transcribelocationpricing
      * @param array $presets array of aws_ets_preset objects containing preset transcode output settings.
+     * @param array $rekogsettings
+     * @param bool $transcribe
      */
     public function __construct(
         location_transcode_pricing $transcodelocationpricing,
@@ -102,7 +97,7 @@ class pricing_calculator {
      *
      * @return bool
      */
-    public function is_high_definition_pricing_valid() : bool {
+    public function is_high_definition_pricing_valid(): bool {
         $result = $this->transcodelocationpricing->has_valid_high_definition_pricing();
         return $result;
     }
@@ -112,7 +107,7 @@ class pricing_calculator {
      *
      * @return bool
      */
-    public function is_standard_definition_pricing_valid() : bool {
+    public function is_standard_definition_pricing_valid(): bool {
         $result = $this->transcodelocationpricing->has_valid_standard_definition_pricing();
         return $result;
     }
@@ -122,7 +117,7 @@ class pricing_calculator {
      *
      * @return bool
      */
-    public function is_audio_pricing_valid() : bool {
+    public function is_audio_pricing_valid(): bool {
         $result = $this->transcodelocationpricing->has_valid_audio_pricing();
         return $result;
     }
@@ -132,7 +127,7 @@ class pricing_calculator {
      *
      * @return bool
      */
-    public function has_presets() : bool {
+    public function has_presets(): bool {
         $result = false;
         if (!empty($this->presets)) {
             $result = true;

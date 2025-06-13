@@ -33,7 +33,7 @@ use local_smartmedia\pricing_calculator;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
+final class pricing_calculator_test extends smartmedia_testcase {
 
     /**
      * @var array of json objects representing the expected API response from \Aws\ElasticTranscoder
@@ -68,6 +68,7 @@ class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
 
     public function setUp(): void {
         global $CFG;
+        parent::setUp();
 
         $this->resetAfterTest();
 
@@ -92,7 +93,7 @@ class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
      * Data provider for test_calculate_transcode_cost.
      * @return array
      */
-    public function calculate_transcode_cost_provider() {
+    public static function calculate_transcode_cost_provider(): array {
         return [
             'High Definition input - 3 HD, 4 SD, 1 audio conversion' =>
                 ['1080', '3600', 1, 1, '0.0035', '0.0017', '0.0008', (3 * 0.0035 + 4 * 0.0017 + 1 * 0.0008) * 3600 / 60],
@@ -164,7 +165,7 @@ class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
      * @dataProvider calculate_transcode_cost_provider
      */
     public function test_calculate_transcode_cost($height, $duration, $videostreams, $audiostreams, $hdpricing,
-                                                  $sdpricing, $audiopricing, $expected) {
+                                                  $sdpricing, $audiopricing, $expected): void {
 
         // Setup the location pricing for dependency injection.
         $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');
@@ -194,7 +195,7 @@ class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
     /**
      * Test that calculate transcode costs will null if preset ids aren't in admin settings.
      */
-    public function test_calculate_transcode_cost_no_presets() {
+    public function test_calculate_transcode_cost_no_presets(): void {
 
         // Setup the location pricing for dependency injection.
         $locationpricing = new location_transcode_pricing('ap-southeast-2');
@@ -212,7 +213,7 @@ class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
      * Data provider for test_calculate_rekog_cost.
      * @return array
      */
-    public function calculate_rekog_cost_provider() {
+    public static function calculate_rekog_cost_provider(): array {
         return [
             '1 min Video, 0 Rekognition Enrichments' => [60, 0, 0.017, 1 * 0 * 0.017],
             '1 min Video, 1 Rekognition Enrichments' => [60, 1, 0.017, 1 * 1 * 0.017],
@@ -235,7 +236,7 @@ class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
      *
      * @dataProvider calculate_rekog_cost_provider
      */
-    public function test_calculate_rekog_cost($duration, $enabled, $cost, $expected) {
+    public function test_calculate_rekog_cost($duration, $enabled, $cost, $expected): void {
 
         // Setup the location pricing for dependency injection.
         $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');
@@ -289,7 +290,7 @@ class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
      * Data provider for test_calculate_transcribe_cost.
      * @return array
      */
-    public function calculate_transcribe_cost_provider() {
+    public static function calculate_transcribe_cost_provider(): array {
         return [
             '1 min Video, Transcribe Off' => [60, false, 0.00125, 1 * 0 * 0.00125 * 60],
             '1 min Video, Transcribe On' => [60, true, 0.00125, 1 * 1 * 0.00125 * 60],
@@ -310,7 +311,7 @@ class local_smartmedia_pricing_calculator_testcase extends smartmedia_testcase {
      *
      * @dataProvider calculate_transcribe_cost_provider
      */
-    public function test_calculate_transcribe_cost($duration, $enabled, $cost, $expected) {
+    public function test_calculate_transcribe_cost($duration, $enabled, $cost, $expected): void {
 
         // Setup the location pricing for dependency injection.
         $transcodelocationpricing = new location_transcode_pricing('ap-southeast-2');

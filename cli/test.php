@@ -14,6 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+use local_smartmedia\tester;
+use core\exception\moodle_exception;
+
 /**
  * This command line script will test a provisioned Smartmedia environment in AWS.
  *
@@ -30,18 +33,18 @@ require_once($CFG->libdir.'/clilib.php');
 
 // Now get cli options.
 list($options, $unrecognized) = cli_get_params(
-    array(
+    [
         'keyid'             => false,
         'secret'            => false,
         'help'              => false,
         'region'            => false,
         'input-bucket'       => '',
         'output-bucket'      => '',
-        'file'              => ''
-    ),
-    array(
-        'h' => 'help'
-    )
+        'file'              => '',
+    ],
+    [
+        'h' => 'help',
+    ]
 );
 
 if ($unrecognized) {
@@ -82,7 +85,7 @@ Example:
     die;
 }
 
-$tester = new \local_smartmedia\tester(
+$tester = new tester(
     $options['keyid'],
     $options['secret'],
     $options['region'],
@@ -95,7 +98,7 @@ cli_heading(get_string('test:uploadfile', 'local_smartmedia'));
 $uploadresposnse = $tester->upload_file($options['file']);
 if ($uploadresposnse->code != 0 ) {
     $errormsg = $uploadresposnse->code . ': ' . $uploadresposnse->message;
-    throw new \moodle_exception($errormsg);
+    throw new moodle_exception($errormsg);
     exit(1);
 } else {
     echo get_string('test:fileuploaded', 'local_smartmedia') . PHP_EOL . PHP_EOL;

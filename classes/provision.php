@@ -14,15 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Class for provisioning AWS resources.
- *
- * @package     local_smartmedia
- * @copyright   2018 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace local_smartmedia;
 
+use stdClass;
 use Aws\S3\Exception\S3Exception;
 use Aws\CloudFormation\Exception\CloudFormationException;
 use Aws\Lambda\Exception\LambdaException;
@@ -106,7 +100,7 @@ class provision {
         $bucketexists = true;
 
         try {
-            $this->s3client->headBucket(array('Bucket' => $bucketname));
+            $this->s3client->headBucket(['Bucket' => $bucketname]);
         } catch (S3Exception $e) {
             // Check the error code. If code = 403, this means the bucket
             // exists but we can't access it.  Need to know either way.
@@ -127,15 +121,15 @@ class provision {
      * @return \Aws\S3\S3Client
      */
     public function create_s3_client($handler=null) {
-        $connectionoptions = array(
+        $connectionoptions = [
             'version' => 'latest',
             'region' => $this->region,
-        );
+        ];
 
         if (!$this->usesdkcreds) {
             $connectionoptions['credentials'] = [
                 'key' => $this->keyid,
-                'secret' => $this->secret
+                'secret' => $this->secret,
             ];
         }
 
@@ -157,21 +151,21 @@ class provision {
      * Create an S3 Bucket in AWS.
      *
      * @param string $bucketname The name to use for the S3 bucket.
-     * @return \stdClass $result The result of the bucket creation.
+     * @return stdClass $result The result of the bucket creation.
      */
     private function create_s3_bucket($bucketname) {
-        $result = new \stdClass();
+        $result = new stdClass();
         $result->status = true;
         $result->code = 0;
         $result->message = '';
         try {
-            $s3result = $this->s3client->createBucket(array(
+            $s3result = $this->s3client->createBucket([
                     'ACL' => 'private',
                     'Bucket' => $bucketname, // Required.
-                    'CreateBucketConfiguration' => array(
+                    'CreateBucketConfiguration' => [
                             'LocationConstraint' => $this->region,
-                    ),
-            ));
+                    ],
+            ]);
             $result->message = $s3result['Location'];
         } catch (S3Exception $e) {
             $result->status = false;
@@ -186,10 +180,10 @@ class provision {
      * Creates a S3 bucket in AWS.
      *
      * @param string $bucketname The name of the bucket to create.
-     * @return \stdClass $result The result from the bucket creation.
+     * @return stdClass $result The result from the bucket creation.
      */
     public function create_bucket($bucketname) {
-        $result = new \stdClass();
+        $result = new stdClass();
         $result->status = true;
         $result->code = 0;
         $result->message = '';
@@ -220,10 +214,10 @@ class provision {
      *
      * @param string $filepath The path to the local file to Put.
      * @param string $bucketname Te name of the bucket to use.
-     * @return \stdClass $result The result of the Put operation.
+     * @return stdClass $result The result of the Put operation.
      */
     private function bucket_put_object($filepath, $bucketname) {
-        $result = new \stdClass();
+        $result = new stdClass();
         $result->status = true;
         $result->code = 0;
         $result->message = '';
@@ -231,14 +225,14 @@ class provision {
         $client = $this->s3client;
         $fileinfo = pathinfo($filepath);
 
-        $uploadparams = array(
+        $uploadparams = [
             'Bucket' => $bucketname, // Required.
             'Key' => $fileinfo['basename'], // Required.
             'SourceFile' => $filepath, // Required.
-            'Metadata' => array(
+            'Metadata' => [
                 'description' => 'This is the Libreoffice archive.',
-            )
-        );
+            ],
+        ];
 
         try {
             $putobject = $client->putObject($uploadparams);
@@ -258,10 +252,10 @@ class provision {
      *
      * @param string $filepath The path to the file to upload.
      * @param string $bucketname Te name of the bucket to use.
-     * @return \stdClass $result The result of the Put operation.
+     * @return stdClass $result The result of the Put operation.
      */
     public function upload_file($filepath, $bucketname) {
-        $result = new \stdClass();
+        $result = new stdClass();
         $result->status = true;
         $result->code = 0;
         $result->message = '';
@@ -291,15 +285,15 @@ class provision {
      * @return \Aws\CloudFormation\CloudFormationClient The create Cloudformation client.
      */
     public function create_cloudformation_client($handler=null) {
-        $connectionoptions = array(
+        $connectionoptions = [
             'version' => 'latest',
             'region' => $this->region,
-        );
+        ];
 
         if (!$this->usesdkcreds) {
             $connectionoptions['credentials'] = [
                 'key' => $this->keyid,
-                'secret' => $this->secret
+                'secret' => $this->secret,
             ];
         }
 
@@ -324,10 +318,10 @@ class provision {
      *
      * @param string $stackname The name to give the created stack.
      * @param array $params The params to create the stack with.
-     * @return \stdClass $result The result of stack creation.
+     * @return stdClass $result The result of stack creation.
      */
     public function create_stack($stackname, $params) {
-        $result = new \stdClass();
+        $result = new stdClass();
         $result->status = true;
         $result->code = 0;
         $result->message = '';
@@ -337,26 +331,26 @@ class provision {
 
         // Create stack.
         $template = file_get_contents($params['templatepath']);
-        $parameters = array();
+        $parameters = [];
         foreach ($params as $key => $value) {
             if ($key == 'templatepath') {
                 continue;
             } else {
-                $parameters[] = array(
+                $parameters[] = [
                     'ParameterKey' => $key,
-                    'ParameterValue' => $value
-                );
+                    'ParameterValue' => $value,
+                ];
             }
         }
 
-        $stackparams = array(
-            'Capabilities' => array('CAPABILITY_NAMED_IAM'),
+        $stackparams = [
+            'Capabilities' => ['CAPABILITY_NAMED_IAM'],
             'OnFailure' => 'DELETE',
             'Parameters' => $parameters,
             'StackName' => $stackname, // Required.
             'TemplateBody' => $template,
-            'TimeoutInMinutes' => 6
-        );
+            'TimeoutInMinutes' => 6,
+        ];
 
         $client = $this->cloudformationclient;
 
@@ -371,18 +365,18 @@ class provision {
         }
 
         if ($result->status == true) {
-            $desctibeparams = array(
+            $desctibeparams = [
                 'StackName' => $result->message,
-            );
+            ];
 
             // Stack creation can take several minutes.
             // Periodically check for stack updates.
             $timeout = time() + (60 * 5); // Five minute timeout.
-            $exitcodes = array(
+            $exitcodes = [
                 'CREATE_FAILED',
                 'CREATE_COMPLETE',
-                'DELETE_COMPLETE'
-            );
+                'DELETE_COMPLETE',
+            ];
             $stackcreated = false;
 
             // Check stack creation until exit code received,
@@ -404,7 +398,7 @@ class provision {
             }
 
             if ($stackcreated) {
-                $outputs = array();
+                $outputs = [];
                 foreach ($stackdetail['Outputs'] as $output) {
                     $outputs[$output['OutputKey']] = $output['OutputValue'];
                 }
@@ -429,15 +423,15 @@ class provision {
      * @return \Aws\Lambda\LambdaClient The created Lambda client.
      */
     public function create_lambda_client($handler=null) {
-        $connectionoptions = array(
+        $connectionoptions = [
             'version' => 'latest',
             'region' => $this->region,
-        );
+        ];
 
         if (!$this->usesdkcreds) {
             $connectionoptions['credentials'] = [
                 'key' => $this->keyid,
-                'secret' => $this->secret
+                'secret' => $this->secret,
             ];
         }
 
@@ -461,7 +455,7 @@ class provision {
      * @param array $lambdaenvvars
      */
     public function update_lambda($function, $lambdaenvvars) {
-        $result = new \stdClass();
+        $result = new stdClass();
         $result->status = true;
         $result->code = 0;
         $result->message = '';
