@@ -24,21 +24,21 @@
 
 defined('MOODLE_INTERNAL') || die;
 
-return array(
-    'readPreset' => array(
-        'System preset: HLS Video - 600k.' => array(
-            'Preset' => array(
-                'Thumbnails' => array(
+return [
+    'readPreset' => [
+        'System preset: HLS Video - 600k.' => [
+            'Preset' => [
+                'Thumbnails' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '192',
                     'Format' => 'png',
                     'PaddingPolicy' => 'NoPad',
                     'Interval' => '300',
                     'MaxHeight' => '108',
-                ),
+                ],
                 'Container' => 'ts',
                 'Description' => 'System preset: HLS Video - 600k',
-                'Video' => array(
+                'Video' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '480',
                     'PaddingPolicy' => 'NoPad',
@@ -48,8 +48,8 @@ return array(
                     'KeyframesMaxDist' => '90',
                     'FixedGOP' => 'true',
                     'Codec' => 'H.264',
-                    'Watermarks' => array(
-                        0 => array(
+                    'Watermarks' => [
+                        0 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -60,8 +60,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopLeft',
-                        ),
-                        1 => array(
+                        ],
+                        1 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -72,8 +72,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopRight',
-                        ),
-                        2 => array(
+                        ],
+                        2 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -84,8 +84,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomLeft',
-                        ),
-                        3 => array(
+                        ],
+                        3 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -96,9 +96,9 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomRight',
-                        ),
-                    ),
-                    'CodecOptions' => array(
+                        ],
+                    ],
+                    'CodecOptions' => [
                         'Profile' => 'baseline',
                         'MaxBitRate' => '472',
                         'InterlacedMode' => 'Progressive',
@@ -106,29 +106,29 @@ return array(
                         'ColorSpaceConversionMode' => 'None',
                         'MaxReferenceFrames' => '3',
                         'BufferSize' => '4248',
-                    ),
+                    ],
                     'BitRate' => '472',
                     'DisplayAspectRatio' => 'auto',
-                ),
+                ],
                 'Type' => 'System',
                 'Id' => '1351620000001-200045',
                 'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-200045',
                 'Name' => 'System preset: HLS Video - 600k',
-            ),
-        ),
-        'System preset: MPEG-Dash Video - 600k.' => array(
-            'Preset' => array(
-                'Thumbnails' => array(
+            ],
+        ],
+        'System preset: MPEG-Dash Video - 600k.' => [
+            'Preset' => [
+                'Thumbnails' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '192',
                     'Format' => 'png',
                     'PaddingPolicy' => 'NoPad',
                     'Interval' => '300',
                     'MaxHeight' => '108',
-                ),
+                ],
                 'Container' => 'fmp4',
                 'Description' => 'System preset: MPEG-Dash Video - 600k',
-                'Video' => array(
+                'Video' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '426',
                     'PaddingPolicy' => 'NoPad',
@@ -137,8 +137,8 @@ return array(
                     'KeyframesMaxDist' => '60',
                     'FixedGOP' => 'true',
                     'Codec' => 'H.264',
-                    'Watermarks' => array(
-                        0 => array(
+                    'Watermarks' => [
+                        0 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -149,8 +149,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopLeft',
-                        ),
-                        1 => array(
+                        ],
+                        1 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -161,8 +161,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopRight',
-                        ),
-                        2 => array(
+                        ],
+                        2 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -173,8 +173,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomLeft',
-                        ),
-                        3 => array(
+                        ],
+                        3 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -185,9 +185,9 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomRight',
-                        ),
-                    ),
-                    'CodecOptions' => array(
+                        ],
+                    ],
+                    'CodecOptions' => [
                         'Profile' => 'main',
                         'MaxBitRate' => '600',
                         'InterlacedMode' => 'Progressive',
@@ -195,29 +195,29 @@ return array(
                         'ColorSpaceConversionMode' => 'None',
                         'MaxReferenceFrames' => '1',
                         'BufferSize' => '1200',
-                    ),
+                    ],
                     'BitRate' => '600',
                     'DisplayAspectRatio' => 'auto',
-                ),
+                ],
                 'Type' => 'System',
                 'Id' => '1351620000001-500050',
                 'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-500050',
                 'Name' => 'System preset: MPEG-Dash Video - 600k',
-            ),
-        ),
-        'System preset: HLS Video - 1M.' => array(
-            'Preset' => array(
-                'Thumbnails' => array(
+            ],
+        ],
+        'System preset: HLS Video - 1M.' => [
+            'Preset' => [
+                'Thumbnails' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '192',
                     'Format' => 'png',
                     'PaddingPolicy' => 'NoPad',
                     'Interval' => '300',
                     'MaxHeight' => '108',
-                ),
+                ],
                 'Container' => 'ts',
                 'Description' => 'System preset: HLS Video - 1M',
-                'Video' => array(
+                'Video' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '640',
                     'PaddingPolicy' => 'NoPad',
@@ -227,8 +227,8 @@ return array(
                     'KeyframesMaxDist' => '90',
                     'FixedGOP' => 'true',
                     'Codec' => 'H.264',
-                    'Watermarks' => array(
-                        0 => array(
+                    'Watermarks' => [
+                        0 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -239,8 +239,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopLeft',
-                        ),
-                        1 => array(
+                        ],
+                        1 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -251,8 +251,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopRight',
-                        ),
-                        2 => array(
+                        ],
+                        2 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -263,8 +263,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomLeft',
-                        ),
-                        3 => array(
+                        ],
+                        3 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -275,9 +275,9 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomRight',
-                        ),
-                    ),
-                    'CodecOptions' => array(
+                        ],
+                    ],
+                    'CodecOptions' => [
                         'Profile' => 'main',
                         'MaxBitRate' => '872',
                         'InterlacedMode' => 'Progressive',
@@ -285,29 +285,29 @@ return array(
                         'ColorSpaceConversionMode' => 'None',
                         'MaxReferenceFrames' => '3',
                         'BufferSize' => '7848',
-                    ),
+                    ],
                     'BitRate' => '872',
                     'DisplayAspectRatio' => 'auto',
-                ),
+                ],
                 'Type' => 'System',
                 'Id' => '1351620000001-200035',
                 'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-200035',
                 'Name' => 'System preset: HLS Video - 1M',
-            ),
-        ),
-        'System preset: MPEG-Dash Video - 1.2M' => array(
-            'Preset' => array(
-                'Thumbnails' => array(
+            ],
+        ],
+        'System preset: MPEG-Dash Video - 1.2M' => [
+            'Preset' => [
+                'Thumbnails' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '192',
                     'Format' => 'png',
                     'PaddingPolicy' => 'NoPad',
                     'Interval' => '300',
                     'MaxHeight' => '108',
-                ),
+                ],
                 'Container' => 'fmp4',
                 'Description' => 'System preset: MPEG-Dash Video - 1.2M',
-                'Video' => array(
+                'Video' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '640',
                     'PaddingPolicy' => 'NoPad',
@@ -316,8 +316,8 @@ return array(
                     'KeyframesMaxDist' => '60',
                     'FixedGOP' => 'true',
                     'Codec' => 'H.264',
-                    'Watermarks' => array(
-                        0 => array(
+                    'Watermarks' => [
+                        0 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -328,8 +328,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopLeft',
-                        ),
-                        1 => array(
+                        ],
+                        1 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -340,8 +340,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopRight',
-                        ),
-                        2 => array(
+                        ],
+                        2 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -352,8 +352,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomLeft',
-                        ),
-                        3 => array(
+                        ],
+                        3 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -364,9 +364,9 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomRight',
-                        ),
-                    ),
-                    'CodecOptions' => array(
+                        ],
+                    ],
+                    'CodecOptions' => [
                         'Profile' => 'main',
                         'MaxBitRate' => '1200',
                         'InterlacedMode' => 'Progressive',
@@ -374,29 +374,29 @@ return array(
                         'ColorSpaceConversionMode' => 'None',
                         'MaxReferenceFrames' => '3',
                         'BufferSize' => '2400',
-                    ),
+                    ],
                     'BitRate' => '1200',
                     'DisplayAspectRatio' => 'auto',
-                ),
+                ],
                 'Type' => 'System',
                 'Id' => '1351620000001-500040',
                 'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-500040',
                 'Name' => 'System preset: MPEG-Dash Video - 1.2M',
-            ),
-        ),
-        'System preset: HLS Video - 2M.' => array(
-            'Preset' => array(
-                'Thumbnails' => array(
+            ],
+        ],
+        'System preset: HLS Video - 2M.' => [
+            'Preset' => [
+                'Thumbnails' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '192',
                     'Format' => 'png',
                     'PaddingPolicy' => 'NoPad',
                     'Interval' => '300',
                     'MaxHeight' => '108',
-                ),
+                ],
                 'Container' => 'ts',
                 'Description' => 'System preset: HLS Video - 2M',
-                'Video' => array(
+                'Video' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '1024',
                     'PaddingPolicy' => 'NoPad',
@@ -406,8 +406,8 @@ return array(
                     'KeyframesMaxDist' => '90',
                     'FixedGOP' => 'true',
                     'Codec' => 'H.264',
-                    'Watermarks' => array(
-                        0 => array(
+                    'Watermarks' => [
+                        0 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -418,8 +418,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopLeft',
-                        ),
-                        1 => array(
+                        ],
+                        1 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -430,8 +430,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopRight',
-                        ),
-                        2 => array(
+                        ],
+                        2 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -442,8 +442,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomLeft',
-                        ),
-                        3 => array(
+                        ],
+                        3 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -454,9 +454,9 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomRight',
-                        ),
-                    ),
-                    'CodecOptions' => array(
+                        ],
+                    ],
+                    'CodecOptions' => [
                         'Profile' => 'main',
                         'MaxBitRate' => '1872',
                         'InterlacedMode' => 'Progressive',
@@ -464,29 +464,29 @@ return array(
                         'ColorSpaceConversionMode' => 'None',
                         'MaxReferenceFrames' => '3',
                         'BufferSize' => '16848',
-                    ),
+                    ],
                     'BitRate' => '1872',
                     'DisplayAspectRatio' => 'auto',
-                ),
+                ],
                 'Type' => 'System',
                 'Id' => '1351620000001-200015',
                 'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-200015',
                 'Name' => 'System preset: HLS Video - 2M',
-            ),
-        ),
-        'System preset: MPEG-Dash Video - 4.8M.' => array(
-            'Preset' => array (
-                'Thumbnails' => array (
+            ],
+        ],
+        'System preset: MPEG-Dash Video - 4.8M.' => [
+            'Preset' => [
+                'Thumbnails' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '192',
                     'Format' => 'png',
                     'PaddingPolicy' => 'NoPad',
                     'Interval' => '300',
                     'MaxHeight' => '108',
-                ),
+                ],
                 'Container' => 'fmp4',
                 'Description' => 'System preset: MPEG-Dash Video - 4.8M',
-                'Video' => array (
+                'Video' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '1280',
                     'PaddingPolicy' => 'NoPad',
@@ -495,8 +495,8 @@ return array(
                     'KeyframesMaxDist' => '60',
                     'FixedGOP' => 'true',
                     'Codec' => 'H.264',
-                    'Watermarks' => array (
-                        0 => array (
+                    'Watermarks' => [
+                        0 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -507,8 +507,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopLeft',
-                        ),
-                        1 => array (
+                        ],
+                        1 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -519,8 +519,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopRight',
-                        ),
-                        2 => array (
+                        ],
+                        2 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -531,8 +531,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomLeft',
-                        ),
-                        3 => array (
+                        ],
+                        3 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -543,9 +543,9 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomRight',
-                        ),
-                    ),
-                    'CodecOptions' => array (
+                        ],
+                    ],
+                    'CodecOptions' => [
                         'Profile' => 'main',
                         'MaxBitRate' => '4800',
                         'InterlacedMode' => 'Progressive',
@@ -553,45 +553,45 @@ return array(
                         'ColorSpaceConversionMode' => 'None',
                         'MaxReferenceFrames' => '3',
                         'BufferSize' => '9600',
-                    ),
+                    ],
                     'BitRate' => '4800',
                     'DisplayAspectRatio' => 'auto',
-                ),
+                ],
                 'Type' => 'System',
                 'Id' => '1351620000001-500020',
                 'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-500020',
                 'Name' => 'System preset: MPEG-Dash Video - 4.8M',
-            ),
-        ),
-        'System preset: Audio MP3 - 192 kilobits/second.' => array(
-            'Preset' => array(
+            ],
+        ],
+        'System preset: Audio MP3 - 192 kilobits/second.' => [
+            'Preset' => [
                 'Container' => 'mp3',
                 'Description' => 'System preset: Audio MP3 - 192 kilobits/second',
-                'Audio' => array(
+                'Audio' => [
                     'Channels' => '2',
                     'SampleRate' => '44100',
                     'Codec' => 'mp3',
                     'BitRate' => '192',
-                ),
+                ],
                 'Type' => 'System',
                 'Id' => '1351620000001-300020',
                 'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-300020',
                 'Name' => 'System preset: Audio MP3 - 192k',
-            ),
-        ),
-        'System preset: Facebook, SmugMug, Vimeo, YouTube.' => array(
-            'Preset' => array(
-                'Thumbnails' => array(
+            ],
+        ],
+        'System preset: Facebook, SmugMug, Vimeo, YouTube.' => [
+            'Preset' => [
+                'Thumbnails' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '192',
                     'Format' => 'png',
                     'PaddingPolicy' => 'NoPad',
                     'Interval' => '60',
                     'MaxHeight' => '108',
-                ),
+                ],
                 'Container' => 'mp4',
                 'Description' => 'System preset: Facebook, SmugMug, Vimeo, YouTube',
-                'Video' => array(
+                'Video' => [
                     'SizingPolicy' => 'ShrinkToFit',
                     'MaxWidth' => '1280',
                     'PaddingPolicy' => 'NoPad',
@@ -600,8 +600,8 @@ return array(
                     'KeyframesMaxDist' => '90',
                     'FixedGOP' => 'false',
                     'Codec' => 'H.264',
-                    'Watermarks' => array(
-                        0 => array(
+                    'Watermarks' => [
+                        0 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -612,8 +612,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopLeft',
-                        ),
-                        1 => array(
+                        ],
+                        1 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Top',
@@ -624,8 +624,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'TopRight',
-                        ),
-                        2 => array(
+                        ],
+                        2 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -636,8 +636,8 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomLeft',
-                        ),
-                        3 => array(
+                        ],
+                        3 => [
                             'SizingPolicy' => 'ShrinkToFit',
                             'VerticalOffset' => '10%',
                             'VerticalAlign' => 'Bottom',
@@ -648,32 +648,32 @@ return array(
                             'HorizontalOffset' => '10%',
                             'Opacity' => '100',
                             'Id' => 'BottomRight',
-                        ),
-                    ),
-                    'CodecOptions' => array(
+                        ],
+                    ],
+                    'CodecOptions' => [
                         'Profile' => 'main',
                         'MaxReferenceFrames' => '3',
                         'ColorSpaceConversionMode' => 'None',
                         'InterlacedMode' => 'Progressive',
                         'Level' => '3.1',
-                    ),
+                    ],
                     'BitRate' => '2200',
                     'DisplayAspectRatio' => 'auto',
-                ),
-                'Audio' => array(
+                ],
+                'Audio' => [
                     'Channels' => '2',
-                    'CodecOptions' => array(
+                    'CodecOptions' => [
                         'Profile' => 'AAC-LC',
-                    ),
+                    ],
                     'SampleRate' => '44100',
                     'Codec' => 'AAC',
                     'BitRate' => '160',
-                ),
+                ],
                 'Type' => 'System',
                 'Id' => '1351620000001-100070',
                 'Arn' => 'arn:aws:elastictranscoder:ap-southeast-2:512561797349:preset/1351620000001-100070',
                 'Name' => 'System preset: Web',
-            ),
-        ),
-    ),
-);
+            ],
+        ],
+    ],
+];

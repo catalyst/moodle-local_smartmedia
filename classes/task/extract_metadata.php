@@ -14,21 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * A scheduled task.
- *
- * @package    local_smartmedia
- * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace local_smartmedia\task;
 
+use local_smartmedia\ffprobe;
+use stdClass;
 use core\task\scheduled_task;
 
 /**
  * Task to extract metadata from mediafiles.
  * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     local_smartmedia
  */
 class extract_metadata extends scheduled_task {
 
@@ -40,7 +36,7 @@ class extract_metadata extends scheduled_task {
     /**
      * Metadata extraction is supported for the following mime types.
      */
-    private const SUPPORTED_MIME_TYPES = array(
+    private const SUPPORTED_MIME_TYPES = [
         'audio/aac',
         'audio/au',
         'audio/mp3',
@@ -66,7 +62,7 @@ class extract_metadata extends scheduled_task {
         'video/x-matroska-3d',
         'video/MP2T'.
         'video/x-sgi-movie',
-    );
+    ];
     /**
      * The maximum run time for the task in seconds.
      * The task will cleanup and exit after this time.
@@ -121,7 +117,7 @@ class extract_metadata extends scheduled_task {
      *
      * @return array $filehashes The hashes of the files we want to process
      */
-    private function get_files_to_process() : array {
+    private function get_files_to_process(): array {
         global $DB;
 
         // Danger! Joins on file table.
@@ -134,11 +130,11 @@ class extract_metadata extends scheduled_task {
         // want to hold a transaction open for a long period.
         $mimetypes = $this->get_supported_mime_types(true);
         $limit = self::MAX_FILES;
-        $params = array(
+        $params = [
             'local_smartmedia',
             'draft',
             '.',
-        );
+        ];
 
         $sql = "SELECT f.id, f.pathnamehash, f.contenthash, f.timecreated
                   FROM {files} f
@@ -163,7 +159,7 @@ class extract_metadata extends scheduled_task {
      *
      * @return array $deletehashes The hashes to remove.
      */
-    private function get_files_to_remove() : array {
+    private function get_files_to_remove(): array {
         global $DB;
 
         // Danger! Joins on file table.
@@ -185,18 +181,18 @@ class extract_metadata extends scheduled_task {
      * @param array $filehashes Filehases to process.
      * @return array $results Results of file processing.
      */
-    private function process_files(array $filehashes) : array {
+    private function process_files(array $filehashes): array {
         global $DB;
 
         $successcount = 0;
         $failcount = 0;
-        $metadatarecords = array();
-        $failhashses = array();
-        $duplicatehashes = array();
+        $metadatarecords = [];
+        $failhashses = [];
+        $duplicatehashes = [];
         $duplicatecount = 0;
 
         $fs = get_file_storage();
-        $ffprobe = new \local_smartmedia\ffprobe();
+        $ffprobe = new ffprobe();
 
         $count = count($filehashes);
         mtrace("local_smartmedia: Found {$count} file(s) to process");
@@ -226,7 +222,7 @@ class extract_metadata extends scheduled_task {
                 $filemetadata = $ffprobe->get_media_metadata($file);
 
                 // Setup initial metadata record.
-                $metadatarecord = new \stdClass();
+                $metadatarecord = new stdClass();
                 $metadatarecord->contenthash = $file->get_contenthash();
                 $metadatarecord->pathnamehash = $file->get_pathnamehash();
                 $metadatarecord->duration = 0;
@@ -266,7 +262,7 @@ class extract_metadata extends scheduled_task {
                         $record = [
                             'contenthash' => $filehash->contenthash,
                             'reason' => $filemetadata['reason'],
-                            'timecreated' => time()
+                            'timecreated' => time(),
                         ];
                         $DB->insert_record('local_smartmedia_data_fail', (object) $record);
                     }
@@ -285,12 +281,12 @@ class extract_metadata extends scheduled_task {
             $DB->insert_records('local_smartmedia_data', $metadatarecords);
         }
 
-        $results = array(
+        $results = [
             'successcount' => $successcount,
             'failcount' => $failcount,
             'failedhashes' => $failhashses,
-            'duplicatecount' => $duplicatecount
-        );
+            'duplicatecount' => $duplicatecount,
+        ];
 
         return $results;
     }
@@ -301,7 +297,7 @@ class extract_metadata extends scheduled_task {
      *
      * @param array $toremove
      */
-    private function remove_metadata_records(array $toremove) : void {
+    private function remove_metadata_records(array $toremove): void {
         global $DB;
 
         $removelist = array_keys($toremove);

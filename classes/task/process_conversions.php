@@ -14,15 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * A scheduled task.
- *
- * @package    local_smartmedia
- * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace local_smartmedia\task;
 
+use local_smartmedia\queue_process;
+use local_smartmedia\conversion;
 use core\task\scheduled_task;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
@@ -31,6 +26,7 @@ use local_smartmedia\aws_elastic_transcoder;
  * Task to process conversions of mediafiles.
  * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     local_smartmedia
  */
 class process_conversions extends scheduled_task {
 
@@ -59,13 +55,13 @@ class process_conversions extends scheduled_task {
 
         // Get SQS messages from AWS.
         mtrace('local_smartmedia: Getting SQS queue messages');
-        $queueprocess = new \local_smartmedia\queue_process();
+        $queueprocess = new queue_process();
         $processedqueue = $queueprocess->process_queue();
         mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueue);
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $conversion = new \local_smartmedia\conversion($transcoder);
+        $conversion = new conversion($transcoder);
 
         // Create conversion records if proactive conversions are enabled.
         $backgroundprocessing = get_config('local_smartmedia', 'proactiveconversion');
@@ -83,7 +79,7 @@ class process_conversions extends scheduled_task {
 
         mtrace('local_smartmedia: Total number of processed files: ' . count($processed));
         foreach ($processed as $key => $value) {
-            if ($value != \local_smartmedia\conversion::CONVERSION_IN_PROGRESS) {
+            if ($value != conversion::CONVERSION_IN_PROGRESS) {
                 mtrace('local_smartmedia: Failed to start processing for file with conversion id: ' . $key);
             }
 

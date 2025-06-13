@@ -14,8 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Smartmedia testcase
+ *
+ * @package     local_smartmedia
+ * @copyright   2022 Kevin Pham
+ * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
 abstract class smartmedia_testcase extends advanced_testcase {
-
     /** @var float Allowed numerical distance between two values to consider them equal */
     const PRECISION_DELTA = 0.000001;
 }

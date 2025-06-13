@@ -138,7 +138,7 @@ return [
                     {"Value":"Audio only"},
                     {"Value":"Less than 720p"}
                 ]
-            }'
+            }',
     ],
     // Fixture for \Aws\Pricing\PricingClient->describeServices.
     'describeServices' => [
@@ -155,7 +155,7 @@ return [
                     "location",
                     "videoResolution"
                 ]
-            }'
+            }',
         ],
         'FormatVersion' => 'aws_v1',
         '@metadata' => [
@@ -2383,11 +2383,11 @@ return [
                 },
                 "version":"20170419202053",
                 "publicationDate":"2017-04-19T20:20:53Z"
-            }'
+            }',
         ],
         '@metadata' => [
             'statusCode' => 200,
             'effectiveUri' => 'https://api.pricing.us-east-1.amazonaws.com',
-        ]
-    ]
+        ],
+    ],
 ];

@@ -14,25 +14,11 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Class for accessing AWS Elastic Transcode Services (ETS).
- *
- * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia;
 
+use core\exception\moodle_exception;
 use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Exception\AwsException;
-
-defined('MOODLE_INTERNAL') || die;
-
-global $CFG;
-// Autoload the SDK for AWS service usage.
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 
 /**
  * Class for accessing AWS Elastic Transcode Services (ETS).
@@ -61,65 +47,75 @@ class aws_elastic_transcoder {
      *
      * @var array
      */
-    public const LOW_PRESETS = array(
+    public const LOW_PRESETS = [
         '1351620000001-200045', // System preset: HLS Video - 600k.
-        '1351620000001-500050' // System preset: MPEG-Dash Video - 600k.
-    );
+        '1351620000001-500050', // System preset: MPEG-Dash Video - 600k.
+    ];
 
     /**
      * Transcoder presets for medium quality video file conversion.
      *
      * @var array
      */
-    public const MEDIUM_PRESETS = array(
+    public const MEDIUM_PRESETS = [
         '1351620000001-200035', // System preset: HLS Video - 1M.
-        '1351620000001-500040' // System preset: MPEG-Dash Video - 1.2M.
-    );
+        '1351620000001-500040', // System preset: MPEG-Dash Video - 1.2M.
+    ];
 
     /**
      * Transcoder presets for high quality video file conversion.
      *
      * @var array
      */
-    public const HIGH_PRESETS = array(
+    public const HIGH_PRESETS = [
         '1351620000001-200015', // System preset: HLS Video - 2M.
-        '1351620000001-500030' // System preset: MPEG-Dash Video - 2.4M.
-    );
+        '1351620000001-500030', // System preset: MPEG-Dash Video - 2.4M.
+    ];
 
     /**
      * Transcoder presets for extra high quality video file conversion.
      *
      * @var array
      */
-    public const EXTRA_HIGH_PRESETS = array(
+    public const EXTRA_HIGH_PRESETS = [
         '1351620000001-500020', // System preset: MPEG-Dash Video - 4.8M.
-    );
+    ];
 
     /**
      * Transcoder presets for audio file conversion.
      *
      * @var array
      */
-    public const AUDIO_PRESETS = array(
-        '1351620000001-300020' // System preset: Audio MP3 - 192 kilobits/second.
-    );
+    public const AUDIO_PRESETS = [
+        '1351620000001-300020', // System preset: Audio MP3 - 192 kilobits/second.
+    ];
 
     /**
      * Transcoder presets for video file download conversion.
      *
      * @var array
      */
-    public const DOWNLOAD_PRESETS = array(
-        '1351620000001-100070' // System preset: Facebook, SmugMug, Vimeo, YouTube.
-    );
+    public const DOWNLOAD_PRESETS = [
+        '1351620000001-100070', // System preset: Facebook, SmugMug, Vimeo, YouTube.
+    ];
 
-    public const HLS_AUDIO = array(
-        '1351620000001-200060'  // System preset: HLS v3 and v4 Audio, 160 k.
-    );
+    /**
+     * Transcoder presets for HLS audio.
+     *
+     * @var array
+     */
+    public const HLS_AUDIO = [
+        '1351620000001-200060',  // System preset: HLS v3 and v4 Audio, 160 k.
+    ];
 
-    public const MPD_AUDIO = array(
-        '1351620000001-500060' // System preset: MPEG-DASH Audio 128 k.
-    );
+    /**
+     * Transcoder presets for MPD audio.
+     *
+     * @var array
+     */
+    public const MPD_AUDIO = [
+        '1351620000001-500060', // System preset: MPEG-DASH Audio 128 k.
+    ];
 
     /**
      * aws_ets_pricing_client constructor.
@@ -128,7 +124,7 @@ class aws_elastic_transcoder {
      */
     public function __construct(ElasticTranscoderClient $transcoderclient) {
         $this->transcoderclient = $transcoderclient;
-        $this->retrievedpresets = array();
+        $this->retrievedpresets = [];
     }
 
     /**
@@ -158,7 +154,7 @@ class aws_elastic_transcoder {
      *
      * @return array $presetids The preset ids.
      */
-    public function get_preset_ids() : array {
+    public function get_preset_ids(): array {
         $pluginconfig = get_config('local_smartmedia');
         $presetids = [];
 
@@ -236,9 +232,9 @@ class aws_elastic_transcoder {
      *
      * @param array $presetids Optional array of preset ids to get presets for.
      * @return array $presets array of aws_ets_preset objects.
-     * @throws \moodle_exception
+     * @throws \core\exception\moodle_exception
      */
-    public function get_presets(array $presetids=array()) : array {
+    public function get_presets(array $presetids=[]): array {
         $presets = [];
         if (empty($presetids)) {
             $presetids = $this->get_preset_ids();
@@ -252,7 +248,7 @@ class aws_elastic_transcoder {
                     $presets[] = new aws_ets_preset($presetdata);
                 } catch (AwsException $e) {
                     debugging($e->getAwsErrorMessage());
-                    throw new \moodle_exception("Invalid AWS Elastic Transcoder Preset ID in SmartMedia settings: '$presetid'");
+                    throw new moodle_exception("Invalid AWS Elastic Transcoder Preset ID in SmartMedia settings: '$presetid'");
                 }
             }
         }
@@ -264,7 +260,7 @@ class aws_elastic_transcoder {
      *
      * @return array
      */
-    public function get_all_presets() : array {
+    public function get_all_presets(): array {
 
         $presetids = array_merge(
             self::LOW_PRESETS,

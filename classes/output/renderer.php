@@ -14,18 +14,10 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Renderer class for audit table.
- *
- * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia\output;
 
-use plugin_renderer_base;
+use core\output\plugin_renderer_base;
+use core\output\html_writer;
 
 /**
  * Renderer class for audit table.
@@ -47,7 +39,7 @@ class renderer extends plugin_renderer_base {
      *
      * @return string $output html for display
      * @throws \coding_exception
-     * @throws \moodle_exception
+     * @throws \core\exception\moodle_exception
      */
     private function render_report_table(string $baseurl, int $page = 0, int $perpage = 50, string $download = '') {
         $renderable = new report_table('local_smartmedia', $baseurl, $page, $perpage, $download);
@@ -81,10 +73,10 @@ class renderer extends plugin_renderer_base {
      * @return string $html the html to display.
      * @throws \coding_exception
      * @throws \dml_exception
-     * @throws \moodle_exception
+     * @throws \core\exception\moodle_exception
      */
     public function render_report(string $baseurl, int $page = 0,
-                                  int $perpage = 50, string $download = '') : string {
+                                  int $perpage = 50, string $download = ''): string {
         $region = get_config('local_smartmedia', 'api_region');
 
         // Get the table output first to prevent output being buffered before download.
@@ -95,7 +87,7 @@ class renderer extends plugin_renderer_base {
         $html .= $this->heading(get_string('dashboard:heading', 'local_smartmedia', $region));
         $html .= $this->render_report_summary();
         $html .= $this->heading(get_string('report:heading', 'local_smartmedia'), 2, 'local-smartmedia local-smartmedia-heading');
-        $html .= \html_writer::div(get_string('report:heading_desc', 'local_smartmedia'));
+        $html .= html_writer::div(get_string('report:heading_desc', 'local_smartmedia'));
         $html .= $tablehtml;
         $html .= $this->footer();
 

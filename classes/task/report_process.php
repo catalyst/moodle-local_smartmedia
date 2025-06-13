@@ -14,18 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * A scheduled task to gather data usee in plugin dashboards and reports.
- *
- * @package    local_smartmedia
- * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace local_smartmedia\task;
 
+use Exception;
+use coding_exception;
+use local_smartmedia\conversion;
+use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\pricing_calculator;
+use local_smartmedia\aws_api;
 use core\task\scheduled_task;
-use \local_smartmedia\pricing\aws_ets_pricing_client;
-use \local_smartmedia\pricing\aws_rekog_pricing_client;
+use local_smartmedia\pricing\aws_ets_pricing_client;
+use local_smartmedia\pricing\aws_rekog_pricing_client;
 use local_smartmedia\pricing\aws_transcribe_pricing_client;
 use stdClass;
 
@@ -34,13 +33,14 @@ use stdClass;
  *
  * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package     local_smartmedia
  */
 class report_process extends scheduled_task {
 
     /**
      * Audio mime types.
      */
-    private const AUDIO_MIME_TYPES = array(
+    private const AUDIO_MIME_TYPES = [
         'audio/aac',
         'audio/au',
         'audio/mp3',
@@ -52,12 +52,12 @@ class report_process extends scheduled_task {
         'audio/x-ms-wma',
         'audio/x-pn-realaudio-plugin',
         'audio/x-matroska',
-    );
+    ];
 
     /**
      * Video mime types.
      */
-    private const VIDEO_MIME_TYPES = array(
+    private const VIDEO_MIME_TYPES = [
         'video/mp4',
         'video/mpeg',
         'video/ogg',
@@ -72,11 +72,14 @@ class report_process extends scheduled_task {
         'video/x-matroska-3d',
         'video/MP2T'.
         'video/x-sgi-movie',
-    );
+    ];
 
     /** @var array - Cache holder for the pricing clients. */
     private $pricing;
 
+    /**
+     * Construct
+     */
     public function __construct() {
         $this->pricing = [];
     }
@@ -96,15 +99,15 @@ class report_process extends scheduled_task {
      *
      * @return int $result Count of files.
      */
-    private function get_all_file_count() : int {
+    private function get_all_file_count(): int {
         global $DB;
 
         $select = 'filearea <> :filearea AND filename <> :filename AND component <> :component';
-        $params = array(
+        $params = [
             'filearea' => 'draft', // Don't get draft files.
             'filename' => '.', // Don't get directories.
-            'component' => 'local_smartmedia'  // Don't count files added by smartmedia itself.
-        );
+            'component' => 'local_smartmedia',  // Don't count files added by smartmedia itself.
+        ];
 
         $result = $DB->count_records_select('files', $select, $params);
 
@@ -118,7 +121,7 @@ class report_process extends scheduled_task {
      *
      * @return int $result Count of files.
      */
-    private function get_audio_file_count() : int {
+    private function get_audio_file_count(): int {
         global $DB;
 
         list($insql, $inparams) = $DB->get_in_or_equal(self::AUDIO_MIME_TYPES);
@@ -138,7 +141,7 @@ class report_process extends scheduled_task {
      *
      * @return int $result Count of files.
      */
-    private function get_video_file_count() : int {
+    private function get_video_file_count(): int {
         global $DB;
 
         list($insql, $inparams) = $DB->get_in_or_equal(self::VIDEO_MIME_TYPES);
@@ -157,7 +160,7 @@ class report_process extends scheduled_task {
      *
      * @return int count of found records.
      */
-    private function get_unique_multimedia_objects() : int {
+    private function get_unique_multimedia_objects(): int {
         global $DB;
 
         $mimetypes = array_merge(self::AUDIO_MIME_TYPES, self::VIDEO_MIME_TYPES);
@@ -182,7 +185,7 @@ class report_process extends scheduled_task {
      *
      * @return int count of found records.
      */
-    private function get_metadata_processed_files() : int {
+    private function get_metadata_processed_files(): int {
         global $DB;
 
         $result = $DB->count_records('local_smartmedia_data');
@@ -196,10 +199,10 @@ class report_process extends scheduled_task {
      *
      * @return int count of found records.
      */
-    private function get_transcoded_files() : int {
+    private function get_transcoded_files(): int {
         global $DB;
 
-        $conditions = array('status' => 'Finished');
+        $conditions = ['status' => 'Finished'];
         $result = $DB->count_records('local_smartmedia_report_over', $conditions);
 
         return $result;
@@ -211,16 +214,16 @@ class report_process extends scheduled_task {
      * @param string $name Name of the value to store.
      * @param mixed $value Value to store.
      */
-    private function update_report_data(string $name, $value) : void {
+    private function update_report_data(string $name, $value): void {
         global $DB;
 
-        $datarecord = new \stdClass();
+        $datarecord = new stdClass();
         $datarecord->name = $name;
         $datarecord->value = $value;
 
         try {
             $transaction = $DB->start_delegated_transaction();
-            $namerecord = $DB->get_record('local_smartmedia_reports', array('name' => $name), 'id');
+            $namerecord = $DB->get_record('local_smartmedia_reports', ['name' => $name], 'id');
 
             if ($namerecord) {
                 $datarecord->id = $namerecord->id;
@@ -231,7 +234,7 @@ class report_process extends scheduled_task {
 
             $transaction->allow_commit();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $transaction->rollback($e);
         }
     }
@@ -239,17 +242,17 @@ class report_process extends scheduled_task {
     /**
      * Get the file type.
      *
-     * @param \stdClass $record  Record from metadata table for file.
-     * @throws \coding_exception
+     * @param stdClass $record Record from metadata table for file.
+     * @throws coding_exception
      * @return string $format File format.
      */
-    private function get_file_type(\stdClass $record) : string {
+    private function get_file_type(stdClass $record): string {
         if (empty($record->videostreams)) {
             if (!empty($record->audiostreams)) {
                 $format = get_string('report:typeaudio', 'local_smartmedia');
             } else {
                 // We should never get here due to the WHERE clause excluding rows with no video or audio data.
-                throw new \coding_exception(
+                throw new coding_exception(
                     'No audio or video stream in {local_smartmedia_data} contenthash' . $record->contenthash);
             }
         } else {
@@ -265,11 +268,11 @@ class report_process extends scheduled_task {
      * @param int $convid The conversion id to get the presets for.
      * @return array $presetids The preset ids for the conversion.
      */
-    private function get_conversion_presets(int $convid) : array {
+    private function get_conversion_presets(int $convid): array {
         global $DB;
 
         $select = 'convid = ?';
-        $params = array($convid);
+        $params = [$convid];
         $presetids = $DB->get_fieldset_select('local_smartmedia_presets', 'preset', $select, $params);
 
         return $presetids;
@@ -281,7 +284,7 @@ class report_process extends scheduled_task {
      * @param int $convid The conversion id to get the presets for.
      * @return array $presetids The preset ids for the conversion.
      */
-    private function get_enrichment_settings(int $convid) : stdClass {
+    private function get_enrichment_settings(int $convid): stdClass {
         global $DB;
         $record = $DB->get_record('local_smartmedia_conv', ['id' => $convid]);
         // Remove non-enrichment settings.
@@ -295,7 +298,7 @@ class report_process extends scheduled_task {
         // This transforms the status code (200, 404) to a boolean status for this process.
         // 200 is true, the process completed, the rest is false.
         $record = array_map(function($el) {
-            return (int) $el === \local_smartmedia\conversion::CONVERSION_FINISHED;
+            return (int) $el === conversion::CONVERSION_FINISHED;
         }, (array) $record);
 
         return (object) $record;
@@ -304,16 +307,18 @@ class report_process extends scheduled_task {
     /**
      * Get the cost to transcode a file with currently configured settings.
      *
-     * @param aws_ets_pricing_client $pricingclient
-     * @param \local_smartmedia\aws_elastic_transcoder $transcoder
-     * @param \stdClass $record Record from metadata table for file.
+     * @param aws_ets_pricing_client $transcodepricingclient
+     * @param aws_rekog_pricing_client $rekogpricingclient
+     * @param aws_transcribe_pricing_client $transcribepricingclient
+     * @param aws_elastic_transcoder $transcoder
+     * @param stdClass $record Record from metadata table for file.
      * @return float $cost The calculated transcoding cost.
      */
     private function get_file_cost(
             aws_ets_pricing_client $transcodepricingclient,
             aws_rekog_pricing_client $rekogpricingclient,
             aws_transcribe_pricing_client $transcribepricingclient,
-            \local_smartmedia\aws_elastic_transcoder $transcoder,  \stdClass $record) : float {
+            aws_elastic_transcoder $transcoder,  stdClass $record): float {
 
         // Check if we have already cached the pricing.
         if (empty($this->pricing)) {
@@ -323,7 +328,7 @@ class report_process extends scheduled_task {
             $this->pricing = [
                 'transcode' => $transcodepricingclient->get_location_pricing($location),
                 'rekog' => $rekogpricingclient->get_location_pricing($location),
-                'transcribe' => $transcribepricingclient->get_location_pricing($location)
+                'transcribe' => $transcribepricingclient->get_location_pricing($location),
             ];
         }
 
@@ -345,7 +350,7 @@ class report_process extends scheduled_task {
         ];
         $transcribe = $enrichmentsettings->transcribe_status ?? false;
 
-        $pricingcalculator = new \local_smartmedia\pricing_calculator(
+        $pricingcalculator = new pricing_calculator(
             $transcodelocationpricing,
             $rekoglocationpricing,
             $transcribelocationpricing,
@@ -368,7 +373,7 @@ class report_process extends scheduled_task {
      * @param int $code The status code.
      * @return string The human readable value.
      */
-    private function get_file_status(int $code) : string {
+    private function get_file_status(int $code): string {
         if ($code == 200) {
             $status = 'Finished';
         } else if ($code == 201) {
@@ -391,15 +396,15 @@ class report_process extends scheduled_task {
      * @param string $contenthash THe contenthash to match.
      * @return int $count The count of file instances.
      */
-    private function get_file_count(string $contenthash) : int {
+    private function get_file_count(string $contenthash): int {
         global $DB;
 
         $select = 'filearea <> :filearea AND filename <> :filename AND contenthash = :contenthash';
-        $params = array(
+        $params = [
             'filearea' => 'draft',
             'filename' => '.',
-            'contenthash' => $contenthash
-        );
+            'contenthash' => $contenthash,
+        ];
 
         $count = $DB->count_records_select('files', $select, $params);
 
@@ -409,15 +414,17 @@ class report_process extends scheduled_task {
     /**
      * Populate the report overview table.
      *
-     * @param aws_ets_pricing_client $pricingclient
-     * @param \local_smartmedia\aws_elastic_transcoder $transcoder
+     * @param aws_ets_pricing_client $transcodepricingclient
+     * @param aws_rekog_pricing_client $rekogpricingclient
+     * @param aws_transcribe_pricing_client $transcribepricingclient
+     * @param aws_elastic_transcoder $transcoder
      */
     private function process_overview_report(aws_ets_pricing_client $transcodepricingclient,
         aws_rekog_pricing_client $rekogpricingclient,
         aws_transcribe_pricing_client $transcribepricingclient,
-        \local_smartmedia\aws_elastic_transcoder $transcoder) : void {
+        aws_elastic_transcoder $transcoder): void {
         global $DB;
-        $reportrecords = array();
+        $reportrecords = [];
 
         // Get metadata and conversion data from DB.
         $sql = 'SELECT d.*, c.status, c.timecreated, c.timecompleted, c.id
@@ -431,7 +438,7 @@ class report_process extends scheduled_task {
             $metadata = json_decode($record->metadata);
 
             // Manipulate values to store.
-            $reportrecord = new \stdClass();
+            $reportrecord = new stdClass();
             $reportrecord->contenthash = $record->contenthash;
             $reportrecord->type = $this->get_file_type($record);
             $reportrecord->format = $metadata->formatname;
@@ -462,7 +469,7 @@ class report_process extends scheduled_task {
 
             $transaction->allow_commit();
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $transaction->rollback($e);
         }
     }
@@ -485,8 +492,10 @@ class report_process extends scheduled_task {
     /**
      * Calculate the total cost of transcoding all not converted media items.
      *
-     * @param aws_ets_pricing_client $pricingclient
-     * @param \local_smartmedia\aws_elastic_transcoder $transcoder
+     * @param aws_ets_pricing_client $transcodepricingclient
+     * @param aws_rekog_pricing_client $rekogpricingclient
+     * @param aws_transcribe_pricing_client $transcribepricingclient
+     * @param aws_elastic_transcoder $transcoder
      * @return float|int|null $total cost for all transcoding across all presets, null if total cannot be calculated.
      *
      * @throws \dml_exception
@@ -495,7 +504,7 @@ class report_process extends scheduled_task {
         aws_ets_pricing_client $transcodepricingclient,
         aws_rekog_pricing_client $rekogpricingclient,
         aws_transcribe_pricing_client $transcribepricingclient,
-        \local_smartmedia\aws_elastic_transcoder $transcoder) : float {
+        aws_elastic_transcoder $transcoder): float {
 
         global $DB;
 
@@ -515,7 +524,7 @@ class report_process extends scheduled_task {
             $this->pricing = [
                 'transcode' => $transcodepricingclient->get_location_pricing($location),
                 'rekog' => $rekogpricingclient->get_location_pricing($location),
-                'transcribe' => $transcribepricingclient->get_location_pricing($location)
+                'transcribe' => $transcribepricingclient->get_location_pricing($location),
             ];
         }
 
@@ -536,7 +545,7 @@ class report_process extends scheduled_task {
         $transcribe = $config->transcribe;
 
         // Get the pricing calculator.
-        $pricingcalculator = new \local_smartmedia\pricing_calculator(
+        $pricingcalculator = new pricing_calculator(
             $transcodelocationpricing,
             $rekoglocationpricing,
             $transcribelocationpricing,
@@ -623,11 +632,11 @@ class report_process extends scheduled_task {
         }
 
         // Build the dependencies.
-        $api = new \local_smartmedia\aws_api();
+        $api = new aws_api();
         $transcodepricingclient = new aws_ets_pricing_client($api->create_pricing_client());
         $rekogpricingclient = new aws_rekog_pricing_client($api->create_pricing_client());
         $transcribepricingclient = new aws_transcribe_pricing_client($api->create_pricing_client());
-        $transcoder = new \local_smartmedia\aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
         $this->process_overview_report($transcodepricingclient, $rekogpricingclient, $transcribepricingclient, $transcoder);
 
         mtrace('local_smartmedia: Processing media file data');

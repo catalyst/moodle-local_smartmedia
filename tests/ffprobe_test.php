@@ -14,13 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit tesst for local_smartmedia ffprobe class.
- *
- * @package    local_smartmedia
- * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
+use local_smartmedia\ffprobe;
 
 /**
  * Unit tesst for local_smartmedia ffprobe class.
@@ -30,7 +24,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_ffprobe_testcase extends advanced_testcase {
+final class ffprobe_test extends advanced_testcase {
 
     /**
      * @var array Fixtures used in this test.
@@ -38,6 +32,7 @@ class local_smartmedia_ffprobe_testcase extends advanced_testcase {
     public $fixture;
 
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
         global $CFG;
 
@@ -58,7 +53,7 @@ class local_smartmedia_ffprobe_testcase extends advanced_testcase {
     /**
      * Test get media metadata method.
      */
-    public function test_get_media_metadata() {
+    public function test_get_media_metadata(): void {
         global $CFG;
 
         // Skip if no valid FFProbe executable.
@@ -68,18 +63,18 @@ class local_smartmedia_ffprobe_testcase extends advanced_testcase {
 
         // Setup for testing.
         $fs = new file_storage();
-        $filerecord = array(
+        $filerecord = [
             'contextid' => 1461,
             'component' => 'mod_label',
             'filearea' => 'intro',
             'itemid' => 0,
             'filepath' => '/',
-            'filename' => 'SampleVideo1mb.mp4');
+            'filename' => 'SampleVideo1mb.mp4'];
         $pathname = $CFG->dirroot . '/local/smartmedia/tests/fixtures/SampleVideo1mb.mp4';
 
         $file = $fs->create_file_from_pathname($filerecord, $pathname);
 
-        $ffprobe = new \local_smartmedia\ffprobe();
+        $ffprobe = new ffprobe();
         $metadata = $ffprobe->get_media_metadata($file);
 
         $this->assertEquals('success', $metadata['status']);
@@ -88,7 +83,7 @@ class local_smartmedia_ffprobe_testcase extends advanced_testcase {
     /**
      * Test decoding FFProbe results.
      */
-    public function test_decode_ffprobe_json() {
+    public function test_decode_ffprobe_json(): void {
         // Disable the class contructor for this test.
         $builder = $this->getMockBuilder('\local_smartmedia\ffprobe');
         $builder->disableOriginalConstructor();
@@ -113,7 +108,7 @@ class local_smartmedia_ffprobe_testcase extends advanced_testcase {
      * Test decoding FFProbe results for a partial response.
      * Some files do not return all the data we are after, we need to handle this case.
      */
-    public function test_decode_ffprobe_json_partial() {
+    public function test_decode_ffprobe_json_partial(): void {
         // Disable the class contructor for this test.
         $builder = $this->getMockBuilder('\local_smartmedia\ffprobe');
         $builder->disableOriginalConstructor();

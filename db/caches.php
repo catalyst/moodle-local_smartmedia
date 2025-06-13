@@ -28,6 +28,6 @@ $definitions = [
     'serve' => [
         'mode' => cache_store::MODE_APPLICATION,
         'ttl' => 3600,
-        'staticacceleration' => true
-    ]
+        'staticacceleration' => true,
+    ],
 ];

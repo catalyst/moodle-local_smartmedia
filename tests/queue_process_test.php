@@ -14,24 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit test for local_smartmedia queue process class.
- *
- * @package    local_smartmedia
- * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
+use local_smartmedia\queue_process;
 use Aws\Result;
 use Aws\MockHandler;
-use Aws\CommandInterface;
-use Psr\Http\Message\RequestInterface;
-use Aws\S3\Exception\S3Exception;
 
 /**
  * Unit test for local_smartmedia queue process class.
@@ -41,7 +26,7 @@ use Aws\S3\Exception\S3Exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_queue_process_testcase extends advanced_testcase {
+final class queue_process_test extends advanced_testcase {
 
     /**
      * @var array Fixtures used in this test.
@@ -53,6 +38,7 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
      */
     public function setUp(): void {
         global $CFG;
+        parent::setUp();
 
         set_config('api_key', 'key', 'local_smartmedia');
         set_config('api_secret', 'secret', 'local_smartmedia');
@@ -68,7 +54,7 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
     /**
      * Test getting messages from SQS queue.
      */
-    public function test_get_queue_messages() {
+    public function test_get_queue_messages(): void {
         $this->resetAfterTest(true);
         global $CFG;
 
@@ -80,9 +66,9 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
         $mock = new MockHandler();
         $mock->append(new Result($this->fixture['sqsmessages']));
         $mock->append(new Result($this->fixture['sqsmessages']));
-        $mock->append(new Result(array()));
+        $mock->append(new Result([]));
 
-        $queueprocess = new \local_smartmedia\queue_process();
+        $queueprocess = new queue_process();
         $queueprocess->create_client($mock);
 
         // We're testing a private method, so we need to setup reflector magic.
@@ -98,19 +84,19 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
     /**
      * Test store messages in DB.
      */
-    public function test_store_messages() {
+    public function test_store_messages(): void {
         $this->resetAfterTest(true);
         global $DB;
 
         $messages = $this->fixture['receviedmessages'];
-        $queueprocess = new \local_smartmedia\queue_process();
+        $queueprocess = new queue_process();
 
         // We're testing a private method, so we need to setup reflector magic.
         $method = new ReflectionMethod('\local_smartmedia\queue_process', 'store_messages');
         $method->setAccessible(true); // Allow accessing of private method.
 
         // Invoke with empty array to check initial conditions.
-        $method->invoke($queueprocess, array());
+        $method->invoke($queueprocess, []);
 
         // Invoke twice to make sure records conflict.
         $method->invoke($queueprocess, $messages);
@@ -125,16 +111,16 @@ class local_smartmedia_queue_process_testcase extends advanced_testcase {
     /**
      * Test deleting messages from SQS queue.
      */
-    public function test_delete_queue_messages() {
+    public function test_delete_queue_messages(): void {
         $this->resetAfterTest(true);
 
         // Set up the AWS mock.
         $mock = new MockHandler();
-        $mock->append(new Result(array()));
-        $mock->append(new Result(array()));
-        $mock->append(new Result(array()));
+        $mock->append(new Result([]));
+        $mock->append(new Result([]));
+        $mock->append(new Result([]));
 
-        $queueprocess = new \local_smartmedia\queue_process();
+        $queueprocess = new queue_process();
         $queueprocess->create_client($mock);
 
         $messages = $this->fixture['receviedmessages'];

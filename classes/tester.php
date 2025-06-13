@@ -14,19 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Class for provisioning AWS resources.
- *
- * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
 namespace local_smartmedia;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
+use stdClass;
 use Aws\S3\Exception\S3Exception;
 
 /**
@@ -59,6 +49,11 @@ class tester {
     private $s3client;
 
     /**
+     * @var aws_s3 s3 interface
+     */
+    protected $awss3;
+
+    /**
      * The constructor for the class
      *
      * @param string $keyid AWS API Access Key ID.
@@ -68,14 +63,14 @@ class tester {
      * @param string $outputbucket The AWS S3 output bucket name.
      */
     public function __construct($keyid, $secret, $region, $inputbucket, $outputbucket) {
-        $config = new \stdClass();
+        $config = new stdClass();
         $config->api_region = $region;
         $config->api_key = $keyid;
         $config->api_secret = $secret;
         $config->s3_input_bucket = $inputbucket;
         $config->s3_output_bucket = $outputbucket;
 
-        $this->awss3  = new \local_smartmedia\aws_s3($config);
+        $this->awss3  = new aws_s3($config);
         $this->s3client = $this->awss3->create_client();
 
         $this->inputbucket = $inputbucket;
@@ -88,12 +83,12 @@ class tester {
      *
      * @param string $filepath The filepath to the local file.
      * @param string $bucketname The name of the S3 bucket to put the object.
-     * @return \stdClass $result The result from the operation.
+     * @return stdClass $result The result from the operation.
      */
     private function bucket_put_object($filepath, $bucketname) {
         global $CFG;
 
-        $result = new \stdClass();
+        $result = new stdClass();
         $result->status = true;
         $result->code = 0;
         $result->message = 'File error';
@@ -101,20 +96,20 @@ class tester {
         $client = $this->s3client;
         $fileinfo = pathinfo($filepath);
 
-        $presets = array('1351620000001-200045' => 'ts', '1351620000001-500050' => 'fmp4',
-                    '1351620000001-100070' => 'mp4', '1351620000001-300020' => 'mp3');
+        $presets = ['1351620000001-200045' => 'ts', '1351620000001-500050' => 'fmp4',
+                    '1351620000001-100070' => 'mp4', '1351620000001-300020' => 'mp3'];
         $presets = json_encode($presets);
 
-        $uploadparams = array(
+        $uploadparams = [
             'Bucket' => $bucketname,
             'Key' => $fileinfo['filename'], // Required.
             'SourceFile' => $filepath, // Required.
-            'Metadata' => array(
+            'Metadata' => [
                 'siteid' => $CFG->siteidentifier,
                 'processes' => '11111111',
                 'presets' => $presets,
-            )
-        );
+            ],
+        ];
 
         try {
             $putobject = $client->putObject($uploadparams);
@@ -136,7 +131,7 @@ class tester {
      *
      */
     public function upload_file($filepath) {
-        $result = new \stdClass();
+        $result = new stdClass();
         $result->status = true;
         $result->code = 0;
         $result->message = '';

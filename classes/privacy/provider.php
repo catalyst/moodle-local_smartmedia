@@ -14,21 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Privacy class for requesting user data.
- *
- * @package     local_smartmedia
- * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia\privacy;
 
-use \core_privacy\local\metadata\collection;
-use \core_privacy\local\request\contextlist;
-use \core_privacy\local\request\approved_contextlist;
-use \core_privacy\local\request\userlist;
-use \core_privacy\local\request\approved_userlist;
+use core_privacy\local\request\core_userlist_provider;
+use context;
+use core_privacy\local\metadata\collection;
+use core_privacy\local\request\contextlist;
+use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\userlist;
+use core_privacy\local\request\approved_userlist;
 
 /**
  * Privacy class for requesting user data.
@@ -39,7 +33,7 @@ use \core_privacy\local\request\approved_userlist;
  */
 class provider implements
         \core_privacy\local\metadata\provider,
-        \core_privacy\local\request\core_userlist_provider,
+        core_userlist_provider,
         \core_privacy\local\request\plugin\provider {
 
     /**
@@ -48,7 +42,7 @@ class provider implements
      * @param   collection $collection The initialised collection to add items to.
      * @return  collection A listing of user data stored through this system.
      */
-    public static function get_metadata(collection $collection) : collection {
+    public static function get_metadata(collection $collection): collection {
         $collection->add_external_location_link('smartmedia', [
             'params' => 'privacy:metadata:local_smartmedia:params',
             'filecontent' => 'privacy:metadata:local_smartmedia:filecontent',
@@ -62,7 +56,7 @@ class provider implements
      * @param   int         $userid     The user to search.
      * @return  contextlist $contextlist  The contextlist containing the list of contexts used in this plugin.
      */
-    public static function get_contexts_for_userid(int $userid) : contextlist {
+    public static function get_contexts_for_userid(int $userid): contextlist {
         $contextlist = new contextlist();
         return $contextlist;
     }
@@ -86,9 +80,9 @@ class provider implements
     /**
      * Delete all use data which matches the specified deletion_criteria.
      *
-     * @param \context $context A user context.
+     * @param context $context A user context.
      */
-    public static function delete_data_for_all_users_in_context(\context $context) {
+    public static function delete_data_for_all_users_in_context(context $context) {
     }
 
     /**

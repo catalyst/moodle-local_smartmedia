@@ -22,7 +22,9 @@
  * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-
+use local_smartmedia\utility;
+use core\url;
+use local_smartmedia\conversion;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
 
@@ -54,7 +56,7 @@ define('LOCAL_SMARTMEDIA_PRESET_OUTPUT_CONTAINER_TYPES',
  * @param array $options Additional options affecting the file serving.
  * @return bool False if the file not found, just send the file otherwise and do not return anything.
  */
-function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options=array()) {
+function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options=[]) {
     global $DB;
 
     // Make sure the filearea is one of those used by the plugin.
@@ -65,7 +67,7 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
     // Due to the way VideoJS handles slash (/) arguments in URLs
     // we may need to clean up the provided args that are passed
     // back to Moodle from the VideoJS AJAX call.
-    $utility = new \local_smartmedia\utility();
+    $utility = new utility();
     $args = $utility->update_args($args);
     $itemid = array_shift($args);
     $filename = array_pop($args); // The last item in the $args array.
@@ -77,7 +79,7 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
         $cache = cache::make('local_smartmedia', 'serve');
         $cachedata = $cache->get($cachekey);
         if ($cachedata) {
-            $url = new moodle_url('/local/smartmedia/serve.php', ['key' => $cachekey]);
+            $url = new url('/local/smartmedia/serve.php', ['key' => $cachekey]);
             // Set cache headers for this redirection, safe to cache in browser only.
             @header('Expires: '. gmdate('D, d M Y H:i:s', time() + 3600) .' GMT');
             @header_remove('Pragma');
@@ -134,7 +136,7 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
 
     $api = new aws_api();
     $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-    $conversion = new \local_smartmedia\conversion($transcoder);
+    $conversion = new conversion($transcoder);
     $filecheck = $conversion->check_smartmedia_file($sourcefile, $smartfile);
     if (!$filecheck) {
         return false; // Source file doesn't match smart file.

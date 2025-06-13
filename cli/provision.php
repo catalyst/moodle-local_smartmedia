@@ -22,6 +22,9 @@
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use local_smartmedia\provision;
+use core\exception\moodle_exception;
+
 define('CLI_SCRIPT', true);
 define('CACHE_DISABLE_ALL', true);
 
@@ -30,17 +33,17 @@ require_once($CFG->libdir.'/clilib.php');
 
 // Get cli options.
 list($options, $unrecognized) = cli_get_params(
-    array(
+    [
         'keyid'             => false,
         'secret'            => false,
         'help'              => false,
         'region'            => false,
         'set-config'        => false,
         'identifier'        => false,
-    ),
-    array(
-        'h' => 'help'
-    )
+    ],
+    [
+        'h' => 'help',
+    ]
 );
 
 if ($unrecognized) {
@@ -76,7 +79,7 @@ Example:
     die;
 }
 
-$provisioner = new \local_smartmedia\provision(
+$provisioner = new provision(
     $options['keyid'],
     $options['secret'],
     $options['region']
@@ -98,12 +101,12 @@ $bucketname = $stackname . '-' . 'resource';
 $resourcebucketresposnse = $provisioner->create_bucket($bucketname);
 if ($resourcebucketresposnse->code != 0 ) {
     $errormsg = $resourcebucketresposnse->code . ': ' . $resourcebucketresposnse->message;
-    throw new \moodle_exception($errormsg);
+    throw new moodle_exception($errormsg);
     exit(1);
 } else {
-    echo get_string('provision:bucketcreated', 'local_smartmedia', array(
+    echo get_string('provision:bucketcreated', 'local_smartmedia', [
         'bucket' => 'resource',
-        'location' => $resourcebucketresposnse->message)) . PHP_EOL . PHP_EOL;
+        'location' => $resourcebucketresposnse->message]) . PHP_EOL . PHP_EOL;
 }
 
 // Upload lambda function archives to the S3 resource bucket.
@@ -115,7 +118,7 @@ foreach ($archives as $archive) {
     $lambdaarchiveuploadresponse = $provisioner->upload_file($archive, $resourcebucketresposnse->bucketname);
     if ($lambdaarchiveuploadresponse->code != 0 ) {
         $errormsg = $lambdaarchiveuploadresponse->code . ': ' . $lambdaarchiveuploadresponse->message;
-        throw new \moodle_exception($errormsg);
+        throw new moodle_exception($errormsg);
         exit(1);
     } else {
         echo get_string(
@@ -129,16 +132,16 @@ foreach ($archives as $archive) {
 cli_heading(get_string('provision:resourcestack', 'local_smartmedia'));
 $cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/resource.template';
 
-$params = array(
+$params = [
     'LambdaTranscodeResourceArchiveKey' => 'lambda_resource_transcoder.zip',
     'ResourceBucket' => $resourcebucketresposnse->bucketname,
-    'templatepath' => $cloudformationpath
-);
+    'templatepath' => $cloudformationpath,
+];
 
 $createstackresponse = $provisioner->create_stack($stackname, $params);
 if ($createstackresponse->code != 0 ) {
     $errormsg = $createstackresponse->code . ': ' . $createstackresponse->message;
-    throw new \moodle_exception($errormsg);
+    throw new moodle_exception($errormsg);
     exit(1);
 } else {
     echo get_string('provision:resourcestackcreated', 'local_smartmedia', $createstackresponse->message) . PHP_EOL . PHP_EOL;
@@ -154,20 +157,20 @@ echo get_string('provision:lambdaresourcearn', 'local_smartmedia', $lambdaresour
 cli_heading(get_string('provision:stack', 'local_smartmedia'));
 $cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/stack.template';
 
-$params = array(
+$params = [
     'LambdaTranscodeTriggerArchiveKey' => 'lambda_transcoder_trigger.zip',
     'LambdaAiArchiveKey' => 'lambda_ai_trigger.zip',
     'LambdaRekognitionCompleteArchiveKey' => 'lambda_rekognition_complete.zip',
     'LambdaTranscribeCompleteArchiveKey' => 'lambda_transcribe_complete.zip',
     'LambdaTranscodeResourceFunctionArn' => $lambdaresourcesrn,
     'ResourceBucket' => $resourcebucketresposnse->bucketname,
-    'templatepath' => $cloudformationpath
-);
+    'templatepath' => $cloudformationpath,
+];
 
 $createstackresponse = $provisioner->create_stack($transcoderstackname, $params);
 if ($createstackresponse->code != 0 ) {
     $errormsg = $createstackresponse->code . ': ' . $createstackresponse->message;
-    throw new \moodle_exception($errormsg);
+    throw new moodle_exception($errormsg);
     exit(1);
 } else {
     echo get_string('provision:stackcreated', 'local_smartmedia', $createstackresponse->message) . PHP_EOL . PHP_EOL;
@@ -176,21 +179,21 @@ if ($createstackresponse->code != 0 ) {
 // We need to update the created Lambda functions environment variables
 // as trying to do it at stack build time causes a circular references in cloudformation.
 
-$envvararray = array(
-    array(
+$envvararray = [
+    [
         'function' => $createstackresponse->outputs['TranscodeLambdaArn'],
-        'values' => array(
+        'values' => [
             'PipelineId' => $createstackresponse->outputs['TranscodePipelineId'],
-            'SmartmediaSqsQueue' => $createstackresponse->outputs['SmartmediaSqsQueue'])
-    )
-);
+            'SmartmediaSqsQueue' => $createstackresponse->outputs['SmartmediaSqsQueue']],
+    ],
+];
 
 foreach ($envvararray as $envvars) {
     echo get_string('provision:lambdaenvupdate', 'local_smartmedia', $envvars['function']) . PHP_EOL;
     $updatelambdaresponse = $provisioner->update_lambda($envvars['function'], $envvars['values']);
     if ($updatelambdaresponse->code != 0 ) {
         $errormsg = $updatelambdaresponse->code . ': ' . $updatelambdaresponse->message;
-        throw new \moodle_exception($errormsg);
+        throw new moodle_exception($errormsg);
         exit(1);
     } else {
         echo $updatelambdaresponse->message . PHP_EOL . PHP_EOL;

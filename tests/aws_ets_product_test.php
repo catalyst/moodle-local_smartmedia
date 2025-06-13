@@ -14,14 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit test for \local_smartmedia\aws_ets_product class.
- *
- * @package    local_smartmedia
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 use local_smartmedia\pricing\aws_ets_product;
 
 /**
@@ -32,7 +24,7 @@ use local_smartmedia\pricing\aws_ets_product;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_aws_ets_product_testcase extends advanced_testcase {
+final class aws_ets_product_test extends advanced_testcase {
 
     /**
      * @var array of json objects representing the expected API response from \Aws\Pricing\PricingClient::getProducts
@@ -42,6 +34,7 @@ class local_smartmedia_aws_ets_product_testcase extends advanced_testcase {
 
     public function setUp(): void {
         global $CFG;
+        parent::setUp();
 
         $this->resetAfterTest();
 
@@ -69,7 +62,7 @@ class local_smartmedia_aws_ets_product_testcase extends advanced_testcase {
     /**
      * Test that transcode cost is set correctly when aws_ets_product is constructed.
      */
-    public function test_set_transcodecost() {
+    public function test_set_transcodecost(): void {
 
         foreach ($this->fixture['getProducts']['PriceList'] as $rawproduct) {
             $product = new aws_ets_product($rawproduct);

@@ -14,25 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Base client for getting AWS pricing information.
- *
- * @package     local_smartmedia
- * @author      Peter Burnett <tomdickman@catalyst-au.net>
- * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia\pricing;
 
+use core\exception\moodle_exception;
+use stdClass;
 use Aws\Exception\AwsException;
 use Aws\Pricing\PricingClient;
-
-defined('MOODLE_INTERNAL') || die;
-
-global $CFG;
-// Autoload the SDK for AWS service usage.
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 
 /**
  * A client for getting pricing information for AWS Elastic Transcode Services.
@@ -122,7 +109,7 @@ abstract class aws_base_pricing_client {
             $result = $this->pricingclient->getProducts($params);
         } catch (AwsException $e) {
             debugging($e->getAwsErrorMessage() . ':' . $e->getMessage());
-            throw new \moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
+            throw new moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
         }
         $products = [];
         $productclass = 'local_smartmedia\pricing\aws_' . $product . '_product';
@@ -135,7 +122,7 @@ abstract class aws_base_pricing_client {
     /**
      * Get a description of this service and it's attributes.
      *
-     * @return \stdClass $description object describing this service.
+     * @return stdClass $description object describing this service.
      */
     public function describe_service() {
 
@@ -147,7 +134,7 @@ abstract class aws_base_pricing_client {
             $services = $result->get('Services');
         } catch (AwsException $e) {
             debugging($e->getAwsErrorMessage() . ':' . $e->getMessage());
-            throw new \moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
+            throw new moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
         }
         $service = reset($services);
         $description = (object) $service;
@@ -174,7 +161,7 @@ abstract class aws_base_pricing_client {
             $result = $this->pricingclient->getAttributeValues($params);
         } catch (AwsException $e) {
             debugging($e->getAwsErrorMessage() . ':' . $e->getMessage());
-            throw new \moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
+            throw new moodle_exception('AWS/Pricing: Error connecting to AWS, please check local_smartmedia plugin settings.');
         }
         $values = $result->get('AttributeValues');
 

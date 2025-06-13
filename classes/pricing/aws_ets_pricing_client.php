@@ -14,24 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Service client for getting AWS pricing information for the Elastic Transcode Services (ETS).
- *
- * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia\pricing;
 
 use Aws\Pricing\PricingClient;
-
-defined('MOODLE_INTERNAL') || die;
-
-global $CFG;
-// Autoload the SDK for AWS service usage.
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
 
 /**
  * A client for getting pricing information for AWS Elastic Transcode Services.
@@ -62,6 +47,11 @@ class aws_ets_pricing_client extends aws_base_pricing_client {
      */
     const TRANSCODINGRESULT_SUCCESS = 'Success';
 
+    /**
+     * Create client
+     *
+     * @param PricingClient $pricingclient
+     */
     public function __construct(PricingClient $pricingclient) {
         parent::__construct($pricingclient);
         $this->servicecode = 'AmazonETS';
@@ -83,7 +73,7 @@ class aws_ets_pricing_client extends aws_base_pricing_client {
         $transcodingresultfilter = [
             'Field' => 'transcodingResult',
             'Type' => self::DEFAULT_TYPE,
-            'Value' => self::TRANSCODINGRESULT_SUCCESS
+            'Value' => self::TRANSCODINGRESULT_SUCCESS,
         ];
         $products = $this->get_products([$locationfilter, $transcodingresultfilter], 'ets');
 

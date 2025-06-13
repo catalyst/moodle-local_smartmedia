@@ -14,23 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit test for \local_smartmedia\output\report_filter class.
- *
- * @package    local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @group      local_smartmedia
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-// Autoload the SDK for AWS service usage.
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-require_once($CFG->libdir . '/moodlelib.php');
-
+use Aws\Pricing\PricingClient;
+use Aws\Exception\AwsException;
 use local_smartmedia\aws_api;
 
 /**
@@ -41,9 +26,10 @@ use local_smartmedia\aws_api;
  * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class local_smartmedia_aws_api_testcase extends advanced_testcase {
+final class aws_api_test extends advanced_testcase {
 
     public function setUp(): void {
+        parent::setUp();
         $this->resetAfterTest();
     }
 
@@ -52,20 +38,20 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
      *
      * @return array
      */
-    public function credentials_provider() {
+    public static function credentials_provider(): array {
         return [
             'No accesskey:' => [
                 '',
-                '012345678910aBcDeFgHiJkLmNOpQrSTuVwXyZ'
+                '012345678910aBcDeFgHiJkLmNOpQrSTuVwXyZ',
             ],
             'No secret:' => [
                 'ABCDEFGHIJKLMNO',
-                ''
+                '',
             ],
             'Accesskey and secret:' => [
                 'ABCDEFGHIJKLMNO',
-                '012345678910aBcDeFgHiJkLmNOpQrSTuVwXyZ'
-            ]
+                '012345678910aBcDeFgHiJkLmNOpQrSTuVwXyZ',
+            ],
         ];
     }
 
@@ -77,9 +63,9 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
      *
      * @dataProvider credentials_provider
      * @throws \dml_exception
-     * @throws \ReflectionException
+     * @throws ReflectionException
      */
-    public function test_set_credentials($apikey, $apisecret) {
+    public function test_set_credentials($apikey, $apisecret): void {
 
         $api = new aws_api();
         $api->set_credentials($apikey, $apisecret);
@@ -103,22 +89,22 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
      * @dataProvider credentials_provider
      * @throws \dml_exception
      */
-    public function test_create_pricing_client($apikey, $apisecret) {
+    public function test_create_pricing_client($apikey, $apisecret): void {
 
         set_config('api_key', $apikey, 'local_smartmedia');
         set_config('api_secret', $apisecret, 'local_smartmedia');
 
         $api = new aws_api();
         $pricingclient = $api->create_pricing_client();
-        $this->assertInstanceOf(\Aws\Pricing\PricingClient::class, $pricingclient);
+        $this->assertInstanceOf(PricingClient::class, $pricingclient);
 
         // Incorrect credentials should result in an AwsException when trying to use the client,
         // so check this is the case by trying to use an \Aws\Pricing\PricingClient method.
-        $this->expectException(\Aws\Exception\AwsException::class);
+        $this->expectException(AwsException::class);
         $pricingclient->describeServices();
     }
 
-    public function test_create_pricing_client_with_proxy() {
+    public function test_create_pricing_client_with_proxy(): void {
         global $CFG;
         $this->resetAfterTest();
 
@@ -133,12 +119,12 @@ class local_smartmedia_aws_api_testcase extends advanced_testcase {
 
         $api = new aws_api();
         $pricingclient = $api->create_pricing_client();
-        $this->assertInstanceOf(\Aws\Pricing\PricingClient::class, $pricingclient);
+        $this->assertInstanceOf(PricingClient::class, $pricingclient);
 
         // Now set the proxy to SOCKS and test it still instantiates.
         $CFG->proxytype = 'SOCKS5';
         $api2 = new aws_api();
         $pricingclient2 = $api2->create_pricing_client();
-        $this->assertInstanceOf(\Aws\Pricing\PricingClient::class, $pricingclient2);
+        $this->assertInstanceOf(PricingClient::class, $pricingclient2);
     }
 }

@@ -14,20 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * Unit test for \local_smartmedia\aws_elastic_transcoder class.
- *
- * @package    local_smartmedia
- * @copyright  2019 Tom Dickman <tomdickman@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-// Autoload the SDK for AWS service usage.
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
 use Aws\MockHandler;
 use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Result;
@@ -43,7 +29,7 @@ use local_smartmedia\aws_ets_preset;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @group      local_smartmedia
  */
-class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase {
+final class aws_elastic_transcoder_test extends advanced_testcase {
 
     /**
      * @var array of json objects representing the expected API response from \Aws\ElasticTranscoder
@@ -78,6 +64,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
 
     public function setUp(): void {
         global $CFG;
+        parent::setUp();
 
         $this->resetAfterTest();
 
@@ -128,7 +115,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
      * Test that we can get presets as aws_ets_preset instances when valid
      * preset ids are set in admin settings.
      */
-    public function test_get_presets_set() {
+    public function test_get_presets_set(): void {
         set_config('quality_low', 1, 'local_smartmedia');
         set_config('quality_high', 1, 'local_smartmedia');
 
@@ -152,7 +139,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
     /**
      * When presets are not set we should get empty array.
      */
-    public function test_get_presets_not_set() {
+    public function test_get_presets_not_set(): void {
 
         // Disable all quality presets.
         set_config('quality_low', 0, 'local_smartmedia');
@@ -173,7 +160,7 @@ class local_smartmedia_aws_elastic_transcoder_testcase extends advanced_testcase
     /**
      * Test that we can get preset ids based on settings.
      */
-    public function test_get_preset_ids() {
+    public function test_get_preset_ids(): void {
 
         // Set up our transcoder instance.
         set_config('api_region', $this->region, 'local_smartmedia');

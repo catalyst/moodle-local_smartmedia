@@ -14,15 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-/**
- * An AWS Rekognition Service product.
- *
- * @package     local_smartmedia
- * @author      Peter Burnett <peterburnett@catalyst-au.net>
- * @copyright   2020 Catalyst IT Australia {@link http://www.catalyst-au.net}
- * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-
 namespace local_smartmedia\pricing;
 
 /**
@@ -57,7 +48,7 @@ class aws_rekog_product extends aws_base_product {
      * @param object $productobject json decoded raw product from AWS Pricing List API.
      * @param string $terms the pricing terms to use in determining transcode cost.
      */
-    protected function set_cost($productobject, $terms = 'OnDemand') : void {
+    protected function set_cost($productobject, $terms = 'OnDemand'): void {
         // Get the product terms as an array to make it easier to handle.
         $terms = json_decode(json_encode($productobject->terms->$terms), true);
 
