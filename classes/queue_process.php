@@ -23,11 +23,7 @@
  */
 namespace local_smartmedia;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
-use Aws\Sqs\SqsClient;
+use core\aws\client_factory;
 
 /**
  * Class for AWS SQS processing operations.
@@ -93,7 +89,7 @@ class queue_process {
 
         // Only create client if it hasn't already been done.
         if (!isset($this->client)) {
-            $this->client = \local_aws\local\client_factory::get_client('\Aws\Sqs\SqsClient', $connectionoptions);
+            $this->client = client_factory::get_client('\Aws\Sqs\SqsClient', $connectionoptions);
         }
 
         return $this->client;

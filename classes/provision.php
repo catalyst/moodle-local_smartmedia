@@ -23,16 +23,10 @@
  */
 namespace local_smartmedia;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
-use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
-use Aws\CloudFormation\CloudFormationClient;
 use Aws\CloudFormation\Exception\CloudFormationException;
-use Aws\Lambda\LambdaClient;
 use Aws\Lambda\Exception\LambdaException;
+use core\aws\client_factory;
 
 /**
  * Class for provisioning AWS resources.
@@ -152,7 +146,7 @@ class provision {
 
         // Only create client if it hasn't already been done.
         if ($this->s3client == null) {
-            $this->s3client = \local_aws\local\client_factory::get_client('\Aws\S3\S3Client', $connectionoptions);
+            $this->s3client = client_factory::get_client('\Aws\S3\S3Client', $connectionoptions);
         }
 
         return $this->s3client;
@@ -316,7 +310,7 @@ class provision {
 
         // Only create client if it hasn't already been done.
         if ($this->cloudformationclient == null) {
-            $this->cloudformationclient = \local_aws\local\client_factory::get_client('\Aws\CloudFormation\CloudFormationClient', $connectionoptions);
+            $this->cloudformationclient = client_factory::get_client('\Aws\CloudFormation\CloudFormationClient', $connectionoptions);
         }
 
         return $this->cloudformationclient;
@@ -454,7 +448,7 @@ class provision {
 
         // Only create client if it hasn't already been done.
         if ($this->lambdaclient == null) {
-            $this->lambdaclient = \local_aws\local\client_factory::get_client('\Aws\Lambda\LambdaClient', $connectionoptions);
+            $this->lambdaclient = client_factory::get_client('\Aws\Lambda\LambdaClient', $connectionoptions);
         }
 
         return $this->lambdaclient;

@@ -22,11 +22,6 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
 use local_smartmedia\conversion;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;

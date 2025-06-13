@@ -23,10 +23,6 @@
  */
 namespace local_smartmedia;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
 use Aws\S3\Exception\S3Exception;
 
 /**
@@ -57,6 +53,11 @@ class tester {
      * @var \Aws\S3\S3Client S3 client.
      */
     private $s3client;
+
+    /**
+     * @var \local_smartmedia\aws_s3 s3 interface
+     */
+    protected $awss3;
 
     /**
      * The constructor for the class

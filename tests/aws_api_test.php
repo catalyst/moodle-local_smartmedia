@@ -24,13 +24,6 @@
  * @group      local_smartmedia
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-// Autoload the SDK for AWS service usage.
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-require_once($CFG->libdir . '/moodlelib.php');
-
 use local_smartmedia\aws_api;
 
 /**

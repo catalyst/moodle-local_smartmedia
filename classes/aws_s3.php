@@ -23,12 +23,8 @@
  */
 namespace local_smartmedia;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
-use Aws\S3\S3Client;
 use Aws\S3\Exception\S3Exception;
+use core\aws\client_factory;
 
 /**
  * Class for converting files between different formats using unoconv.
@@ -94,7 +90,7 @@ class aws_s3 {
 
         // Only create client if it hasn't already been done.
         if ($this->client == null) {
-            $this->client = \local_aws\local\client_factory::get_client('\Aws\S3\S3Client', $connectionoptions);
+            $this->client = client_factory::get_client('\Aws\S3\S3Client', $connectionoptions);
         }
 
         return $this->client;
@@ -153,7 +149,7 @@ class aws_s3 {
      * We use list buckets instead and check the bucket is in the list.
      *
      * @param string $bucket Name of buket to check.
-     * @return boolean true on success, false on failure.
+     * @return object with success and message
      */
     public function is_bucket_accessible($bucket) {
         $connection = new \stdClass();
@@ -179,7 +175,7 @@ class aws_s3 {
      * We use list buckets instead and check the bucket is in the list.
      *
      * @param string $bucket The bucket to check.
-     * @return boolean true on success, false on failure.
+     * @return object with success and message properties
      */
     private function have_bucket_permissions($bucket) {
         $permissions = new \stdClass();

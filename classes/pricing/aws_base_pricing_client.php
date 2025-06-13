@@ -28,12 +28,6 @@ namespace local_smartmedia\pricing;
 use Aws\Exception\AwsException;
 use Aws\Pricing\PricingClient;
 
-defined('MOODLE_INTERNAL') || die;
-
-global $CFG;
-// Autoload the SDK for AWS service usage.
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
 /**
  * A client for getting pricing information for AWS Elastic Transcode Services.
  *

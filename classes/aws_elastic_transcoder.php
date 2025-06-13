@@ -28,12 +28,6 @@ namespace local_smartmedia;
 use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Exception\AwsException;
 
-defined('MOODLE_INTERNAL') || die;
-
-global $CFG;
-// Autoload the SDK for AWS service usage.
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
 /**
  * Class for accessing AWS Elastic Transcode Services (ETS).
  *

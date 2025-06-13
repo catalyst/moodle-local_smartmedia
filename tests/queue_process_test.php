@@ -22,16 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-global $CFG;
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
-
 use Aws\Result;
 use Aws\MockHandler;
-use Aws\CommandInterface;
-use Psr\Http\Message\RequestInterface;
-use Aws\S3\Exception\S3Exception;
 
 /**
  * Unit test for local_smartmedia queue process class.

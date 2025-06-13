@@ -1,4 +1,7 @@
-[![Build Status](https://travis-ci.org/catalyst/moodle-local_smartmedia.svg?branch=master)](https://travis-ci.org/catalyst/moodle-local_smartmedia)
+# Plugin state May 2025
+This plugin curreently uses `AWS Elastic Transcoder`, which will be [discontinued by AWS on November 13 2025](https://aws.amazon.com/elastictranscoder/).
+
+Currently there are no plans to convert this plugin to use the replacement service, `AWS MediaConvert`.
 
 # Smart Media #
 
@@ -17,34 +20,18 @@ The following sections outline how to install the required smart media plugins i
 ## Supported Moodle Versions
 This plugin currently supports Moodle:
 
-* 3.9
-
-**Note:** The high version of Moodle required is due to internal Moodle API's that this plugin depends on where only introduced in Moodle 3.9. If you want to use smart media in earlier Moodle versions please contact [Catalyst IT](https://www.catalyst-au.net/) for commercial support.
+* 4.5+
 
 ## Plugin Installation ##
 There are several dependencies required and steps to complete in order to setup smart media in your Moodle instance.
 
 **Note:** These instructions assume knowledge of Git, Moodle plugin functionality and that you have access to the infrastructure that runs your Moodle instance.
 
-1. Install dependency plugin local_aws. See [local_aws](#local_aws)
-2. Clone the *local_smartmedia* plugin git repo into your Moodle codebase root `git clone git@github.com:catalyst/moodle-local_smartmedia.git local/smartmedia`
-3. Install dependency plugin filter_smartmedia. See [filter_smartmedia](#filter_smartmedia)
-4. Install dependency binary FFmpeg on your Moodle server. See [FFmpeg](#ffmpeg)
-5. Setup the AWS Stack. See [AWS Stack Setup](#aws-stack-setup)
-6. Update plugin settings. See [Plugin Settings](#plugin-settings)
-
-### local_aws
-
-The local_aws plugin is a dependency for local_smartmedia, it provides the AWS PHP SDK that is required in order for Moodle to utilise AWS cloud services.
-
-You can download this from the Moodle plugin library at <https://moodle.org/plugins/local_aws>
-
-You can install this by cloning the git repo into your Moodle codebase:
-```bash
-git clone https://github.com/catalyst/moodle-local_aws local/aws
-```
-
-More detailed information is available at <https://github.com/catalyst/moodle-local_aws> in the README
+1. Clone the *local_smartmedia* plugin git repo into your Moodle codebase root `git clone git@github.com:catalyst/moodle-local_smartmedia.git local/smartmedia`
+2. Install dependency plugin filter_smartmedia. See [filter_smartmedia](#filter_smartmedia)
+3. Install dependency binary FFmpeg on your Moodle server. See [FFmpeg](#ffmpeg)
+4. Setup the AWS Stack. See [AWS Stack Setup](#aws-stack-setup)
+5. Update plugin settings. See [Plugin Settings](#plugin-settings)
 
 ### filter_smartmedia
 

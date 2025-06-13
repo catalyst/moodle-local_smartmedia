@@ -28,12 +28,7 @@ namespace local_smartmedia;
 use Aws\Credentials\Credentials;
 use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Pricing\PricingClient;
-
-defined('MOODLE_INTERNAL') || die;
-
-global $CFG;
-// Autoload the SDK for AWS service usage.
-require_once($CFG->dirroot . '/local/aws/sdk/aws-autoloader.php');
+use core\aws\client_factory;
 
 /**
  * API using the AWS PHP SDK to make service calls.
@@ -132,7 +127,7 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->pricingclient == null) {
-            $this->pricingclient = \local_aws\local\client_factory::get_client('\Aws\Pricing\PricingClient', $args);
+            $this->pricingclient = client_factory::get_client('\Aws\Pricing\PricingClient', $args);
         }
 
         return $this->pricingclient;
@@ -166,7 +161,7 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->transcoderclient == null) {
-            $this->transcoderclient = \local_aws\local\client_factory::get_client('\Aws\ElasticTranscoder\ElasticTranscoderClient', $args);
+            $this->transcoderclient = client_factory::get_client('\Aws\ElasticTranscoder\ElasticTranscoderClient', $args);
         }
 
         return $this->transcoderclient;
