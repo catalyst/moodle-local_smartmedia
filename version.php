@@ -28,3 +28,4 @@ $plugin->component = 'local_smartmedia';
 $plugin->release = 2025061300;
 $plugin->version = 2025061300;
 $plugin->requires = 2024100700; // 4.5
+$plugin->supported = [405,405];
