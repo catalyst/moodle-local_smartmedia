@@ -25,13 +25,6 @@ use local_smartmedia\aws_ets_preset;
 use local_smartmedia\aws_elastic_transcoder;
 
 /**
- * Unit test for local_smartmedia task classes.
- *
- * @package    local_smartmedia
- * @copyright  2019 Matt Porritt <mattp@catalyst-au.net>
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- */
-/**
  * Unit test for local_smartmedia extract metadata classes.
  *
  * @package    local_smartmedia
@@ -40,6 +33,10 @@ use local_smartmedia\aws_elastic_transcoder;
  * @group      local_smartmedia
  */
 final class report_process_test extends advanced_testcase {
+    /**
+     * @var mixed $fixture
+     */
+    protected $fixture;
 
     /**
      * Test getting start file id.

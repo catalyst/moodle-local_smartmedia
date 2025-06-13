@@ -14,9 +14,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-use local_smartmedia\tester;
-use core\exception\moodle_exception;
-
 /**
  * This command line script will test a provisioned Smartmedia environment in AWS.
  *
@@ -24,6 +21,9 @@ use core\exception\moodle_exception;
  * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+
+use local_smartmedia\tester;
+use core\exception\moodle_exception;
 
 define('CLI_SCRIPT', true);
 define('CACHE_DISABLE_ALL', true);
