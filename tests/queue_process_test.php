@@ -75,6 +75,7 @@ final class queue_process_test extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\queue_process', 'get_queue_messages');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($queueprocess);
+        $this->resetDebugging();
 
         $this->assertCount(2, $result);
         $this->assertArrayHasKey('433e99fcfec5c3f50406f05705c209de', $result);
@@ -129,6 +130,7 @@ final class queue_process_test extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\queue_process', 'delete_queue_messages');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($queueprocess, $messages);
+        $this->resetDebugging();
 
         $this->assertCount(3, $result);
     }

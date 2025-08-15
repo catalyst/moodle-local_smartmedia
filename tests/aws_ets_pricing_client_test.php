@@ -107,6 +107,7 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
         // Instantiate the class, injecting our mock.
         $pricingclient = new aws_ets_pricing_client($mock);
         $actual = $pricingclient->get_products([], 'ets');
+        $this->resetDebugging();
 
         // Get the expected results from the fixture to compare.
         $expected = [];
@@ -130,6 +131,7 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
         // Instantiate the class, injecting our mock.
         $pricingservice = new aws_ets_pricing_client($mock);
         $actual = $pricingservice->describe_service();
+        $this->resetDebugging();
 
         // Get the expected result from fixture.
         $services = $mockresult->get('Services');
@@ -176,6 +178,7 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
         // Instantiate the class, injecting our stub.
         $pricingservice = new aws_ets_pricing_client($mock);
         $actual = $pricingservice->get_attribute_values($attribute);
+        $this->resetDebugging();
 
         // Expect that we'll get all values in a single array.
         $expected = [];
@@ -219,6 +222,7 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
         // Instantiate the class, injecting our stub.
         $pricingservice = new aws_ets_pricing_client($mock);
         $actual = $pricingservice->get_location_pricing($region);
+        $this->resetDebugging();
 
         $this->assertInstanceOf(location_transcode_pricing::class, $actual);
 

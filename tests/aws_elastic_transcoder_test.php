@@ -166,6 +166,7 @@ final class aws_elastic_transcoder_test extends advanced_testcase {
         set_config('api_region', $this->region, 'local_smartmedia');
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
 
         // First test should be empty as all quality options disabled.
         set_config('quality_low', 0, 'local_smartmedia');

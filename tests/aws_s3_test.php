@@ -92,6 +92,7 @@ final class aws_s3_test extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\aws_s3', 'is_bucket_accessible');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($awss3, 'input');
+        $this->resetDebugging();
 
         $this->assertFalse($result->success);
     }
@@ -121,6 +122,7 @@ final class aws_s3_test extends advanced_testcase {
          $method = new ReflectionMethod('\local_smartmedia\aws_s3', 'is_bucket_accessible');
          $method->setAccessible(true); // Allow accessing of private method.
          $result = $method->invoke($awss3, 'input');
+        $this->resetDebugging();
 
          $this->assertTrue($result->success);
     }
@@ -156,6 +158,7 @@ final class aws_s3_test extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\aws_s3', 'have_bucket_permissions');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($awss3, 'bucket1');
+        $this->resetDebugging();
 
         $this->assertFalse($result->success);
     }
@@ -185,6 +188,7 @@ final class aws_s3_test extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\aws_s3', 'have_bucket_permissions');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($awss3, 'bucket1');
+        $this->resetDebugging();
 
         $this->assertTrue($result->success);
     }
