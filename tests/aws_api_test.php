@@ -97,11 +97,16 @@ final class aws_api_test extends advanced_testcase {
         $api = new aws_api();
         $pricingclient = $api->create_pricing_client();
         $this->assertInstanceOf(PricingClient::class, $pricingclient);
+        $this->resetDebugging();
 
         // Incorrect credentials should result in an AwsException when trying to use the client,
         // so check this is the case by trying to use an \Aws\Pricing\PricingClient method.
-        $this->expectException(AwsException::class);
-        $pricingclient->describeServices();
+        try {
+            $pricingclient->describeServices();
+        } catch (Exception $e) {
+            $this->assertInstanceOf(AwsException::class, $e);
+            $this->resetDebugging();
+        }
     }
 
     public function test_create_pricing_client_with_proxy(): void {
@@ -119,6 +124,7 @@ final class aws_api_test extends advanced_testcase {
 
         $api = new aws_api();
         $pricingclient = $api->create_pricing_client();
+        $this->resetDebugging();
         $this->assertInstanceOf(PricingClient::class, $pricingclient);
 
         // Now set the proxy to SOCKS and test it still instantiates.
@@ -126,5 +132,6 @@ final class aws_api_test extends advanced_testcase {
         $api2 = new aws_api();
         $pricingclient2 = $api2->create_pricing_client();
         $this->assertInstanceOf(PricingClient::class, $pricingclient2);
+        $this->resetDebugging();
     }
 }

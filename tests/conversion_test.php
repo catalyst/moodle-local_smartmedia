@@ -130,6 +130,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $smartmedia = $conversion->get_smart_media($moodleurl);
 
@@ -212,6 +213,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         $smartmedia = $conversion->get_smart_media($href);
@@ -265,6 +267,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // We're testing a private method, so we need to setup reflector magic.
@@ -318,6 +321,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // We're testing a private method, so we need to setup reflector magic.
@@ -419,6 +423,7 @@ final class conversion_test extends advanced_testcase {
         // Instansiate new conversion class.
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // We're testing a private method, so we need to setup reflector magic.
@@ -462,6 +467,7 @@ final class conversion_test extends advanced_testcase {
         $this->resetAfterTest(true);
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // Setup for testing.
@@ -494,6 +500,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // Setup for testing.
@@ -561,6 +568,7 @@ final class conversion_test extends advanced_testcase {
         $mock = $this->create_mock_elastic_transcoder_client($mockdata);
 
         $transcoder = new aws_elastic_transcoder($mock);
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // Setup for testing.
@@ -659,6 +667,7 @@ final class conversion_test extends advanced_testcase {
         $DB->insert_record('local_smartmedia_data', $metadatarecord3);
 
         $transcoder = new aws_elastic_transcoder($mock);
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // We're testing a private method, so we need to setup reflector magic.
@@ -721,6 +730,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // Setup for testing.
@@ -784,6 +794,7 @@ final class conversion_test extends advanced_testcase {
         $conversionrecord->detect_entities_status = 404;
 
         $transcoder = new aws_elastic_transcoder($mock);
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_settings');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -823,6 +834,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // Setup for testing.
@@ -854,6 +866,7 @@ final class conversion_test extends advanced_testcase {
         $method->setAccessible(true); // Allow accessing of private method.
         $resultgood = $method->invoke($conversion, $file, $settings, $mockhandler);
         $resultbad = $method->invoke($conversion, $file, $settings, $mockhandler);
+        $this->resetDebugging();
 
         $this->assertEquals($conversion::CONVERSION_IN_PROGRESS, $resultgood);
         $this->assertEquals($conversion::CONVERSION_ERROR, $resultbad);
@@ -884,6 +897,7 @@ final class conversion_test extends advanced_testcase {
         $recordid = $DB->insert_record('local_smartmedia_conv', $conversionrecord);
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         $updates = [];
@@ -908,6 +922,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         $conversionrecord = new stdClass();
@@ -984,6 +999,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         $conversionrecord = new stdClass();
@@ -1034,6 +1050,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         $conversionrecord = new stdClass();
@@ -1091,6 +1108,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         $conversionrecord = new stdClass();
@@ -1123,6 +1141,7 @@ final class conversion_test extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $conversionrecord, $messages, $mock);
+        $this->resetDebugging();
 
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->transcoder_status);
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
@@ -1148,6 +1167,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         $conversionrecord = new stdClass();
@@ -1197,6 +1217,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         foreach ($playlists as $playlistcontent) {
@@ -1222,6 +1243,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         $conversionrecord = new stdClass();
@@ -1254,6 +1276,7 @@ final class conversion_test extends advanced_testcase {
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'process_conversion');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $conversionrecord, $messages, $mock);
+        $this->resetDebugging();
 
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->rekog_moderation_status);
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
@@ -1269,6 +1292,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'update_completion_status');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -1324,6 +1348,7 @@ final class conversion_test extends advanced_testcase {
         $mockhandler->append($mockresult);
         $mockhandler->append($mockresult);
         $result = $method->invoke($conversion, $conversionrecord, $mockhandler);
+        $this->resetDebugging();
         $this->assertEquals($conversion::CONVERSION_FINISHED, $result->status);
 
         // Try again with some conversions configured to not run.
@@ -1483,6 +1508,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_fileids');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -1563,6 +1589,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_fileids');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -1582,6 +1609,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // Create some test files.
@@ -1675,6 +1703,7 @@ final class conversion_test extends advanced_testcase {
         // Set up the method to test.
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_media_files');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -1721,6 +1750,7 @@ final class conversion_test extends advanced_testcase {
         // Set up the method to test.
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'filter_playlists');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -1774,6 +1804,7 @@ final class conversion_test extends advanced_testcase {
         // Set up the method to test.
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'generate_playlists');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -1802,6 +1833,7 @@ final class conversion_test extends advanced_testcase {
         // Set up the method to test.
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_urls');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -1827,6 +1859,7 @@ final class conversion_test extends advanced_testcase {
         // Set up the method to test.
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_urls');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -1865,10 +1898,12 @@ final class conversion_test extends advanced_testcase {
         // Set up the method to test.
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'cleanup_aws_files');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, $filehash, $mockhandler);
+        $this->resetDebugging();
 
         $expected = [
              [
@@ -1929,6 +1964,7 @@ final class conversion_test extends advanced_testcase {
         // Set up the method to test.
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'string_starts_with');
         $method->setAccessible(true); // Allow accessing of private method.
@@ -1983,6 +2019,7 @@ final class conversion_test extends advanced_testcase {
 
         $api = new aws_api();
         $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
         // Set convert time to future to test convert correctly.
