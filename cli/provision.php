@@ -127,33 +127,7 @@ foreach ($archives as $archive) {
     }
 }
 
-// Create the Lambda function and associated services for the
-// custom elastic transcoder resource cloudformation provider.
-cli_heading(get_string('provision:resourcestack', 'local_smartmedia'));
-$cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/resource.template';
-
-$params = [
-    'LambdaTranscodeResourceArchiveKey' => 'lambda_resource_transcoder.zip',
-    'ResourceBucket' => $resourcebucketresposnse->bucketname,
-    'templatepath' => $cloudformationpath,
-];
-
-$createstackresponse = $provisioner->create_stack($stackname, $params);
-if ($createstackresponse->code != 0 ) {
-    $errormsg = $createstackresponse->code . ': ' . $createstackresponse->message;
-    throw new moodle_exception($errormsg);
-    exit(1);
-} else {
-    echo get_string('provision:resourcestackcreated', 'local_smartmedia', $createstackresponse->message) . PHP_EOL . PHP_EOL;
-}
-
-// Get Lmbda ARN.
-$lambdaresourcesrn = $createstackresponse->outputs['LambdaTranscodeResourceFunction'];
-
-// Print Summary.
-echo get_string('provision:lambdaresourcearn', 'local_smartmedia', $lambdaresourcesrn) . PHP_EOL;
-
-// Create Lambda function, IAM roles and the rest of the stack.
+// Create Lambda functions, IAM roles and the rest of the stack.
 cli_heading(get_string('provision:stack', 'local_smartmedia'));
 $cloudformationpath = $CFG->dirroot . '/local/smartmedia/aws/stack.template';
 
@@ -162,7 +136,6 @@ $params = [
     'LambdaAiArchiveKey' => 'lambda_ai_trigger.zip',
     'LambdaRekognitionCompleteArchiveKey' => 'lambda_rekognition_complete.zip',
     'LambdaTranscribeCompleteArchiveKey' => 'lambda_transcribe_complete.zip',
-    'LambdaTranscodeResourceFunctionArn' => $lambdaresourcesrn,
     'ResourceBucket' => $resourcebucketresposnse->bucketname,
     'templatepath' => $cloudformationpath,
 ];
@@ -183,8 +156,9 @@ $envvararray = [
     [
         'function' => $createstackresponse->outputs['TranscodeLambdaArn'],
         'values' => [
-            'PipelineId' => $createstackresponse->outputs['TranscodePipelineId'],
-            'SmartmediaSqsQueue' => $createstackresponse->outputs['SmartmediaSqsQueue']],
+            'QueueId' => $createstackresponse->outputs['MediaConvertQueue'],
+            'SmartmediaSqsQueue' => $createstackresponse->outputs['SmartmediaSqsQueue']
+        ],
     ],
 ];
 
@@ -213,5 +187,6 @@ echo get_string(
 echo get_string('provision:inputbucket', 'local_smartmedia', $createstackresponse->outputs['InputBucket']) . PHP_EOL;
 echo get_string('provision:outputbucket', 'local_smartmedia', $createstackresponse->outputs['OutputBucket']) . PHP_EOL;
 echo get_string('provision:sqsqueue', 'local_smartmedia', $createstackresponse->outputs['SmartmediaSqsQueue']) . PHP_EOL;
+echo get_string('provision:mediaconvertqueue', 'local_smartmedia', $createstackresponse->outputs['MediaConvertQueue']) . PHP_EOL;
 
 exit(0); // 0 means success.

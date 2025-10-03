@@ -28,7 +28,7 @@ from datetime import datetime
 
 s3_client = boto3.client('s3')
 sqs_client = boto3.client('sqs')
-et_client = boto3.client('elastictranscoder')
+mc_client = boto3.client('mediaconvert')
 logger = logging.getLogger()
 
 
@@ -68,73 +68,29 @@ def sqs_send_message(key, bucket, record, metadata):
     )
 
 
-def submit_transcode_jobs(s3key, pipeline_id, presets):
+def submit_transcode_jobs(queue_id, settings):
     """
     Submits jobs to Elastic Transcoder.
     """
 
-    logger.info('Triggering transcode job...')
+    logger.info('Creating media convert job...')
 
-    outputs = []
-    playlists = {} # Start as a dictionary, so we can add outputs by playlist key.
-
-    # Create a playlist for MPEG-DASH adaptive streaming if required.
-    if 'fmp4' in presets.values() :
-        fmp4playlist = {}
-        fmp4playlist['Name'] = '{0}_mpegdash_playlist'.format(s3key)
-        fmp4playlist['Format'] = 'MPEG-DASH'
-        fmp4playlist['OutputKeys'] = []
-        playlists['fmp4playlist'] = fmp4playlist
-
-    # Create a playlist for HLS adaptive streaming if required.
-    if 'ts' in presets.values() :
-        tsplaylist = {}
-        tsplaylist['Name'] = '{0}_hls_playlist'.format(s3key)
-        tsplaylist['Format'] = 'HLSv4'
-        tsplaylist['OutputKeys'] = []
-        playlists['tsplaylist'] = tsplaylist
-
-    for preset_id, container in presets.items() :
-        output = {}
-        filename = '{0}_{1}'.format(s3key, preset_id)
-        # HLS outputs will add .ts file extension automatically, so don't append container type.
-        if container == 'ts' :
-            output['Key'] = filename
-        else :
-            output['Key'] = '{0}.{1}'.format(filename, container)
-        output['PresetId'] = preset_id
-        output['ThumbnailPattern'] = ''
-
-        # Add output to appropriate playlist if the preset outputs fragmented media.
-        if container == 'fmp4' or container == 'ts' :
-            output['SegmentDuration'] = '6' # Hard code segments to 3 seconds duration.
-            if container == 'fmp4' :
-                playlists['fmp4playlist']['OutputKeys'].append(output['Key'])
-            if container == 'ts' :
-                playlists['tsplaylist']['OutputKeys'].append(filename)
-
-        outputs.append(output)
-
-    response = et_client.create_job(
-        PipelineId=pipeline_id,
-         OutputKeyPrefix=s3key + '/conversions/',
-         Input={
-            'Key': s3key,
-        },
-        Outputs=outputs,
-        Playlists=list(playlists.values()) # Convert dictionary to list.
+    response = mc_client.create_job(
+        queue=queue_id,
+        role='TODO',
+        settings=settings
     )
-
     logger.info(response)
 
-def get_presets(key, bucket, metadata):
+
+def get_job_settings(key, bucket, metadata):
     """
-    Get applicable elastic transcoder presets from S3 metadata
+    Get the job settings from the S3 Object metadata
     """
-    raw_preset_data = metadata['presets']
-    decoded_presets = json.loads(raw_preset_data)
-    logger.info(decoded_presets)
-    return decoded_presets
+    raw_settings_data = metadata['settings']
+    decoded_settings = json.loads(raw_settings_data)
+    logger.info(decoded_settings)
+    return decoded_settings
 
 def lambda_handler(event, context):
     """
@@ -146,14 +102,14 @@ def lambda_handler(event, context):
     """
 
     #  Set logging
-    logging_level = os.environ.get('LoggingLevel', logging.ERROR)
+    logging_level = os.environ.get('LoggingLevel', logging.INFO)
     logger.setLevel(int(logging_level))
 
     logger.info(event)
 
-    #  Get Pipeline ID from environment variable
-    pipeline_id = os.environ.get('PipelineId')
-    logger.info('Executing Pipeline: {}'.format(pipeline_id))
+    #  Get MediaConvert queue ID from environment variable
+    queue_id = 'smt-1759470910-queue' # TODO os.environ.get('QueueId')
+    logger.info('Inserting S3 input objects into queue: {}'.format(queue_id))
 
     #  Now get and process the file from the input bucket.
     for record in event['Records']:
@@ -164,6 +120,8 @@ def lambda_handler(event, context):
         #  This is initiated by Moodle to check bucket access is correct
         if key == 'permissions_check_file':
             continue
+        
+        logger.info('File uploaded: {}'.format(key))
 
         # Get input object metadata as we will need for SQS message sending.
         input_object_headdata_object = s3_client.head_object(
@@ -173,11 +131,11 @@ def lambda_handler(event, context):
 
         metadata = input_object_headdata_object['Metadata']
 
-        logger.info('File uploaded: {}'.format(key))
-
         # Send message to SQS queue.
+        logger.info('Sending metadata to SQS')
         sqs_send_message(key, bucket, record, metadata)
 
-        presets = get_presets(key, bucket, metadata)
+        logger.info('Submitting transcode job to queue {}'.format(queue_id))
+        settings = get_jobs_settings(key, bucket, metadata)
+        submit_transcode_jobs(queue_id, settings)
 
-        submit_transcode_jobs(key, pipeline_id, presets)

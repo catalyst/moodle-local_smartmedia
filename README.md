@@ -114,10 +114,10 @@ Stack status: CREATE_IN_PROGRESS
 Stack status: CREATE_COMPLETE
 Cloudformation stack created. Stack ID is: arn:aws:cloudformation:ap-southeast-2:693620471840:stack/smt1565939869/1a1e1570-bff6-11e9-b220-02a73bda2f36
 
-Updating Lambda transcode funciton enivronment variables.
+Updating Lambda transcode function environment variables.
 Environment variables updated
 
-Updating Lambda transcode funciton enivronment variables.
+Updating Lambda transcode function environment variables.
 Environment variables updated
 
 == Provisioning the smart media stack resources ==

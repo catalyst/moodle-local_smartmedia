@@ -44,10 +44,6 @@ Parameters:
     Type: String
     Default: lambda_transcribe_complete.zip
     Description: The S3 Key (filename) for the Lambda Transcribe complete function archive.
-  LambdaTranscodeResourceFunctionArn:
-    Type: String
-    Default: arn:aws:lambda:ap-southeast-2:693620471840:function:resourcestack_lambda_transcoder_resource
-    Description: Lambda function ARN that provides Elastic Transcoder custom resource.
 
 # These are the resources and AWS services that the stack creates.
 Resources:
@@ -446,24 +442,6 @@ Resources:
         -
           Endpoint: !GetAtt LambdaRekognitionCompleteFunction.Arn
           Protocol: 'lambda'
-# Custom Resources.
-# Custom resources setup AWS services that are not natively supported by Cloudformation.
-  ElasticTranscoderPipeline:
-    DependsOn:
-      - InputS3Bucket
-      - OutputS3Bucket
-    Type: Custom::ElasticTranscoderPipeline
-    Properties:
-      ServiceToken: !Ref LambdaTranscodeResourceFunctionArn
-      Name: !Join [ '-', [!Ref 'AWS::StackName', 'Pipeline'] ]
-      Role: !GetAtt ElasticTranscoderRole.Arn
-      InputBucket: !Ref InputS3Bucket
-      OutputBucket: !Ref OutputS3Bucket
-      Notifications:
-        Completed: !Ref SnsTopicConversion
-        Error: !Ref SnsTopicConversion
-        Progressing: !Ref SnsTopicConversion
-        Warning: !Ref SnsTopicConversion
 # Cloudwatch events.
 # Trigger actions based on custom events.
   TranscribeEventRule:
@@ -502,6 +480,17 @@ Resources:
     Properties:
       BucketName: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
       AccessControl: Private
+
+# Elemental Mediaconvert queues.
+  MediaConvertQueue:
+    Type: AWS::MediaConvert::Queue
+    Properties:
+        Name: !Join [ '-', [!Ref 'AWS::StackName', 'queue'] ]
+        PricingPlan: ON_DEMAND
+        Status: ACTIVE
+
+        # TODO permissions / iam.
+
 # Users
 # These are the IAM users created by the stack.
 # They are used by external systems interacting with the stack.
@@ -529,12 +518,12 @@ Outputs:
   OutputBucket:
     Description: S3 Output Bucket
     Value: !Ref OutputS3Bucket
+  MediaConvertQueue:
+    Description: Elemental MediaConvert Queue Name
+    Value: !Ref MediaConvertQueue
   TranscodeLambdaArn:
    Description: The ARN of the Lambda transcode funciton
    Value: !GetAtt LambdaTranscodeTriggerFunction.Arn
-  TranscodePipelineId:
-    Description: Elastic Transcoder Pipeline ID
-    Value: !GetAtt ElasticTranscoderPipeline.PipelineId
   RekognitionCompleteLambdaArn:
    Description: The ARN of the Lambda transcode funciton
    Value: !GetAtt LambdaRekognitionCompleteFunction.Arn
