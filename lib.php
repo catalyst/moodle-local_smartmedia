@@ -24,6 +24,7 @@
  */
 use local_smartmedia\utility;
 use core\url;
+use core_cache\cache;
 use local_smartmedia\conversion;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;

@@ -16,8 +16,8 @@
 
 namespace local_smartmedia\task;
 
+use core\exception\coding_exception;
 use Exception;
-use coding_exception;
 use local_smartmedia\conversion;
 use local_smartmedia\aws_elastic_transcoder;
 use local_smartmedia\pricing_calculator;

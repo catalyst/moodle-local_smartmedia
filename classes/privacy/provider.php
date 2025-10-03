@@ -16,8 +16,8 @@
 
 namespace local_smartmedia\privacy;
 
+use core\context;
 use core_privacy\local\request\core_userlist_provider;
-use context;
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\contextlist;
 use core_privacy\local\request\approved_contextlist;

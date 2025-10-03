@@ -61,11 +61,6 @@ class pricing_calculator {
     private $transcribe;
 
     /**
-     * @var string $region the AWS region applying to this calculator.
-     */
-    private $region;
-
-    /**
      * pricing_calculator constructor.
      *
      * @param location_transcode_pricing $transcodelocationpricing object containing pricing information for region.
@@ -86,7 +81,6 @@ class pricing_calculator {
         $this->transcodelocationpricing = $transcodelocationpricing;
         $this->rekoglocationpricing = $rekoglocationpricing;
         $this->transcribelocationpricing = $transcribelocationpricing;
-        $this->region = $transcodelocationpricing->get_region();
         $this->presets = $presets;
         $this->rekogsettings = $rekogsettings;
         $this->transcribe = $transcribe;

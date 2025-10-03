@@ -20,7 +20,6 @@ use dml_exception;
 use Aws\Credentials\Credentials;
 use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Pricing\PricingClient;
-use core\aws\client_factory;
 
 /**
  * API using the AWS PHP SDK to make service calls.
@@ -119,7 +118,7 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->pricingclient == null) {
-            $this->pricingclient = client_factory::get_client('\Aws\Pricing\PricingClient', $args);
+            $this->pricingclient = new PricingClient($args);
         }
 
         return $this->pricingclient;
@@ -153,7 +152,7 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->transcoderclient == null) {
-            $this->transcoderclient = client_factory::get_client('\Aws\ElasticTranscoder\ElasticTranscoderClient', $args);
+            $this->transcoderclient = new ElasticTranscoderClient($args);
         }
 
         return $this->transcoderclient;

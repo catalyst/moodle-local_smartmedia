@@ -29,6 +29,11 @@ use stored_file;
 class ffprobe {
 
     /**
+     * @var string path to ffprobe
+     */
+    private string $ffprobe_path;
+
+    /**
      * Class constructor
      */
     public function __construct() {
@@ -44,7 +49,7 @@ class ffprobe {
      * Given the results from an FFProbe inspection extract
      * relevant media data.
      *
-     * @param array $resultobject Array of raw JSON from FFProbe.
+     * @param object $resultobject Array of raw JSON from FFProbe.
      * @return array $metadata The metadata array with extracted media file data.
      */
     private function decode_ffprobe_json($resultobject): array {

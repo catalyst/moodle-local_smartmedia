@@ -19,10 +19,10 @@ namespace local_smartmedia\output;
 use core_table\sql_table;
 use core\url;
 use core\output\html_writer;
+use core\output\renderable;
 use stdClass;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
-use renderable;
 
 /**
  * Renderable table for the AWS Elastic Transcode report.

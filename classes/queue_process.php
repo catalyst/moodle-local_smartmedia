@@ -16,8 +16,8 @@
 
 namespace local_smartmedia;
 
+use Aws\Sqs\SqsClient;
 use stdClass;
-use core\aws\client_factory;
 
 /**
  * Class for AWS SQS processing operations.
@@ -83,7 +83,7 @@ class queue_process {
 
         // Only create client if it hasn't already been done.
         if (!isset($this->client)) {
-            $this->client = client_factory::get_client('\Aws\Sqs\SqsClient', $connectionoptions);
+            $this->client = new SqsClient($connectionoptions);
         }
 
         return $this->client;

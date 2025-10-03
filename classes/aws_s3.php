@@ -18,7 +18,7 @@ namespace local_smartmedia;
 
 use stdClass;
 use Aws\S3\Exception\S3Exception;
-use core\aws\client_factory;
+use Aws\S3\S3Client;
 
 /**
  * Class for converting files between different formats using unoconv.
@@ -84,7 +84,7 @@ class aws_s3 {
 
         // Only create client if it hasn't already been done.
         if ($this->client == null) {
-            $this->client = client_factory::get_client('\Aws\S3\S3Client', $connectionoptions);
+            $this->client = new S3Client($connectionoptions);
         }
 
         return $this->client;

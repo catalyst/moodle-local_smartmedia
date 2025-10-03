@@ -24,6 +24,7 @@ use context;
 use core\exception\moodle_exception;
 use Exception;
 use Aws\S3\Exception\S3Exception;
+use core\context as CoreContext;
 
 /**
  * Class for smart media conversion operations.
@@ -49,26 +50,6 @@ class conversion {
         'audio/x-ms-wma',
         'audio/x-pn-realaudio-plugin',
         'audio/x-matroska',
-    ];
-
-    /**
-     * @var array Video mimetypes
-     */
-    private const VIDEO_MIMETYPES = [
-        'video/mp4',
-        'video/mpeg',
-        'video/ogg',
-        'video/quicktime',
-        'video/webm',
-        'video/x-dv',
-        'video/x-flv',
-        'video/x-ms-asf',
-        'video/x-ms-wm',
-        'video/x-ms-wmv',
-        'video/x-matroska',
-        'video/x-matroska-3d',
-        'video/MP2T'.
-        'video/x-sgi-movie',
     ];
 
     /**
@@ -613,7 +594,7 @@ class conversion {
             return $smartmedia;
         }
         // Keep a hold of the context so we know where we are targeting the file.
-        $smartmedia['context'] = context::instance_by_id($file->get_contextid());
+        $smartmedia['context'] = CoreContext::instance_by_id($file->get_contextid());
 
         // Query conversion table for status.
         $conversionstatuses = $this->get_conversion_statuses($file);
