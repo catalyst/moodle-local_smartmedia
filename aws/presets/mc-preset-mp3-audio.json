@@ -1,0 +1,22 @@
+{
+  "Name": "Smartmedia-MP3-Audio",
+  "Description": "",
+  "Category": "",
+  "Settings": {
+    "AudioDescriptions": [
+      {
+        "CodecSettings": {
+          "Codec": "MP3",
+          "Mp3Settings": {
+            "Bitrate": 192000,
+            "RateControlMode": "CBR",
+            "SampleRate": 44100
+          }
+        }
+      }
+    ],
+    "ContainerSettings": {
+      "Container": "RAW"
+    }
+  }
+}

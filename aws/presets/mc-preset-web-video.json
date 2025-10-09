@@ -1,0 +1,82 @@
+{
+    "Name": "Smartmedia-Web", 
+    "Description": "System preset: Facebook, SmugMug, Vimeo, YouTube", 
+    "Settings": {
+        "VideoDescription": {
+            "CodecSettings": {
+                "Codec": "H_264", 
+                "H264Settings": {
+                    "CodecProfile": "MAIN", 
+                    "SpatialAdaptiveQuantization": "ENABLED", 
+                    "TemporalAdaptiveQuantization": "ENABLED", 
+                    "Softness": 0, 
+                    "RateControlMode": "CBR", 
+                    "FramerateNumerator": 30, 
+                    "MinIInterval": 0, 
+                    "UnregisteredSeiTimecode": "DISABLED", 
+                    "FramerateControl": "SPECIFIED", 
+                    "NumberReferenceFrames": 3, 
+                    "FramerateDenominator": 1, 
+                    "Bitrate": 2200000, 
+                    "GopBReference": "DISABLED", 
+                    "EntropyEncoding": "CAVLC", 
+                    "GopSizeUnits": "FRAMES", 
+                    "FlickerAdaptiveQuantization": "DISABLED", 
+                    "Telecine": "NONE", 
+                    "AdaptiveQuantization": "HIGH", 
+                    "InterlaceMode": "PROGRESSIVE", 
+                    "QualityTuningLevel": "SINGLE_PASS", 
+                    "HrdBufferInitialFillPercentage": 90, 
+                    "RepeatPps": "DISABLED", 
+                    "SlowPal": "DISABLED", 
+                    "GopClosedCadence": 1, 
+                    "GopSize": 90, 
+                    "ParControl": "INITIALIZE_FROM_SOURCE", 
+                    "Slices": 1, 
+                    "FramerateConversionAlgorithm": "DUPLICATE_DROP", 
+                    "Syntax": "DEFAULT", 
+                    "SceneChangeDetect": "ENABLED", 
+                    "CodecLevel": "LEVEL_3_1", 
+                    "NumberBFramesBetweenReferenceFrames": 0
+                }
+            }, 
+            "Sharpness": 100, 
+            "AntiAlias": "ENABLED", 
+            "Height": 720, 
+            "Width": 1280, 
+            "ScalingBehavior": "DEFAULT", 
+            "RespondToAfd": "NONE", 
+            "ColorMetadata": "INSERT", 
+            "AfdSignaling": "NONE", 
+            "TimecodeInsertion": "DISABLED"
+        }, 
+        "AudioDescriptions": [
+            {
+                "AudioSourceName": "Audio Selector 1", 
+                "CodecSettings": {
+                    "Codec": "AAC", 
+                    "AacSettings": {
+                        "CodecProfile": "LC", 
+                        "Specification": "MPEG4", 
+                        "RateControlMode": "CBR", 
+                        "AudioDescriptionBroadcasterMix": "NORMAL", 
+                        "SampleRate": 44100, 
+                        "Bitrate": 128000, 
+                        "CodingMode": "CODING_MODE_2_0", 
+                        "RawFormat": "NONE"
+                    }
+                }, 
+                "LanguageCodeControl": "FOLLOW_INPUT", 
+                "AudioTypeControl": "FOLLOW_INPUT"
+            }
+        ], 
+        "ContainerSettings": {
+            "Mp4Settings": {
+                "MoovPlacement": "PROGRESSIVE_DOWNLOAD", 
+                "CslgAtom": "INCLUDE", 
+                "FreeSpaceBox": "EXCLUDE"
+            }, 
+            "Container": "MP4"
+        }
+    }
+}
