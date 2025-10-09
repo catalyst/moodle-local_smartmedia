@@ -62,7 +62,9 @@ Resources:
         - Sid: ''
           Effect: Allow
           Principal:
-            Service: lambda.amazonaws.com
+            Service:
+              - lambda.amazonaws.com
+              - mediaconvert.amazonaws.com
           Action: sts:AssumeRole
   LambdaTranscodeTriggerPolicy:
     # This is the policy that is applied to the LambdaTranscodeTriggerRole
@@ -85,15 +87,18 @@ Resources:
           - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
         - Effect: Allow
           Action:
-          - elastictranscoder:CreateJob
-          - elastictranscoder:ReadJob
-          - elastictranscoder:ReadPipeline
-          - elastictranscoder:ReadPreset
+          - mediaconvert:CreateJob
+          - mediaconvert:GetPreset
+          - mediaconvert:GetQueue
+          - mediaconvert:GetJob
           Resource: '*'
         - Effect: Allow
           Action:
           - sqs:SendMessage
           Resource: !GetAtt SqsQueue.Arn
+        - Effect: Allow
+          Action: iam:PassRole
+          Resource: !GetAtt LambdaTranscodeTriggerRole.Arn
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
         - !Ref LambdaTranscodeTriggerRole
@@ -199,61 +204,6 @@ Resources:
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
       Roles:
         - !Ref LambdaAiRole
-  ElasticTranscoderPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: '1'
-          Effect: Allow
-          Action:
-          - s3:ListBucket
-          Resource:
-          - !GetAtt InputS3Bucket.Arn
-          - !GetAtt OutputS3Bucket.Arn
-        - Sid: '2'
-          Effect: Allow
-          Action:
-          - s3:Put*
-          - s3:Get*
-          - s3:*MultipartUpload*
-          Resource:
-          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
-          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
-        - Sid: '3'
-          Effect: Allow
-          Action:
-          - sns:Publish
-          Resource:
-          - !Ref 'SnsTopicConversion'
-          - !Ref 'SnsTopicRekognitionComplete'
-        - Sid: '4'
-          Effect: Deny
-          Action:
-          - s3:*Policy*
-          - sns:*Permission*
-          - sns:*Delete*
-          - s3:*Delete*
-          - sns:*Remove*
-          Resource:
-          - "*"
-      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'transcoder-process-policy'] ]
-      Roles:
-        - !Ref ElasticTranscoderRole
-  ElasticTranscoderRole:
-    Type: AWS::IAM::Role
-    Description: Elastic Transcoder Role
-    Properties:
-      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'elastic-transcoder-role'] ]
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: '1'
-          Effect: Allow
-          Principal:
-            Service: elastictranscoder.amazonaws.com
-          Action: sts:AssumeRole
   SqsQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
@@ -353,6 +303,9 @@ Resources:
       Environment:
         Variables:
           SmartmediaSqsQueue: !Ref SqsQueue
+          OutputBucketArn: !GetAtt OutputS3Bucket.Arn
+          MediaConvertQueueArn: !GetAtt MediaConvertQueue.Arn
+          MediaConvertRoleArn: !GetAtt LambdaTranscodeTriggerRole.Arn
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_trigger'] ]
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
@@ -488,9 +441,6 @@ Resources:
         Name: !Join [ '-', [!Ref 'AWS::StackName', 'queue'] ]
         PricingPlan: ON_DEMAND
         Status: ACTIVE
-
-        # TODO permissions / iam.
-
 # Users
 # These are the IAM users created by the stack.
 # They are used by external systems interacting with the stack.
@@ -518,15 +468,12 @@ Outputs:
   OutputBucket:
     Description: S3 Output Bucket
     Value: !Ref OutputS3Bucket
-  MediaConvertQueue:
-    Description: Elemental MediaConvert Queue Name
-    Value: !Ref MediaConvertQueue
   TranscodeLambdaArn:
-   Description: The ARN of the Lambda transcode funciton
-   Value: !GetAtt LambdaTranscodeTriggerFunction.Arn
+    Description: The ARN of the Lambda transcode funciton
+    Value: !GetAtt LambdaTranscodeTriggerFunction.Arn
   RekognitionCompleteLambdaArn:
-   Description: The ARN of the Lambda transcode funciton
-   Value: !GetAtt LambdaRekognitionCompleteFunction.Arn
+    Description: The ARN of the Lambda transcode funciton
+    Value: !GetAtt LambdaRekognitionCompleteFunction.Arn
   SnsTopicRekognitionCompleteArn:
     Description: Rekognition complete SNS topic ARN
     Value: !Ref SnsTopicRekognitionComplete

@@ -149,31 +149,6 @@ if ($createstackresponse->code != 0 ) {
     echo get_string('provision:stackcreated', 'local_smartmedia', $createstackresponse->message) . PHP_EOL . PHP_EOL;
 }
 
-// We need to update the created Lambda functions environment variables
-// as trying to do it at stack build time causes a circular references in cloudformation.
-
-$envvararray = [
-    [
-        'function' => $createstackresponse->outputs['TranscodeLambdaArn'],
-        'values' => [
-            'QueueId' => $createstackresponse->outputs['MediaConvertQueue'],
-            'SmartmediaSqsQueue' => $createstackresponse->outputs['SmartmediaSqsQueue']
-        ],
-    ],
-];
-
-foreach ($envvararray as $envvars) {
-    echo get_string('provision:lambdaenvupdate', 'local_smartmedia', $envvars['function']) . PHP_EOL;
-    $updatelambdaresponse = $provisioner->update_lambda($envvars['function'], $envvars['values']);
-    if ($updatelambdaresponse->code != 0 ) {
-        $errormsg = $updatelambdaresponse->code . ': ' . $updatelambdaresponse->message;
-        throw new moodle_exception($errormsg);
-        exit(1);
-    } else {
-        echo $updatelambdaresponse->message . PHP_EOL . PHP_EOL;
-    }
-};
-
 // Print summary.
 cli_heading(get_string('provision:stack', 'local_smartmedia'));
 echo get_string(
@@ -187,6 +162,5 @@ echo get_string(
 echo get_string('provision:inputbucket', 'local_smartmedia', $createstackresponse->outputs['InputBucket']) . PHP_EOL;
 echo get_string('provision:outputbucket', 'local_smartmedia', $createstackresponse->outputs['OutputBucket']) . PHP_EOL;
 echo get_string('provision:sqsqueue', 'local_smartmedia', $createstackresponse->outputs['SmartmediaSqsQueue']) . PHP_EOL;
-echo get_string('provision:mediaconvertqueue', 'local_smartmedia', $createstackresponse->outputs['MediaConvertQueue']) . PHP_EOL;
 
 exit(0); // 0 means success.

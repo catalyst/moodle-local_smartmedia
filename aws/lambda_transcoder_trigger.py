@@ -70,27 +70,79 @@ def sqs_send_message(key, bucket, record, metadata):
 
 def submit_transcode_jobs(queue_id, settings):
     """
-    Submits jobs to Elastic Transcoder.
+    Submits jobs to Media Convert
     """
 
     logger.info('Creating media convert job...')
 
+    role = get_lambda_execution_role_arn()
+    logger.info(role)
+
     response = mc_client.create_job(
-        queue=queue_id,
-        role='TODO',
-        settings=settings
+        Queue=queue_id,
+        Settings=settings,
+        Role=role
     )
     logger.info(response)
 
 
-def get_job_settings(key, bucket, metadata):
+def get_job_settings(key, input_bucket, output_bucket, metadata):
     """
     Get the job settings from the S3 Object metadata
     """
-    raw_settings_data = metadata['settings']
-    decoded_settings = json.loads(raw_settings_data)
-    logger.info(decoded_settings)
-    return decoded_settings
+
+    raw_presets_data = metadata['presets']
+    decoded_presets = json.loads(raw_presets_data)
+
+    # DEBUG DEBUG DEBUG
+    decoded_presets = { 'Matts Test HLS preset without audio': 'ts' }
+
+    output_groups = []
+    for preset, container in decoded_presets.items():
+        output_group_settings = {}
+
+        # TODO cleanup, split into functions
+
+        if container == 'ts':
+            output_group_settings = {
+                "Type": "HLS_GROUP_SETTINGS",
+                "HlsGroupSettings": {
+                    "Destination": f"s3://{output_bucket}/{key}/{preset}",
+                    "SegmentLength": 6, # Matches the GOP segment length defined in the preset.
+                    "MinSegmentLength": 0,
+                }
+            }
+        # TODO rest of types
+
+        output_groups.append({
+            "OutputGroupSettings": output_group_settings,
+            "Outputs": [
+                {
+                    "Preset": preset,
+                    "NameModifier": key
+                }
+            ]
+        })
+
+    settings = {
+        "Inputs": [
+            {
+                "FileInput": f"s3://{input_bucket}/{key}"
+            }
+        ],
+        "OutputGroups": output_groups
+    }
+
+    return settings
+
+def get_lambda_execution_role_arn():
+    return os.environ.get('MediaConvertRoleArn')
+
+def get_output_bucket_name():
+    return os.environ.get('OutputBucketArn').split(':')[-1]
+
+def get_media_convert_queue_name():
+    return os.environ.get('MediaConvertQueueArn').split('/')[1]
 
 def lambda_handler(event, context):
     """
@@ -105,15 +157,12 @@ def lambda_handler(event, context):
     logging_level = os.environ.get('LoggingLevel', logging.INFO)
     logger.setLevel(int(logging_level))
 
-    logger.info(event)
-
-    #  Get MediaConvert queue ID from environment variable
-    queue_id = 'smt-1759470910-queue' # TODO os.environ.get('QueueId')
-    logger.info('Inserting S3 input objects into queue: {}'.format(queue_id))
+    queue_id = get_media_convert_queue_name()
+    output_bucket = get_output_bucket_name()
 
     #  Now get and process the file from the input bucket.
     for record in event['Records']:
-        bucket = record['s3']['bucket']['name']
+        input_bucket = record['s3']['bucket']['name']
         key = record['s3']['object']['key']
 
         #  Filter out permissions check file.
@@ -125,7 +174,7 @@ def lambda_handler(event, context):
 
         # Get input object metadata as we will need for SQS message sending.
         input_object_headdata_object = s3_client.head_object(
-            Bucket=bucket,
+            Bucket=input_bucket,
             Key=key
             )
 
@@ -133,9 +182,8 @@ def lambda_handler(event, context):
 
         # Send message to SQS queue.
         logger.info('Sending metadata to SQS')
-        sqs_send_message(key, bucket, record, metadata)
+        sqs_send_message(key, input_bucket, record, metadata)
 
         logger.info('Submitting transcode job to queue {}'.format(queue_id))
-        settings = get_jobs_settings(key, bucket, metadata)
+        settings = get_job_settings(key, input_bucket, output_bucket, metadata)
         submit_transcode_jobs(queue_id, settings)
-
