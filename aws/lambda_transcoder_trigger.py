@@ -94,25 +94,49 @@ def get_job_settings(key, input_bucket, output_bucket, metadata):
     raw_presets_data = metadata['presets']
     decoded_presets = json.loads(raw_presets_data)
 
-    # DEBUG DEBUG DEBUG
-    decoded_presets = { 'Matts Test HLS preset without audio': 'ts' }
-
     output_groups = []
     for preset, container in decoded_presets.items():
+        logger.info(container)
         output_group_settings = {}
 
-        # TODO cleanup, split into functions
-
-        if container == 'ts':
+        # HLS
+        if container == "M3U8":
             output_group_settings = {
                 "Type": "HLS_GROUP_SETTINGS",
                 "HlsGroupSettings": {
                     "Destination": f"s3://{output_bucket}/{key}/{preset}",
-                    "SegmentLength": 6, # Matches the GOP segment length defined in the preset.
+                    # These two are required by the SDK but we don't care about them.
+                    # So just use the defaults (segmentlength=10,minsegmentlength=0)
+                    "SegmentLength": 10,
                     "MinSegmentLength": 0,
                 }
             }
-        # TODO rest of types
+        
+        # MPEG Dash
+        elif container == "MPD":
+            output_group_settings = {
+                "Type": "DASH_ISO_GROUP_SETTINGS",
+                "DashIsoGroupSettings": {
+                    "Destination": f"s3://{output_bucket}/{key}/{preset}",
+                    # This is required by the SDK but we don't care about them.
+                    # So just use the defaults (segmentlength=10,fragmentlength=1)
+                    "SegmentLength": 10,
+                    "FragmentLength": 1
+                }
+            }
+        
+        # MP4 / MP3 (aka RAW)
+        elif container == "MP4" or container == "RAW":
+            output_group_settings = {
+                "Type": "FILE_GROUP_SETTINGS",
+                "FileGroupSettings": {
+                    "Destination": f"s3://{output_bucket}/{key}/{preset}"
+                }
+            }
+        
+        else:
+            logger.info(f"Unhandled container {container} - skipping")
+            continue
 
         output_groups.append({
             "OutputGroupSettings": output_group_settings,
@@ -127,6 +151,11 @@ def get_job_settings(key, input_bucket, output_bucket, metadata):
     settings = {
         "Inputs": [
             {
+                "AudioSelectors": {
+                    "Audio Selector 1": {
+                        "DefaultSelection": "DEFAULT"
+                    }
+                },
                 "FileInput": f"s3://{input_bucket}/{key}"
             }
         ],
@@ -154,7 +183,7 @@ def lambda_handler(event, context):
     """
 
     #  Set logging
-    logging_level = os.environ.get('LoggingLevel', logging.INFO)
+    logging_level = logging.INFO # DEBUG os.environ.get('LoggingLevel', logging.INFO)
     logger.setLevel(int(logging_level))
 
     queue_id = get_media_convert_queue_name()
