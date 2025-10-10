@@ -18,7 +18,7 @@
                     "Bitrate": 472000, 
                     "GopBReference": "DISABLED", 
                     "EntropyEncoding": "CAVLC", 
-                    "GopSizeUnits": "FRAMES", 
+                    "GopSizeUnits": "AUTO", 
                     "FlickerAdaptiveQuantization": "DISABLED", 
                     "Telecine": "NONE", 
                     "AdaptiveQuantization": "HIGH", 
@@ -28,7 +28,7 @@
                     "RepeatPps": "DISABLED", 
                     "SlowPal": "DISABLED", 
                     "GopClosedCadence": 1, 
-                    "GopSize": 90, 
+                     
                     "ParControl": "INITIALIZE_FROM_SOURCE", 
                     "Slices": 1, 
                     "FramerateConversionAlgorithm": "DUPLICATE_DROP", 
