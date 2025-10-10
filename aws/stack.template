@@ -253,7 +253,7 @@ Resources:
           - '*'
         - Effect: Allow
           Action:
-          - elastictranscoder:ReadPreset
+          - mediaconvert:GetPreset
           Resource:
           - '*'
       ManagedPolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'moodle-policy'] ]

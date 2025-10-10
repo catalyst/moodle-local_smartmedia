@@ -21,6 +21,7 @@ use local_smartmedia\conversion;
 use core\task\scheduled_task;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\aws_media_convert;
 
 /**
  * Task to process conversions of mediafiles.
@@ -60,8 +61,8 @@ class process_conversions extends scheduled_task {
         mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueue);
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $conversion = new conversion($transcoder);
+        $mediaconvert = new aws_media_convert($api->create_media_convert_client());
+        $conversion = new conversion($mediaconvert);
 
         // Create conversion records if proactive conversions are enabled.
         $backgroundprocessing = get_config('local_smartmedia', 'proactiveconversion');

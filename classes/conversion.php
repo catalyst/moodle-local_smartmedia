@@ -144,11 +144,7 @@ class conversion {
      */
     private $config;
 
-    /**
-     * @var aws_elastic_transcoder the transcoder for accessing communicating with the
-     * AWS Elastic Transcoding Service.
-     */
-    private $transcoder;
+    private $mediaconvert;
 
     /**
      * Class constructor.
@@ -157,9 +153,9 @@ class conversion {
      *
      * @throws dml_exception
      */
-    public function __construct(aws_elastic_transcoder $transcoder) {
+    public function __construct(aws_media_convert $mediaconvert) {
         $this->config = get_config('local_smartmedia');
-        $this->transcoder = $transcoder;
+        $this->mediaconvert = $mediaconvert;
     }
 
     /**
@@ -197,7 +193,7 @@ class conversion {
     private function get_preset_records(int $convid, string $contenthash): array {
         global $DB;
         $presetrecords = [];
-        $presetids = $this->transcoder->get_preset_ids();
+        $presetids = $this->mediaconvert->get_preset_ids();
 
         // Get metadata for file from database.
         $streams = $DB->get_record('local_smartmedia_data', ['contenthash' => $contenthash], 'videostreams, audiostreams');
@@ -205,9 +201,9 @@ class conversion {
         // If file is video only remove audio streams.
         if ($streams && $streams->audiostreams == 0) {
             $audiostreams = array_merge(
-                aws_elastic_transcoder::AUDIO_PRESETS,
-                aws_elastic_transcoder::MPD_AUDIO,
-                aws_elastic_transcoder::HLS_AUDIO
+                aws_media_convert::AUDIO_PRESETS,
+                aws_media_convert::MPD_AUDIO,
+                aws_media_convert::HLS_AUDIO
             );
             $presetids = array_diff($presetids, $audiostreams);
         }
@@ -215,17 +211,17 @@ class conversion {
         // If file is audio only remove video streams.
         if ($streams && $streams->videostreams == 0) {
             $videostreams = array_merge(
-                aws_elastic_transcoder::LOW_PRESETS,
-                aws_elastic_transcoder::MEDIUM_PRESETS,
-                aws_elastic_transcoder::HIGH_PRESETS,
-                aws_elastic_transcoder::EXTRA_HIGH_PRESETS,
-                aws_elastic_transcoder::DOWNLOAD_PRESETS
+                aws_media_convert::LOW_PRESETS,
+                aws_media_convert::MEDIUM_PRESETS,
+                aws_media_convert::HIGH_PRESETS,
+                aws_media_convert::EXTRA_HIGH_PRESETS,
+                aws_media_convert::DOWNLOAD_PRESETS
                 );
             $presetids = array_diff($presetids, $videostreams);
         }
 
         // Get all configured presets available.
-        $presets = $this->transcoder->get_presets();
+        $presets = $this->mediaconvert->get_presets();
 
         foreach ($presets as $preset) {
             // Only add records for presets which weren't filtered out based on stream data.

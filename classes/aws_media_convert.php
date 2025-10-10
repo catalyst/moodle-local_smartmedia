@@ -16,24 +16,24 @@
 
 namespace local_smartmedia;
 
-use core\exception\moodle_exception;
-use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Exception\AwsException;
+use Aws\MediaConvert\MediaConvertClient;
+use core\exception\moodle_exception;
 
 /**
  * Class for accessing AWS Elastic Transcode Services (ETS).
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Matthew Hilton <matthewhilton@catalyst-au.net>
+ * @copyright   2025 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class aws_elastic_transcoder {
+class aws_media_convert {
 
     /**
-     * @var \Aws\ElasticTranscoder\ElasticTranscoderClient
+     * @var \Aws\MediaConvert\MediaConvertClient
      */
-    private $transcoderclient;
+    private $mediaconvertclient;
 
     /**
      * Retrieved Preset ID information
@@ -97,14 +97,14 @@ class aws_elastic_transcoder {
     private const PRESET_MPD_VIDEO_1_2M = 'Smartmedia-MPD-Video-1.2m';
 
     /**
-     * @var const mpeg dash video 2.4m preset name
-     * this is created in mediaconvert by provision script
+     * @var const Mpeg Dash Video 2.4m preset name
+     * This is created in MediaConvert by provision script
      */
     private const PRESET_MPD_VIDEO_2_4M = 'Smartmedia-MPD-Video-2.4m';
 
     /**
-     * @var const mpeg dash video 4.8m preset name
-     * this is created in mediaconvert by provision script
+     * @var const Mpeg Dash Video 4.8m preset name
+     * This is created in MediaConvert by provision script
      */
     private const PRESET_MPD_VIDEO_4_8M = 'Smartmedia-MPD-Video-4.8m';
 
@@ -183,36 +183,9 @@ class aws_elastic_transcoder {
         self::PRESET_MPD_AUDIO,
     ];
 
-    /**
-     * aws_ets_pricing_client constructor.
-     *
-     * @param \Aws\ElasticTranscoder\ElasticTranscoderClient $transcoderclient the client for accessing AWS ETS.
-     */
-    public function __construct(ElasticTranscoderClient $transcoderclient) {
-        $this->transcoderclient = $transcoderclient;
+    public function __construct(MediaConvertClient $mediaconvertclient) {
+        $this->mediaconvertclient = $mediaconvertclient;
         $this->retrievedpresets = [];
-    }
-
-    /**
-     * Read the details of an AWS Elastic Transcoder preset.
-     *
-     * @param string $presetid the AWS preset ID to read the preset for.
-     *
-     * @return mixed|null
-     */
-    private function read_preset(string $presetid) {
-        // Retrieve preset information if already stored.
-        if (array_key_exists($presetid, $this->retrievedpresets)) {
-            $preset = $this->retrievedpresets[$presetid];
-        } else {
-            $params = ['Id' => $presetid];
-            $result = $this->transcoderclient->readPreset($params);
-            $preset = $result->get('Preset');
-            // Store the info for later.
-            $this->retrievedpresets[$presetid] = $preset;
-        }
-
-        return $preset;
     }
 
     /**
@@ -311,14 +284,34 @@ class aws_elastic_transcoder {
             foreach ($presetids as $presetid) {
                 try {
                     $presetdata = $this->read_preset($presetid);
-                    $presets[] = new aws_ets_preset($presetdata);
+                    $presets[] = new media_convert_preset($presetdata);
                 } catch (AwsException $e) {
                     debugging($e->getAwsErrorMessage());
-                    throw new moodle_exception("Invalid AWS Elastic Transcoder Preset ID in SmartMedia settings: '$presetid'");
+                    throw new moodle_exception("Invalid AWS MediaConvert preset name: '$presetid'");
                 }
             }
         }
         return $presets;
+    }
+
+    /**
+     * Read the details of an AWS Media convert preset.
+     *
+     * @param string $presetname
+     * @return mixed|null
+     */
+    private function read_preset(string $presetname) {
+        // Retrieve preset information if already stored.
+        if (array_key_exists($presetname, $this->retrievedpresets)) {
+            $preset = $this->retrievedpresets[$presetname];
+        } else {
+            $result = $this->mediaconvertclient->getPreset(["Name" => $presetname]);
+            $preset = $result->get('Preset');
+            // Store the info for later.
+            $this->retrievedpresets[$presetname] = $preset;
+        }
+
+        return $preset;
     }
 
     /**
@@ -327,8 +320,7 @@ class aws_elastic_transcoder {
      * @return array
      */
     public function get_all_presets(): array {
-
-        $presetids = array_merge(
+        return array_merge(
             self::LOW_PRESETS,
             self::MEDIUM_PRESETS,
             self::HIGH_PRESETS,
@@ -336,7 +328,5 @@ class aws_elastic_transcoder {
             self::AUDIO_PRESETS,
             self::DOWNLOAD_PRESETS
         );
-
-        return $this->get_presets($presetids);
     }
 }
