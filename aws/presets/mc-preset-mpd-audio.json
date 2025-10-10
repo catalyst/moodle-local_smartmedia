@@ -1,7 +1,7 @@
 {
   "Name": "Smartmedia-MPD-Audio",
   "Description": "",
-  "Category": "OTT-DASH",
+  "Category": "",
   "Settings": {
     "AudioDescriptions": [
       {

@@ -86,6 +86,11 @@ $provisioner = new provision(
     );
 $now = time();
 
+// Create media convert presets if they don't exist already.
+cli_heading(get_string('provision:creatingpresets', 'local_smartmedia'));
+$provisioner->upload_mediaconvert_presets();
+echo get_string('provision:presetscreated', 'local_smartmedia') . PHP_EOL . PHP_EOL;
+
 $identifier = $options['identifier'] ? $options['identifier'] : $now;
 
 // Resource stack name.

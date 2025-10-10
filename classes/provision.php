@@ -22,6 +22,8 @@ use Aws\S3\Exception\S3Exception;
 use Aws\CloudFormation\Exception\CloudFormationException;
 use Aws\Lambda\Exception\LambdaException;
 use Aws\Lambda\LambdaClient;
+use Aws\MediaConvert\Exception\MediaConvertException;
+use Aws\MediaConvert\MediaConvertClient;
 use Aws\S3\S3Client;
 
 /**
@@ -32,6 +34,7 @@ use Aws\S3\S3Client;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provision {
+    private const MEDIACONVERT_PRESETS_DIR = '/local/smartmedia/aws/presets';
 
     /**
      * AWS API Access Key ID.
@@ -65,6 +68,12 @@ class provision {
      * @var \Aws\CloudFormation\CloudformationClient Cloudformation client.
      */
     private $cloudformationclient;
+
+    /**
+     *
+     * @var \Aws\MediaConvert\MediaConvertClient Media convert client.
+     */
+    private $mediaconvertclient;
 
     /**
      *
@@ -450,6 +459,33 @@ class provision {
         return $this->lambdaclient;
     }
 
+    public function create_mediaconvert_client($handler=null) {
+        $connectionoptions = [
+            'version' => 'latest',
+            'region' => $this->region,
+        ];
+
+        if (!$this->usesdkcreds) {
+            $connectionoptions['credentials'] = [
+                'key' => $this->keyid,
+                'secret' => $this->secret,
+            ];
+        }
+
+        // Allow handler overriding for testing.
+        if ($handler != null) {
+            $connectionoptions['handler'] = $handler;
+        }
+
+        // Only create client if it hasn't already been done.
+        if ($this->mediaconvertclient == null) {
+            $this->mediaconvertclient = new MediaConvertClient($connectionoptions);
+        }
+
+        return $this->mediaconvertclient;
+
+    }
+
     /**
      * Update the environment variables in a Lambda function.
      *
@@ -480,5 +516,83 @@ class provision {
         }
 
         return $result;
+    }
+
+    /**
+     * Upload local presets (in /aws/presets dir) to MediaConvert
+     * They are identified by their "Name" value (inside their JSON).
+     */
+    public function upload_mediaconvert_presets() {
+        foreach ($this->get_local_presets() as $name => $contents) {
+            $this->create_preset_in_mediaconvert_if_not_exists($name, $contents);
+        }
+    }
+
+    /**
+     * Get array of name => json contents of local media convert preset files
+     * Files are stored in /aws/presets dir (self::MEDIACONVERT_PRESETS_DIR constant)
+     *
+     * @return array
+     */
+    private function get_local_presets(): array {
+        global $CFG;
+        $presets = [];
+        $files = scandir(implode('/', [$CFG->dirroot, self::MEDIACONVERT_PRESETS_DIR]));
+        foreach ($files as $file) {
+            if (is_dir($file)) {
+                continue;
+            }
+
+            $filepath = implode('/', [$CFG->dirroot, self::MEDIACONVERT_PRESETS_DIR, $file]);
+            $contents = file_get_contents($filepath);
+            // AWS SDK requires array and not default stdClass.
+            $decoded = json_decode($contents, associative: true);
+
+            // Bad contents.
+            if (empty($decoded) || empty($decoded["Name"])) {
+                continue;
+            }
+
+            $presets[$decoded["Name"]] = $decoded;
+        }
+
+        return $presets;
+    }
+
+    /**
+     * Find if a preset already exists with a given name in MediaConvert
+     * @param string $name
+     * @return bool true if exists, else false
+     */
+    private function preset_exists_in_mediaconvert(string $name): bool {
+        $client = $this->create_mediaconvert_client();
+        try {
+            $client->getPreset([
+                'Name' => $name
+            ]);
+            // Could get it, so it exists.
+            return true;
+        } catch (MediaConvertException $e) {
+            if ($e->getAwsErrorCode() == "NotFoundException") {
+                return false;
+            }
+
+            // Different error, re-throw
+            throw $e;
+        }
+    }
+
+    /**
+     * Creates a mediaconvert preset,or skips if already exists.
+     * @param string $name preset name
+     * @param array $contents contents of preset (settings, description, etc.)
+     */
+    private function create_preset_in_mediaconvert_if_not_exists(string $name, array $contents) {
+        if ($this->preset_exists_in_mediaconvert($name)) {
+            return;
+        }
+
+        $client = $this->create_mediaconvert_client();
+        $client->createPreset($contents);
     }
 }

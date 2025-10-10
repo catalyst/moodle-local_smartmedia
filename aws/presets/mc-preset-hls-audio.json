@@ -1,7 +1,7 @@
 {
   "Name": "Smartmedia-HLS-Audio",
-  "Description": "Wifi, 1920x1080, 16:9, 29.97fps, 8500kbps",
-  "Category": "HLS",
+  "Description": "",
+  "Category": "",
   "Settings": {
     "AudioDescriptions": [
       {

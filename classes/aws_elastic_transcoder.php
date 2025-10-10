@@ -43,13 +43,79 @@ class aws_elastic_transcoder {
     private $retrievedpresets;
 
     /**
+     * @var const HLS Audio preset name
+     * This is created in MediaConvert by provision script
+     */
+    private const PRESET_HLS_AUDIO = 'Smartmedia-HLS-Audio';
+
+    /**
+     * @var const Mpeg Dash audio preset name
+     * This is created in MediaConvert by provision script
+     */
+    private const PRESET_MPD_AUDIO = 'Smartmedia-MPD-Audio';
+
+    /**
+     * @var const Mp3 (raw) audio preset name
+     * This is created in MediaConvert by provision script
+     */
+    private const PRESET_MP3_AUDIO = 'Smartmedia-MP3-Audio';
+
+    /**
+     * @var const Web (audio and video) preset name
+     * This is created in MediaConvert by provision script
+     */
+    private const PRESET_WEB = 'Smartmedia-Web';
+
+    /**
+     * @var const HLS Video 600k preset name
+     * This is created in MediaConvert by provision script
+     */
+    private const PRESET_HLS_VIDEO_600K = 'Smartmedia-HLS-Video-600k';
+    
+    /**
+     * @var const HLS Video 1m preset name
+     * This is created in MediaConvert by provision script
+     */
+    private const PRESET_HLS_VIDEO_1M = 'Smartmedia-HLS-Video-1m';
+
+    /**
+     * @var const HLS Video 2m preset name
+     * This is created in MediaConvert by provision script
+     */
+    private const PRESET_HLS_VIDEO_2M = 'Smartmedia-HLS-Video-2m';
+
+    /**
+     * @var const Mpeg Dash Video 600k preset name
+     * This is created in MediaConvert by provision script
+     */
+    private const PRESET_MPD_VIDEO_600K = 'Smartmedia-MPD-Video-600k';
+
+    /**
+     * @var const Mpeg Dash Video 1.2m preset name
+     * This is created in MediaConvert by provision script
+     */
+    private const PRESET_MPD_VIDEO_1_2M = 'Smartmedia-MPD-Video-1.2m';
+
+    /**
+     * @var const mpeg dash video 2.4m preset name
+     * this is created in mediaconvert by provision script
+     */
+    private const PRESET_MPD_VIDEO_2_4M = 'Smartmedia-MPD-Video-2.4m';
+
+    /**
+     * @var const mpeg dash video 4.8m preset name
+     * this is created in mediaconvert by provision script
+     */
+    private const PRESET_MPD_VIDEO_4_8M = 'Smartmedia-MPD-Video-4.8m';
+
+    /**
      * Transcoder presets for low quality video file conversion.
      *
      * @var array
      */
     public const LOW_PRESETS = [
-        '1351620000001-200045', // System preset: HLS Video - 600k.
-        '1351620000001-500050', // System preset: MPEG-Dash Video - 600k.
+        self::PRESET_HLS_VIDEO_600K,
+        self::PRESET_MPD_VIDEO_600K,
     ];
 
     /**
@@ -58,8 +124,8 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const MEDIUM_PRESETS = [
-        '1351620000001-200035', // System preset: HLS Video - 1M.
-        '1351620000001-500040', // System preset: MPEG-Dash Video - 1.2M.
+        self::PRESET_HLS_VIDEO_1M,
+        self::PRESET_MPD_VIDEO_1_2M,
     ];
 
     /**
@@ -68,8 +134,8 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const HIGH_PRESETS = [
-        '1351620000001-200015', // System preset: HLS Video - 2M.
-        '1351620000001-500030', // System preset: MPEG-Dash Video - 2.4M.
+        self::PRESET_HLS_VIDEO_2M,
+        self::PRESET_MPD_VIDEO_2_4M,
     ];
 
     /**
@@ -78,7 +144,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const EXTRA_HIGH_PRESETS = [
-        '1351620000001-500020', // System preset: MPEG-Dash Video - 4.8M.
+        self::PRESET_MPD_VIDEO_4_8M,
     ];
 
     /**
@@ -87,7 +153,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const AUDIO_PRESETS = [
-        '1351620000001-300020', // System preset: Audio MP3 - 192 kilobits/second.
+        self::PRESET_MP3_AUDIO,
     ];
 
     /**
@@ -96,7 +162,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const DOWNLOAD_PRESETS = [
-        '1351620000001-100070', // System preset: Facebook, SmugMug, Vimeo, YouTube.
+        self::PRESET_WEB,
     ];
 
     /**
@@ -105,7 +171,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const HLS_AUDIO = [
-        '1351620000001-200060',  // System preset: HLS v3 and v4 Audio, 160 k.
+        self::PRESET_HLS_AUDIO,
     ];
 
     /**
@@ -114,7 +180,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const MPD_AUDIO = [
-        '1351620000001-500060', // System preset: MPEG-DASH Audio 128 k.
+        self::PRESET_MPD_AUDIO,
     ];
 
     /**

@@ -51,7 +51,7 @@
             "TimecodeInsertion": "DISABLED"
         }, 
         "ContainerSettings": {
-            "Container": "mpd"
+            "Container": "MPD"
         }
     }
 }
