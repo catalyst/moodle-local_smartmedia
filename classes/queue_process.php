@@ -16,7 +16,9 @@
 
 namespace local_smartmedia;
 
+use Aws\MediaConvert\MediaConvertClient;
 use Aws\Sqs\SqsClient;
+use core\exception\coding_exception;
 use stdClass;
 
 /**
@@ -39,6 +41,8 @@ class queue_process {
      * @var \Aws\Sqs\SqsClient SQS client.
      */
     private $client;
+
+    private $mediaconvertclient;
 
     /**
      * Max messages to get from AWS SQS queue per run..
@@ -89,6 +93,33 @@ class queue_process {
         return $this->client;
     }
 
+    public function create_media_convert_client($handler = null) {
+        $connectionoptions = [
+            'version' => 'latest',
+            'region' => $this->config->api_region,
+        ];
+
+        $usesdkcreds = get_config('local_smartmedia', 'usesdkcreds');
+        if (!$usesdkcreds) {
+            $connectionoptions['credentials'] = [
+                'key' => $this->config->api_key,
+                'secret' => $this->config->api_secret,
+            ];
+        }
+
+        // We should use the test handler if provided.
+        if (isset($handler)) {
+            $connectionoptions['handler'] = $handler;
+        }
+
+        // Only create client if it hasn't already been done.
+        if (!isset($this->mediaconvertclient)) {
+            $this->mediaconvertclient = new MediaConvertClient($connectionoptions);
+        }
+
+        return $this->mediaconvertclient;
+    }
+
 
     /**
      * Get pending messages from the AWS SQS queue.
@@ -122,18 +153,25 @@ class queue_process {
             // SQS can also deliver the same message multiple times.
             foreach ($newmessages as $newmessage) {
                 $messagebody = json_decode($newmessage['Body']);
-                $messagehash = md5(json_encode($messagebody->message));
-                $messagesiteid = $newmessage['MessageAttributes']['siteid']['StringValue'];
+                
+                // Pass through any MediaConvert events.
+                // TODO also allow rekonignition lambda events. Currently left broken.
 
-                // We could be using the same AWS queue for multiple Moodles,
-                // so we only store messages for our Moodle.
-                if ($messagesiteid === $CFG->siteidentifier) {
-                    $messages[$messagehash] = $newmessage;
+                if (empty($messagebody->source) || $messagebody->source != "aws.mediaconvert") {
+                    continue;
                 }
+
+                // Only care about finish mediaconvert messages(ignore others such as PROGRESSING and NEW_WARNING).
+                if ($messagebody->source == 'aws.mediaconvert' && $messagebody->detail->status != "COMPLETE") {
+                    continue;
+                }
+
+                $messagehash = md5(json_encode($messagebody->detail));
+                $messages[$messagehash] = $newmessage;
             }
         }
 
-        return $messages;
+         return $messages;
     }
 
     /**
@@ -153,18 +191,15 @@ class queue_process {
 
         foreach ($messages as $message) {
             $messagebody = json_decode($message['Body']);
-            $messagejson = json_encode($messagebody->message);
-            $record = new stdClass();
-            $record->objectkey = $messagebody->objectkey;
-            $record->process = $messagebody->process;
-            $record->status = $messagebody->status;
-            $record->messagehash = md5($messagejson);
-            $record->message = $messagejson;
-            $record->senttime = $messagebody->timestamp;
-            $record->timecreated = time();
 
-            $messagerecords[md5($messagejson)] = $record;
-            $messagehashes[] = md5($messagejson);
+            // TODO properly handle non-mediaconvert events such as Rekognition.
+            if ($messagebody->source !== "aws.mediaconvert") {
+                throw new coding_exception("Currently only mediaconvert events are handled");
+            }
+
+            $record = $this->extract_message_for_mediaconvert_event($messagebody);
+            $messagerecords[$record->messagehash]  = $record;
+            $messagehashes[] = $record->messagehash;
         }
 
         // Because AWS SQS can deliver the same message more than once,
@@ -180,6 +215,28 @@ class queue_process {
         $DB->insert_records('local_smartmedia_queue_msgs', $recordstoinsert);
 
         $transaction->allow_commit();
+    }
+
+    private function extract_message_for_mediaconvert_event(stdClass $messagebody): stdClass {
+        // We need to find the object (i.e. the input).
+        // to do so we need to lookup the job.
+        $mcclient = $this->create_media_convert_client();
+        $jobdetails = $mcclient->getJob(['Id' => $messagebody->resources[0]]);
+
+        // Explode the s3 objects ARN to get the object key.
+        $parts = explode("/", $jobdetails["Job"]["Settings"]["Inputs"][0]["FileInput"]);
+        $inputobjectkey = array_pop($parts);
+
+        $record = new stdClass();
+        $record->objectkey = $inputobjectkey.
+        $record->process = "mediaconvert";
+        $record->status = $messagebody->detail->status === "COMPLETE" ? 200 : 201; // TODO double check this.
+        $messagejson = json_encode($messagebody); // TODO this is very messy.
+        $record->messagehash = md5($messagejson);
+        $record->message = $messagejson;
+        $record->senttime = strtotime($messagebody->time);
+        $record->timecreated = time();
+        return $record;
     }
 
     /**
@@ -211,6 +268,7 @@ class queue_process {
      */
     public function process_queue(): int {
         $this->create_client();
+        $this->create_media_convert_client();
 
         $messages = $this->get_queue_messages(); // Get current messages from queue.
         $this->store_messages($messages); // Store messages in database.

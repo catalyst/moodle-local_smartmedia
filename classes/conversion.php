@@ -1172,6 +1172,7 @@ class conversion {
         }
 
         foreach ($queuemessages as $message) {
+            // TODO clean this up...
             if ($message->status == 'ERROR' && $message->process == 'elastic_transcoder') {
                 // If Elastic Transcoder conversion has failed then all other conversions have also failed.
                 // It is also highly likely this will be the only message recevied.

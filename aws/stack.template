@@ -51,11 +51,73 @@ Resources:
 # These are the IAM roles and policies used by resources and services in the stack.
 # Roles and polices grant the services and services permissions to carry out their
 # operations.
+  MediaConvertRole:
+    Description: The role that the Media Convert assumes when it runs
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'media-convert-role'] ]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service:
+              - mediaconvert.amazonaws.com
+          Action: sts:AssumeRole
+  MediaConvertPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - logs:*
+          Resource: arn:aws:logs:*:*:*
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          - s3:DeleteObject
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'media-convert-policy'] ]
+      Roles:
+        - !Ref MediaConvertRole
+  EventBridgeNotifyQueueRole:
+    Description: The role that event bridge assumes to foward MediaConvert events to SQS queue
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'eventbridge-sqs-notify-role'] ]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service:
+              - events.amazonaws.com
+          Action: sts:AssumeRole
+  EventBridgeNotifyQueuePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt SqsQueue.Arn
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'eventbridge-sqs-notify-policy'] ]
+      Roles:
+        - !Ref EventBridgeNotifyQueueRole
   LambdaTranscodeTriggerRole:
     Description: The role that the 'LambdaTranscodeTriggerFunction' assumes when it runs
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'elastic-transcode-trigger-role'] ]
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-role'] ]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -64,10 +126,8 @@ Resources:
           Principal:
             Service:
               - lambda.amazonaws.com
-              - mediaconvert.amazonaws.com
           Action: sts:AssumeRole
   LambdaTranscodeTriggerPolicy:
-    # This is the policy that is applied to the LambdaTranscodeTriggerRole
     Type: AWS::IAM::Policy
     Properties:
       PolicyDocument:
@@ -87,18 +147,17 @@ Resources:
           - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
         - Effect: Allow
           Action:
-          - mediaconvert:CreateJob
-          - mediaconvert:GetPreset
-          - mediaconvert:GetQueue
-          - mediaconvert:GetJob
-          Resource: '*'
-        - Effect: Allow
-          Action:
           - sqs:SendMessage
           Resource: !GetAtt SqsQueue.Arn
         - Effect: Allow
+          Action:
+          - mediaconvert:CreateJob
+          Resource:
+            - !GetAtt MediaConvertQueue.Arn
+            - !Sub "arn:*:mediaconvert:*:${AWS::AccountId}:presets/*"
+        - Effect: Allow
           Action: iam:PassRole
-          Resource: !GetAtt LambdaTranscodeTriggerRole.Arn
+          Resource: !GetAtt MediaConvertRole.Arn
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
         - !Ref LambdaTranscodeTriggerRole
@@ -254,6 +313,7 @@ Resources:
         - Effect: Allow
           Action:
           - mediaconvert:GetPreset
+          - mediaconvert:GetJob
           Resource:
           - '*'
       ManagedPolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'moodle-policy'] ]
@@ -305,7 +365,7 @@ Resources:
           SmartmediaSqsQueue: !Ref SqsQueue
           OutputBucketArn: !GetAtt OutputS3Bucket.Arn
           MediaConvertQueueArn: !GetAtt MediaConvertQueue.Arn
-          MediaConvertRoleArn: !GetAtt LambdaTranscodeTriggerRole.Arn
+          MediaConvertRoleArn: !GetAtt MediaConvertRole.Arn
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_trigger'] ]
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
@@ -441,6 +501,25 @@ Resources:
         Name: !Join [ '-', [!Ref 'AWS::StackName', 'queue'] ]
         PricingPlan: ON_DEMAND
         Status: ACTIVE
+# EventBridge rules.
+  MediaConvertEventBridgePassToSqsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Join [ '-', [!Ref 'AWS::StackName', 'mediaconvert-pass-to-sqs'] ]
+      EventPattern:
+        source:
+          - "aws.mediaconvert"
+        detail-type:
+          - "MediaConvert Job State Change"
+        detail:
+          queue:
+            - !GetAtt MediaConvertQueue.Arn
+      State: ENABLED
+      EventBusName: default
+      Targets:
+        - Id: Sqstarget
+          Arn: !GetAtt SqsQueue.Arn
+          RoleArn: !GetAtt EventBridgeNotifyQueueRole.Arn
 # Users
 # These are the IAM users created by the stack.
 # They are used by external systems interacting with the stack.
