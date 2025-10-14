@@ -148,29 +148,6 @@ class queue_process {
         return $messages;
     }
 
-    
-    /**
-     * Converts MediaConvert Job status to a conversion status (one of conversion::CONVERSION_XXX)
-     * @see https://docs.aws.amazon.com/mediaconvert/latest/ug/mediaconvert_event_list.html
-     */
-    private function mediaconvert_status_to_conversion_status(string $mediaconvertstatus): int {
-        switch ($mediaconvertstatus) {
-            case "COMPLETE":
-                return conversion::CONVERSION_FINISHED;
-            case "PROGRESSING":
-                return conversion::CONVERSION_IN_PROGRESS;
-            case "INPUT_INFORMATION":
-                return conversion::CONVERSION_ACCEPTED;
-            case "CANCELLED":
-            case "ERROR":
-                return conversion::CONVERSION_ERROR;
-            // Anything else we don't care about really, e.g. warnings, queue hop.
-            // We don't have a 'unknown' status yet.
-            default:
-                return conversion::CONVERSION_IN_PROGRESS;
-        }
-    }
-
     private function handle_message(array $message) {
         // First extract the record that goes into the DB local_smartmedia_queue_msgs.
         $record = $this->extract_record_from_message($message);
@@ -236,7 +213,7 @@ class queue_process {
         $record = new stdClass();
         $record->objectkey = $inputobjectkey;
         $record->process = "mediaconvert";
-        $record->status = $this->mediaconvert_status_to_conversion_status($messagebody->detail->status);
+        $record->status = $messagebody->detail->status;
         $record->messagehash = md5($messagejson);
         $record->message = $messagejson;
         $record->senttime = strtotime($messagebody->time);

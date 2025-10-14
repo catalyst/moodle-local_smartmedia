@@ -103,8 +103,8 @@ class conversion {
      */
     private const SQS_MESSAGE_STATES = [
         'SUCCEEDED', // Rekognition success status.
-        'COMPLETED', // Elastic Transcoder success status.
-        'ERROR', // Elastic Transcoder error status.
+        'COMPLETE', // Media convert success status.
+        'ERROR', // Media convert error status.
     ];
 
     /**
@@ -848,7 +848,7 @@ class conversion {
 
         if ($conversionrecord->transcoder_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->transcoder_status == self::CONVERSION_IN_PROGRESS) {
-                $services[] = 'elastic_transcoder';
+                $services[] = 'mediaconvert';
         }
         if ($conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
             || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS) {
@@ -952,12 +952,12 @@ class conversion {
                 'MaxKeys' => 1000,  // The maximum allowed before we need to page, we should NEVER have this many.
                 'Prefix' => $conversionrecord->contenthash . '/conversions/',  // Location in the S3 bucket where the files live.
         ];
-        $availableobjects = $s3client->listObjects($listparams);
+        $availableobjects = $s3client->listObjects($listparams)->get('Contents') ?? [];
 
         // Then we iterate over that list and get all the files available.
         $fs = get_file_storage();
         $requestdir = make_request_directory();
-        foreach ($availableobjects->get('Contents') as $availableobject) {
+        foreach ($availableobjects as $availableobject) {
             $filename = basename($availableobject['Key']);
             $filerecord = [
                 'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
@@ -1172,9 +1172,8 @@ class conversion {
         }
 
         foreach ($queuemessages as $message) {
-            // TODO clean this up...
-            if ($message->status == 'ERROR' && $message->process == 'elastic_transcoder') {
-                // If Elastic Transcoder conversion has failed then all other conversions have also failed.
+            if ($message->status == 'ERROR' && $message->process == 'mediaconvert') {
+                // If MediaConvert conversion has failed then all other conversions have also failed.
                 // It is also highly likely this will be the only message recevied.
                 $conversionrecord->status = self::CONVERSION_ERROR;
                 $conversionrecord->transcoder_status = self::CONVERSION_ERROR;
@@ -1187,10 +1186,10 @@ class conversion {
 
                 break;
 
-            } else if ($message->status == 'COMPLETED' || $message->status == 'SUCCEEDED') {
+            } else if ($message->status == 'COMPLETE' || $message->status == 'SUCCEEDED') {
                 // For each successful status get the file/s for the conversion.
-                if ($message->process == 'elastic_transcoder') {
-                    // Get Elastic Transcoder files.
+                if ($message->process == 'mediaconvert') {
+                    // Get converted files.
                     $this->get_transcode_files($conversionrecord, $handler);
 
                     $conversionrecord->transcoder_status = self::CONVERSION_FINISHED;

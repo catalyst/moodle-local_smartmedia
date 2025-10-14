@@ -55,7 +55,7 @@ class process_conversions extends scheduled_task {
         }
 
         // Get SQS messages from AWS.
-        mtrace('local_smartmedia: Reading and storing SQS queue messages');
+        mtrace('local_smartmedia: Consuming SQS queue messages and storing locally');
         $queueprocess = new queue_process();
         $processedqueuecount = $queueprocess->process_queue();
         mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueuecount);

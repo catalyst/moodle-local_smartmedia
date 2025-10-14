@@ -104,7 +104,7 @@ def get_job_settings(key, input_bucket, output_bucket, metadata):
             output_group_settings = {
                 "Type": "HLS_GROUP_SETTINGS",
                 "HlsGroupSettings": {
-                    "Destination": f"s3://{output_bucket}/{key}/{preset}",
+                    "Destination": f"s3://{output_bucket}/{key}/conversions/{preset}",
                     # These two are required by the SDK but we don't care about them.
                     # So just use the defaults (segmentlength=10,minsegmentlength=0)
                     "SegmentLength": 10,
@@ -117,7 +117,7 @@ def get_job_settings(key, input_bucket, output_bucket, metadata):
             output_group_settings = {
                 "Type": "DASH_ISO_GROUP_SETTINGS",
                 "DashIsoGroupSettings": {
-                    "Destination": f"s3://{output_bucket}/{key}/{preset}",
+                    "Destination": f"s3://{output_bucket}/{key}/conversions/{preset}",
                     # This is required by the SDK but we don't care about them.
                     # So just use the defaults (segmentlength=10,fragmentlength=1)
                     "SegmentLength": 10,
@@ -130,7 +130,7 @@ def get_job_settings(key, input_bucket, output_bucket, metadata):
             output_group_settings = {
                 "Type": "FILE_GROUP_SETTINGS",
                 "FileGroupSettings": {
-                    "Destination": f"s3://{output_bucket}/{key}/{preset}"
+                    "Destination": f"s3://{output_bucket}/{key}/conversions/{preset}"
                 }
             }
         
