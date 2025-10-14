@@ -55,10 +55,10 @@ class process_conversions extends scheduled_task {
         }
 
         // Get SQS messages from AWS.
-        mtrace('local_smartmedia: Getting SQS queue messages');
+        mtrace('local_smartmedia: Reading and storing SQS queue messages');
         $queueprocess = new queue_process();
-        $processedqueue = $queueprocess->process_queue();
-        mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueue);
+        $processedqueuecount = $queueprocess->process_queue();
+        mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueuecount);
 
         $api = new aws_api();
         $mediaconvert = new aws_media_convert($api->create_media_convert_client());
