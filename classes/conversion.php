@@ -422,29 +422,6 @@ class conversion {
     }
 
     /**
-     * Find only top level playlists (i.e. those that are not referenced by other playlists.)
-     *
-     * @param array $mediafiles
-     * @return array $mediafiles
-     */
-    private function filter_top_level_playlists(array $mediafiles): array {
-        // This works on the premise that top level playlists are always _hls_playlist.m3u8 or _mpegdash_playlist.mpd,
-        // and sublevel playlists have the Preset appended before the file extension.
-        $toplevelplaylistendings = [
-            '_hls_playlist.m3u8',
-            '_mpegdash_playlist.mpd'
-        ];
-        
-        // TODO why was it referencing mp4 and mp3 here in the previous version???
-        // Maybe it should be top_level_files instead ? (I.e. top level playlists and mp4/mp3 plain raw files).
-
-        return array_filter($mediafiles, function($file) use ($toplevelplaylistendings) {
-            // Find where filename ends with one of these endings.
-            return !empty(array_filter($toplevelplaylistendings, fn($ending) => str_ends_with($file->get_filename(), $ending)));
-        });
-    }
-
-    /**
      * Get smart media for file.
      *
      * @param \core\url $href the url of the file to find smart media for.
@@ -489,7 +466,7 @@ class conversion {
 
             // Get media files.
             $smartmedia['media'] = $rawfiles ? $playerfiles : $this->map_files_to_urls($playerfiles, $file->get_id());
-            $smartmedia['download'] = $rawfiles ? $downloadfiles : $this->map_files_to_urls($playerfiles, $file->get_id());
+            $smartmedia['download'] = $rawfiles ? $downloadfiles : $this->map_files_to_urls($downloadfiles, $file->get_id());
 
             // Get data files.
             $fs = get_file_storage();
@@ -507,11 +484,12 @@ class conversion {
 
     /**
      * If file is meant to be played in the player.
-     * E.g. top-level playlists, standalone MP4 videos and standalone MP3 audio.
+     * I.e. top level playlists
      */
     private function is_player_file(stored_file $file): bool {
         // Is top level playlist?
-        // This works on the premise of excluding playlists with the preset in the name, indicating they are sub playlists.
+        // This works as sub level playlists have the preset name before the file extension (e.g. _mpegdash_playlistSmartmedia-HLS-600k.mpd)
+        // By checking just _mpegdash_playlist.mpd we exclude these.
         $toplevelplaylistendings = [
             '_mpegdash_playlist.mpd',
             '_hls_playlist.m3u8'
@@ -607,7 +585,7 @@ class conversion {
     }
 
     /**
-     * Get the configured covnersion for this conversion record in a format that will
+     * Get the configured conversion for this conversion record in a format that will
      * be sent to AWS for processing.
      *
      * @param stdClass $conversionrecord The conversion record to get the settings for.
