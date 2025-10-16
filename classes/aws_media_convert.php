@@ -46,67 +46,67 @@ class aws_media_convert {
      * @var const HLS Audio preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_HLS_AUDIO = 'Smartmedia-HLS-Audio';
+    public const PRESET_HLS_AUDIO = 'Smartmedia-HLS-Audio';
 
     /**
      * @var const Mpeg Dash audio preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_MPD_AUDIO = 'Smartmedia-MPD-Audio';
+    public const PRESET_MPD_AUDIO = 'Smartmedia-MPD-Audio';
 
     /**
      * @var const Mp3 (raw) audio preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_MP3_AUDIO = 'Smartmedia-MP3-Audio';
+    public const PRESET_MP3_AUDIO = 'Smartmedia-MP3-Audio';
 
     /**
      * @var const Web (audio and video) preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_WEB = 'Smartmedia-Web';
+    public const PRESET_WEB = 'Smartmedia-Web';
 
     /**
      * @var const HLS Video 600k preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_HLS_VIDEO_600K = 'Smartmedia-HLS-Video-600k';
+    public const PRESET_HLS_VIDEO_600K = 'Smartmedia-HLS-Video-600k';
     
     /**
      * @var const HLS Video 1m preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_HLS_VIDEO_1M = 'Smartmedia-HLS-Video-1m';
+    public const PRESET_HLS_VIDEO_1M = 'Smartmedia-HLS-Video-1m';
 
     /**
      * @var const HLS Video 2m preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_HLS_VIDEO_2M = 'Smartmedia-HLS-Video-2m';
+    public const PRESET_HLS_VIDEO_2M = 'Smartmedia-HLS-Video-2m';
 
     /**
      * @var const Mpeg Dash Video 600k preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_MPD_VIDEO_600K = 'Smartmedia-MPD-Video-600k';
+    public const PRESET_MPD_VIDEO_600K = 'Smartmedia-MPD-Video-600k';
 
     /**
      * @var const Mpeg Dash Video 1.2m preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_MPD_VIDEO_1_2M = 'Smartmedia-MPD-Video-1.2m';
+    public const PRESET_MPD_VIDEO_1_2M = 'Smartmedia-MPD-Video-1.2m';
 
     /**
      * @var const Mpeg Dash Video 2.4m preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_MPD_VIDEO_2_4M = 'Smartmedia-MPD-Video-2.4m';
+    public const PRESET_MPD_VIDEO_2_4M = 'Smartmedia-MPD-Video-2.4m';
 
     /**
      * @var const Mpeg Dash Video 4.8m preset name
      * This is created in MediaConvert by provision script
      */
-    private const PRESET_MPD_VIDEO_4_8M = 'Smartmedia-MPD-Video-4.8m';
+    public const PRESET_MPD_VIDEO_4_8M = 'Smartmedia-MPD-Video-4.8m';
 
     /**
      * Transcoder presets for low quality video file conversion.

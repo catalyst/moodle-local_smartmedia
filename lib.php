@@ -28,6 +28,7 @@ use core_cache\cache;
 use local_smartmedia\conversion;
 use local_smartmedia\aws_api;
 use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\aws_media_convert;
 
 // Minimum height above which media is considered high definition.
 define('LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT', 720);
@@ -122,22 +123,14 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
         $filepath = '/'.implode('/', $args).'/'; // Var $args contains elements of the filepath.
     }
 
-    // We need to handle playlist files and media files differently.
-    $fileparts = pathinfo($filename);
-    $fileextension = $fileparts['extension'];
-
-    if ($fileextension != 'mpd' && $fileextension != 'm3u8') {
-        $itemid = 0; // There is only one source of truth for media (non playlist files).
-    }
-
-    $smartfile = $fs->get_file($context->id, 'local_smartmedia', $filearea, $itemid, $filepath, $filename);
+    $smartfile = $fs->get_file($context->id, 'local_smartmedia', $filearea, 0, $filepath, $filename);
     if (!$smartfile) {
         return false; // Return early if smartfile id is invalid.
     }
 
     $api = new aws_api();
-    $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-    $conversion = new conversion($transcoder);
+    $mediaconvert = new aws_media_convert($api->create_media_convert_client());
+    $conversion = new conversion($mediaconvert);
     $filecheck = $conversion->check_smartmedia_file($sourcefile, $smartfile);
     if (!$filecheck) {
         return false; // Source file doesn't match smart file.

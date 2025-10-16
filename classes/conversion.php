@@ -125,16 +125,6 @@ class conversion {
     ];
 
     /**
-     *
-     */
-    private const FILTER_PLAYLIST = 1;
-
-    /**
-     *
-     */
-    private const FILTER_DOWNLOAD = 2;
-
-    /**
      *  The file is not found on disk to transcode.
      */
     private const FILE_NOT_FOUND = 3;
@@ -397,43 +387,12 @@ class conversion {
     }
 
     /**
-     * Helper function to filter array of smartmedia files
-     * to playlists only.
-     *
-     * @param stored_file $mediafile The file object to check.
-     * @return bool
-     */
-    private function filter_file_playlist(stored_file $mediafile): bool {
-        if ($mediafile->get_mimetype() == 'application/dash+xml' || $mediafile->get_mimetype() == 'application/x-mpegURL') {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Helper function to filter array of smartmedia files
-     * to downloads only.
-     *
-     * @param stored_file $mediafile The file object to check.
-     * @return bool
-     */
-    private function filter_file_download(stored_file $mediafile): bool {
-        if ($mediafile->get_mimetype() == 'video/mp4' || $mediafile->get_mimetype() == 'audio/mp3') {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Get the media files for delivery to the smartmedia filter.
+     * Finds files downloaded from MediaConvert that we have stored locally.
      *
      * @param string $contenthash
-     * @param int $filter
      * @return array $mediafiles
      */
-    private function get_media_files(string $contenthash, int $filter=self::FILTER_PLAYLIST): array {
+    private function get_downloaded_converted_files(string $contenthash): array {
         global $DB;
 
         // Get all media files for this source file.
@@ -459,111 +418,30 @@ class conversion {
             $mediafiles[$filerecord->pathnamehash] = $fs->get_file_instance($filerecord);
         }
 
-        if ($filter == self::FILTER_PLAYLIST) {
-            $mediafiles = array_filter($mediafiles, [$this, 'filter_file_playlist']);
-        } else if ($filter == self::FILTER_DOWNLOAD) {
-            $mediafiles = array_filter($mediafiles, [$this, 'filter_file_download']);
-        }
-
         return $mediafiles;
-
     }
 
     /**
-     * Filter out non master playlists from
-     * media files.
+     * Find only top level playlists (i.e. those that are not referenced by other playlists.)
      *
      * @param array $mediafiles
      * @return array $mediafiles
      */
-    private function filter_playlists(array $mediafiles): array {
-        // Next filter the file list to only include: playlists, the mp4 and mp3 download files.
-        foreach ($mediafiles as $key => $mediafile) {
-            $match = preg_match('/\_hls_playlist\.m3u8|_mpegdash_playlist\.mpd|\.mp4|\.mp3/', $mediafile->get_filename());
-            if (!$match) {
-                unset($mediafiles[$key]);
-            }
-        }
+    private function filter_top_level_playlists(array $mediafiles): array {
+        // This works on the premise that top level playlists are always _hls_playlist.m3u8 or _mpegdash_playlist.mpd,
+        // and sublevel playlists have the Preset appended before the file extension.
+        $toplevelplaylistendings = [
+            '_hls_playlist.m3u8',
+            '_mpegdash_playlist.mpd'
+        ];
+        
+        // TODO why was it referencing mp4 and mp3 here in the previous version???
+        // Maybe it should be top_level_files instead ? (I.e. top level playlists and mp4/mp3 plain raw files).
 
-        $sort = array_values($mediafiles);
-        usort($sort, function($a, $b){
-            // Move non-mpds to the back using boolean int trickery.
-            $a = (int) preg_match('/\_mpegdash_playlist\.mpd/', $a->get_filename());
-            $b = (int) preg_match('/\_mpegdash_playlist\.mpd/', $b->get_filename());
-
-            return ($a + $b);
+        return array_filter($mediafiles, function($file) use ($toplevelplaylistendings) {
+            // Find where filename ends with one of these endings.
+            return !empty(array_filter($toplevelplaylistendings, fn($ending) => str_ends_with($file->get_filename(), $ending)));
         });
-
-        return $sort;
-    }
-
-    /**
-     * Replace the item ids in URLs in playlist files.
-     *
-     * @param string $filecontent File content to replace URLs in.
-     * @param int $id Item id to be used in replacement.
-     * @return string $replacedcontent Updated file content.
-     */
-    private function replace_urls(string $filecontent, int $id): string {
-        $matches = [];
-        preg_match_all('/pluginfile\.php\/1\/local_smartmedia\/media\/(0)\/(.*)\/conversions\/(.*)\./',
-            $filecontent, $matches, PREG_SET_ORDER);
-
-        foreach ($matches as $match) {
-            $filename = $match[2] . '_' . $match[3];
-            $filecontent = preg_replace(
-                '/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/0\/.{40}\/conversions\/)('.$match[3].')(?=\.)/',
-                $filename, $filecontent);
-        }
-
-        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/)(0)/', $id, $filecontent);
-
-        return $replacedcontent;
-
-    }
-
-    /**
-     * We need to make specific playlist files for each smartmedia object
-     * that relate explicitily to each source file. This means that there will
-     * end up being many playlist files per smartmedia object. Therefore we
-     * only generate these playlists when we first need them.
-     *
-     * We store the playlist after it is generated.
-     *
-     * @param array $mappedfiles
-     * @param int $fileid
-     * @return array
-     */
-    private function generate_playlists(array $mappedfiles, int $fileid): array {
-        $fs = get_file_storage();
-
-        // For each playlist try to get playlist.
-        // If playlist doesn't exist create it.
-        foreach ($mappedfiles as $key => $mappedfile) {
-            $match = preg_match('/\.m3u8|\.mpd/', $mappedfile->get_filename());
-            if ($match) {
-                $playlist = $fs->get_file(1, 'local_smartmedia', 'media', $fileid,
-                    $mappedfile->get_filepath(), $mappedfile->get_filename());
-                if (!$playlist) {
-                    $filerecord = new stdClass();
-                    $filerecord->contextid = 1;
-                    $filerecord->component = 'local_smartmedia';
-                    $filerecord->filearea = 'media';
-                    $filerecord->itemid = $fileid;
-                    $filerecord->filepath = $mappedfile->get_filepath();
-                    $filerecord->filename = $mappedfile->get_filename();
-
-                    $filecontent = $mappedfile->get_content();
-                    $updatedcontent = $this->replace_urls($filecontent, $fileid);
-                    $playlist = $fs->create_file_from_string($filerecord, $updatedcontent);
-
-                }
-
-                $mappedfiles[$key] = $playlist;
-            }
-        }
-
-        return $mappedfiles;
     }
 
     /**
@@ -604,18 +482,14 @@ class conversion {
         }
 
         // If processing complete get all urls and data for source href.
-        if ($conversionstatuses->status == self::CONVERSION_IN_PROGRESS ||
-                $conversionstatuses->status == self::CONVERSION_FINISHED) {
+        if ($conversionstatuses->status == self::CONVERSION_FINISHED) {
+            $convertedfiles = $this->get_downloaded_converted_files($file->get_contenthash());
+            $playerfiles = array_filter($convertedfiles, fn($f) => $this->is_player_file($f));
+            $downloadfiles = array_filter($convertedfiles, fn($f) => $this->is_standalone_file($f));
 
             // Get media files.
-            $mediafiles = $this->get_media_files($file->get_contenthash());
-            $updatedplaylists = $this->generate_playlists($mediafiles, $file->get_id());
-            $filteredfiles = $this->filter_playlists($updatedplaylists);
-            $smartmedia['media'] = $rawfiles ? $filteredfiles : $this->map_files_to_urls($filteredfiles, $file->get_id());
-
-            // Get download files.
-            $datafiles = $this->get_media_files($file->get_contenthash(), self::FILTER_DOWNLOAD);
-            $smartmedia['download'] = $rawfiles ? $datafiles : $this->map_files_to_urls($datafiles, $file->get_id());
+            $smartmedia['media'] = $rawfiles ? $playerfiles : $this->map_files_to_urls($playerfiles, $file->get_id());
+            $smartmedia['download'] = $rawfiles ? $downloadfiles : $this->map_files_to_urls($playerfiles, $file->get_id());
 
             // Get data files.
             $fs = get_file_storage();
@@ -629,7 +503,46 @@ class conversion {
         // and when processing is finished we will explictly clear the cache.
 
         return $smartmedia;
+    }
 
+    /**
+     * If file is meant to be played in the player.
+     * E.g. top-level playlists, standalone MP4 videos and standalone MP3 audio.
+     */
+    private function is_player_file(stored_file $file): bool {
+        // Is top level playlist?
+        // This works on the premise of excluding playlists with the preset in the name, indicating they are sub playlists.
+        $toplevelplaylistendings = [
+            '_mpegdash_playlist.mpd',
+            '_hls_playlist.m3u8'
+        ];
+
+        foreach ($toplevelplaylistendings as $toplevelplaylistending) {
+            if (str_ends_with($file->get_filename(), $toplevelplaylistending)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function is_standalone_file(stored_file $file): bool {
+        // Is this a standalone mp4 or mp3?
+        // Note, playlists also have Mp4's but these are NOT standalone.
+        // So we look for files with the standalone preset name in their name.
+        // TODO for this to be backwards compatibler, we need to update the old preset its to the new names.
+        $standalonepresetnames = [
+            aws_media_convert::PRESET_MP3_AUDIO . '.mp3',
+            aws_media_convert::PRESET_WEB . '.mp4'
+        ];
+
+        foreach ($standalonepresetnames as $standalonepresetname) {
+            if (str_ends_with($file->get_filename(), (string) $standalonepresetname)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -973,10 +886,9 @@ class conversion {
             ];
 
             try {
-                // The playlist files (including iframe playlists) created in s3 transcoding contain
-                // relative file paths to Variant Streams for adaptive bitsteaming media, these need to be amended
-                // to have Moodle plugin filepaths.
-                if ($this->is_file_playlist($filename)) {
+                // Playlist files (MPD and HLS) link to other playlists and video streams inside of them
+                // So we need to update these references to be pluginfile links instead.
+                if (str_ends_with($filename, '.mpd') || str_ends_with($filename, '.m3u8')) {
                     // This is small enough that we can just pull direct to memory.
                     $result = $s3client->getObject($downloadparams);
                     $filecontent = $result->get('Body');
@@ -1015,30 +927,14 @@ class conversion {
      * @return string $updatedcontent The updated file content.
      */
     private function replace_playlist_urls_with_pluginfile_urls($filecontent, string $contenthash): string {
+        // New path.
+        $pluginfilepath = "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/$contenthash";
 
-        $pluginfilepath = "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
-        // Replace all matching content hashes with the plugin file path for smartmedia with this content.
-        $updatedcontent = preg_replace('/' . $contenthash . '_/', $pluginfilepath, $filecontent);
+        // Replace contenthash (prefix used in all playlist references)
+        // to be a pluginfile url instead.
+        $updatedcontent = preg_replace('/' . $contenthash . '/', $pluginfilepath, $filecontent);
 
         return $updatedcontent;
-    }
-
-
-    /**
-     * Check if a file is a playlist file by filename.
-     *
-     * @param string $filename the file to check (including file extension)
-     *
-     * @return bool true if the file is playlist, false otherwise.
-     */
-    private function is_file_playlist(string $filename): bool {
-        $result = false;
-
-        if (preg_match('/.m3u8|.mpd/', $filename)) {
-            $result = true;
-        }
-
-        return $result;
     }
 
     /**
