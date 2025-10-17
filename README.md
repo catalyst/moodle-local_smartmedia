@@ -1,9 +1,11 @@
-# Plugin state May 2025
-This plugin curreently uses `AWS Elastic Transcoder`, which will be [discontinued by AWS on November 13 2025](https://aws.amazon.com/elastictranscoder/).
+# Important Notice
+Since October 2025, this plugin uses a new architecture due to Elastic Transcoder being decomissioned.
 
-Currently there are no plans to convert this plugin to use the replacement service, `AWS MediaConvert`.
+See the [migration guide](MIGRATION.md) for how to migrate and consideration.
 
-# Smart Media #
+Much of the information in this README is now out of date.
+
+# Smart Media
 
 Smart media aims to enhance Moodle's processing and delivery of multimedia while simplifying the process of managing multimedia for teachers and students.
 
@@ -85,49 +87,6 @@ sudo -u www-data php local/smartmedia/cli/provision.php \
 ```
 **Note:** the user may be different to www-data on your system.
 
-The script will return output similar to, the following:
-
-```console
-    
-== Creating resource S3 Bucket ==
-Created resource bucket, at location http://smr1565939869-resource.s3.amazonaws.com/
-
-== Uploading Lambda function archives to resource S3 bucket ==
-Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_ai_trigger.zip
-
-Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_rekognition_complete.zip
-
-Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_resource_transcoder.zip
-
-Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_transcoder_trigger.zip
-
-Lambda archive uploaded sucessfully to: https://smr1565939869-resource.s3.ap-southeast-2.amazonaws.com/lambda_transcribe_complete.zip
-
-== Provisioning the Lambda function to provide a custom cloudformation resource provider ==
-Stack status: CREATE_IN_PROGRESS
-Stack status: CREATE_COMPLETE
-Cloudformation custom resource stack created. Stack ID is: arn:aws:cloudformation:ap-southeast-2:693620471840:stack/smr1565939869/f5f297c0-bff5-11e9-86c0-0290a6e588aa
-
-Lambda Resource ARN: arn:aws:lambda:ap-southeast-2:693620471840:function:smr1565939869_transcoder_resource
-== Provisioning the smart media stack resources ==
-Stack status: CREATE_IN_PROGRESS
-Stack status: CREATE_COMPLETE
-Cloudformation stack created. Stack ID is: arn:aws:cloudformation:ap-southeast-2:693620471840:stack/smt1565939869/1a1e1570-bff6-11e9-b220-02a73bda2f36
-
-Updating Lambda transcode function environment variables.
-Environment variables updated
-
-Updating Lambda transcode function environment variables.
-Environment variables updated
-
-== Provisioning the smart media stack resources ==
-Smart media S3 user access key: AKIA2C8YAPAQEWV347IT
-Smart media S3 user secret key: uBdLPiBwHj+ANmYP+bpzNx5zCEqjpktjFON/NsAG
-Input bucket: smt1565939869-input
-Output bucket: smt1565939869-output
-
-```
-
 Record the ouput from the resources section of the script information.
 
 ### Plugin Settings
@@ -170,8 +129,6 @@ sudo -u www-data php local/smartmedia/cli/test.php \
 
 ## Additional Information
 The following sections provide an overview of some additional topics for this plugin and it's associated AWS architecture.
-
-For advanced setup and plugin usage once the plugins have been installed please see the [project wiki](https://github.com/catalyst/moodle-local_smartmedia/wiki).
 
 ### Conversion Architecture
 The below image shows the high level architecture the plugin provisioning process sets up in AWS.
