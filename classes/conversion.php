@@ -402,6 +402,9 @@ class conversion {
         // a filepath filter which should drastically reduce the number of records loaded into memory.
         // When the number of media files start to exceed 100,000, this extra filter is required to
         // reduce page loading times.
+
+        // ORDER BY mimetype is added to ensure the ordering is consistent
+        // (order matters to the Videojs player - it tries to play them in order).
         $sql = "SELECT " . self::instance_sql_fields() . "
                   FROM {files} f
              LEFT JOIN {files_reference} r
@@ -410,7 +413,9 @@ class conversion {
                    AND f.component = 'local_smartmedia'
                    AND f.filearea = 'media'
                    AND f.itemid = 0
-                   AND f.filepath = ?";
+                   AND f.filepath = ?
+                   ORDER BY mimetype ASC
+                   ";
         $filepath = "/$contenthash/conversions/";
         $filerecords = $DB->get_records_sql($sql, [$filepath]);
         $mediafiles = [];
@@ -511,7 +516,12 @@ class conversion {
         // TODO for this to be backwards compatibler, we need to update the old preset its to the new names.
         $standalonepresetnames = [
             aws_media_convert::PRESET_MP3_AUDIO . '.mp3',
-            aws_media_convert::PRESET_WEB . '.mp4'
+            aws_media_convert::PRESET_WEB . '.mp4',
+
+            // Legacy backwards compatibility.
+            // These are the same as above, but the old Elastic Transcode versions.
+            '1351620000001-300020.mp3', // MP3 audio
+            '1351620000001-100070.mp4', // MP4 "Web" standalone
         ];
 
         foreach ($standalonepresetnames as $standalonepresetname) {

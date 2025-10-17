@@ -25,6 +25,7 @@ import io
 import json
 from botocore.exceptions import ClientError
 from datetime import datetime
+from collections import defaultdict
 
 s3_client = boto3.client('s3')
 sqs_client = boto3.client('sqs')
@@ -83,41 +84,58 @@ def submit_transcode_jobs(queue_id, settings):
         Settings=settings,
         Role=role
     )
-    logger.info(response)
 
-
-def get_job_settings(key, input_bucket, output_bucket, metadata):
+def get_job_settings(input_object_key, input_bucket, output_bucket, metadata):
     """
     Get the job settings from the S3 Object metadata
     """
 
     raw_presets_data = metadata['presets']
     decoded_presets = json.loads(raw_presets_data)
+    
+
+    # Group presets together by container
+    # So say all .mpd are in one mpd playlist (with varying qualities)
+    grouped_presets = defaultdict(list)
+    for key, value in decoded_presets.items():
+        grouped_presets[value].append(key)
 
     output_groups = []
-    for preset, container in decoded_presets.items():
-        logger.info(container)
+    for container, presets in grouped_presets.items():
         output_group_settings = {}
+
+        logger.info(container)
+        logger.info(presets)
+
+        outputs = [{
+            "Preset": p,
+            "NameModifier": p
+        } for p in presets]
 
         # HLS
         if container == "M3U8":
             output_group_settings = {
                 "Type": "HLS_GROUP_SETTINGS",
                 "HlsGroupSettings": {
-                    "Destination": f"s3://{output_bucket}/{key}/conversions/{preset}",
+                    "Destination": f"s3://{output_bucket}/{input_object_key}/conversions/{input_object_key}_hls_playlist",
+                    "SegmentControl": "SINGLE_FILE",
                     # These two are required by the SDK but we don't care about them.
                     # So just use the defaults (segmentlength=10,minsegmentlength=0)
                     "SegmentLength": 10,
                     "MinSegmentLength": 0,
                 }
             }
+
+            # This cannot be added in presets, so it must be added here instead.
+            outputs = [{**o, **{ "OutputSettings": { "HlsSettings": { "IFrameOnlyManifest": "INCLUDE" }}}} for o in outputs]
         
         # MPEG Dash
         elif container == "MPD":
             output_group_settings = {
                 "Type": "DASH_ISO_GROUP_SETTINGS",
                 "DashIsoGroupSettings": {
-                    "Destination": f"s3://{output_bucket}/{key}/conversions/{preset}",
+                    "Destination": f"s3://{output_bucket}/{input_object_key}/conversions/{input_object_key}_mpegdash_playlist",
+                    "SegmentControl": "SINGLE_FILE",
                     # This is required by the SDK but we don't care about them.
                     # So just use the defaults (segmentlength=10,fragmentlength=1)
                     "SegmentLength": 10,
@@ -130,7 +148,7 @@ def get_job_settings(key, input_bucket, output_bucket, metadata):
             output_group_settings = {
                 "Type": "FILE_GROUP_SETTINGS",
                 "FileGroupSettings": {
-                    "Destination": f"s3://{output_bucket}/{key}/conversions/{preset}"
+                    "Destination": f"s3://{output_bucket}/{input_object_key}/conversions/"
                 }
             }
         
@@ -140,12 +158,7 @@ def get_job_settings(key, input_bucket, output_bucket, metadata):
 
         output_groups.append({
             "OutputGroupSettings": output_group_settings,
-            "Outputs": [
-                {
-                    "Preset": preset,
-                    "NameModifier": key
-                }
-            ]
+            "Outputs": outputs
         })
 
     settings = {
@@ -156,7 +169,7 @@ def get_job_settings(key, input_bucket, output_bucket, metadata):
                         "DefaultSelection": "DEFAULT"
                     }
                 },
-                "FileInput": f"s3://{input_bucket}/{key}"
+                "FileInput": f"s3://{input_bucket}/{input_object_key}"
             }
         ],
         "OutputGroups": output_groups

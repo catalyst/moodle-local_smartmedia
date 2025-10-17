@@ -123,6 +123,11 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
         $filepath = '/'.implode('/', $args).'/'; // Var $args contains elements of the filepath.
     }
 
+    // Legacy handling, add contenthash to start if not there already.
+    if (!str_starts_with($filename, $contenthash)) {
+        $filename = $contenthash . '_' . $filename;
+    }
+
     $smartfile = $fs->get_file($context->id, 'local_smartmedia', $filearea, 0, $filepath, $filename);
     if (!$smartfile) {
         return false; // Return early if smartfile id is invalid.
