@@ -23,6 +23,7 @@ use local_smartmedia\aws_elastic_transcoder;
 use local_smartmedia\pricing_calculator;
 use local_smartmedia\aws_api;
 use core\task\scheduled_task;
+use local_smartmedia\aws_media_convert;
 use local_smartmedia\pricing\aws_ets_pricing_client;
 use local_smartmedia\pricing\aws_rekog_pricing_client;
 use local_smartmedia\pricing\aws_transcribe_pricing_client;
@@ -318,7 +319,7 @@ class report_process extends scheduled_task {
             aws_ets_pricing_client $transcodepricingclient,
             aws_rekog_pricing_client $rekogpricingclient,
             aws_transcribe_pricing_client $transcribepricingclient,
-            aws_elastic_transcoder $transcoder,  stdClass $record): float {
+            aws_media_convert $transcoder,  stdClass $record): float {
 
         // Check if we have already cached the pricing.
         if (empty($this->pricing)) {
@@ -422,7 +423,7 @@ class report_process extends scheduled_task {
     private function process_overview_report(aws_ets_pricing_client $transcodepricingclient,
         aws_rekog_pricing_client $rekogpricingclient,
         aws_transcribe_pricing_client $transcribepricingclient,
-        aws_elastic_transcoder $transcoder): void {
+        aws_media_convert $transcoder): void {
         global $DB;
         $reportrecords = [];
 
@@ -504,7 +505,7 @@ class report_process extends scheduled_task {
         aws_ets_pricing_client $transcodepricingclient,
         aws_rekog_pricing_client $rekogpricingclient,
         aws_transcribe_pricing_client $transcribepricingclient,
-        aws_elastic_transcoder $transcoder): float {
+        aws_media_convert $transcoder): float {
 
         global $DB;
 
@@ -636,7 +637,7 @@ class report_process extends scheduled_task {
         $transcodepricingclient = new aws_ets_pricing_client($api->create_pricing_client());
         $rekogpricingclient = new aws_rekog_pricing_client($api->create_pricing_client());
         $transcribepricingclient = new aws_transcribe_pricing_client($api->create_pricing_client());
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->process_overview_report($transcodepricingclient, $rekogpricingclient, $transcribepricingclient, $transcoder);
 
         mtrace('local_smartmedia: Processing media file data');

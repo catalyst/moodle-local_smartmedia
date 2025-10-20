@@ -19,7 +19,7 @@ namespace local_smartmedia\task;
 use stdClass;
 use core\task\scheduled_task;
 use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\aws_media_convert;
 use local_smartmedia\conversion;
 
 /**
@@ -52,7 +52,7 @@ class poll_stale_conversions extends scheduled_task {
         mtrace("Found $count stale conversions to poll");
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $conversion = new conversion($transcoder);
 
         foreach ($records as $record) {

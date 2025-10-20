@@ -113,7 +113,7 @@ class conversion {
      * @var array
      */
     public const SERVICE_MAPPING = [
-        'elastic_transcoder' => ['transcoder_status'],
+        'mediaconvert' => ['transcoder_status'],
         'StartLabelDetection' => ['rekog_label_status', 'Labels'],
         'StartContentModeration' => ['rekog_moderation_status', 'ModerationLabels'],
         'StartFaceDetection' => ['rekog_face_status', 'Faces'],

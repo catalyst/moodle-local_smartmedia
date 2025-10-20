@@ -27,7 +27,6 @@ use core\url;
 use core_cache\cache;
 use local_smartmedia\conversion;
 use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
 use local_smartmedia\aws_media_convert;
 
 // Minimum height above which media is considered high definition.

@@ -20,7 +20,6 @@ use local_smartmedia\queue_process;
 use local_smartmedia\conversion;
 use core\task\scheduled_task;
 use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
 use local_smartmedia\aws_media_convert;
 
 /**

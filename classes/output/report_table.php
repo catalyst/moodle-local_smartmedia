@@ -22,7 +22,7 @@ use core\output\html_writer;
 use core\output\renderable;
 use stdClass;
 use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\aws_media_convert;
 
 /**
  * Renderable table for the AWS Elastic Transcode report.
@@ -105,8 +105,8 @@ class report_table extends sql_table implements renderable {
 
         // Setup a transcoder to get all preset information and store it.
         $api = new aws_api;
-        $transcoderclient = $api->create_elastic_transcoder_client();
-        $transcoder = new aws_elastic_transcoder($transcoderclient);
+        $client = $api->create_media_convert_client();
+        $transcoder = new aws_media_convert($client);
         $this->presets = $transcoder->get_all_presets();
     }
 
