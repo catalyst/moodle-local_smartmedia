@@ -52,6 +52,9 @@ class aws_api {
      */
     private $pricingclient;
 
+    /**
+     * @var \Aws\MediaConvert\MediaConvertClient
+     */
     private $mediaconvertclient;
 
     /**
@@ -121,6 +124,14 @@ class aws_api {
         return $this->pricingclient;
     }
 
+    /**
+     * Get the AWS Media Convert Client
+     *
+     * @param \Aws\MockHandler|null $handler Optional handler.
+     * @param string $version the AWS version to use for API calls.
+     *
+     * @return \Aws\MediaConvert\MediaConvertClient
+     */
     public function create_media_convert_client($handler = null, $version = '2017-08-29'): MediaConvertClient {
 
         // Set up the minimum arguments required for client.
@@ -145,5 +156,4 @@ class aws_api {
 
         return $this->mediaconvertclient;
     }
-
 }

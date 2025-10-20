@@ -116,12 +116,12 @@ if ($hassiteconfig) {
 
     // NOTE - Custom presets are disabled since MediaConvert migration.
     // $settings->add(new admin_setting_configcheckbox('local_smartmedia/usecustompresets',
-    //     get_string('settings:output:usecustompresets', 'local_smartmedia'),
-    //     get_string('settings:output:usecustompresets_help', 'local_smartmedia'), 0));
+    // get_string('settings:output:usecustompresets', 'local_smartmedia'),
+    // get_string('settings:output:usecustompresets_help', 'local_smartmedia'), 0));
 
     // $settings->add(new admin_setting_configtextarea('local_smartmedia/custompresets',
-    //     get_string('settings:output:custompresets', 'local_smartmedia'),
-    //     get_string('settings:output:usecustompresets_help', 'local_smartmedia'), '', PARAM_TEXT));
+    // get_string('settings:output:custompresets', 'local_smartmedia'),
+    // get_string('settings:output:usecustompresets_help', 'local_smartmedia'), '', PARAM_TEXT));
 
     // Processing settings.
     $settings->add(new admin_setting_heading('processingheader',
@@ -146,33 +146,33 @@ if ($hassiteconfig) {
     // NOTE - Enrichment/Rekognition handling is broken since MediaConvert migration.
     // Enrichment settings.
     // $settings->add(new admin_setting_heading('enrichmentheader',
-    //     get_string('settings:enrichment:header', 'local_smartmedia'),
-    //     get_string('settings:enrichment:description', 'local_smartmedia')));
+    // get_string('settings:enrichment:header', 'local_smartmedia'),
+    // get_string('settings:enrichment:description', 'local_smartmedia')));
     // $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectlabels',
-    //     get_string('settings:enrichment:detectlabels', 'local_smartmedia'),
-    //     get_string('settings:enrichment:detectlabels_help', 'local_smartmedia'), 0));
+    // get_string('settings:enrichment:detectlabels', 'local_smartmedia'),
+    // get_string('settings:enrichment:detectlabels_help', 'local_smartmedia'), 0));
     // $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectmoderation',
-    //     get_string('settings:enrichment:detectmoderation', 'local_smartmedia'),
-    //     get_string('settings:enrichment:detectmoderation_help', 'local_smartmedia'), 0));
+    // get_string('settings:enrichment:detectmoderation', 'local_smartmedia'),
+    // get_string('settings:enrichment:detectmoderation_help', 'local_smartmedia'), 0));
     // $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectfaces',
-    //     get_string('settings:enrichment:detectfaces', 'local_smartmedia'),
-    //     get_string('settings:enrichment:detectfaces_help', 'local_smartmedia'), 0));
+    // get_string('settings:enrichment:detectfaces', 'local_smartmedia'),
+    // get_string('settings:enrichment:detectfaces_help', 'local_smartmedia'), 0));
     // $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectpeople',
-    //     get_string('settings:enrichment:detectpeople', 'local_smartmedia'),
-    //     get_string('settings:enrichment:detectpeople_help', 'local_smartmedia'), 0));
+    // get_string('settings:enrichment:detectpeople', 'local_smartmedia'),
+    // get_string('settings:enrichment:detectpeople_help', 'local_smartmedia'), 0));
     // $settings->add(new admin_setting_configcheckbox('local_smartmedia/transcribe',
-    //     get_string('settings:enrichment:transcribe', 'local_smartmedia'),
-    //     get_string('settings:enrichment:transcribe_help', 'local_smartmedia'), 0));
+    // get_string('settings:enrichment:transcribe', 'local_smartmedia'),
+    // get_string('settings:enrichment:transcribe_help', 'local_smartmedia'), 0));
     // // TODO: figure out how to disable these settings if transcribe is disabled.
     // $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectsentiment',
-    //     get_string('settings:enrichment:detectsentiment', 'local_smartmedia'),
-    //     get_string('settings:enrichment:detectsentiment_help', 'local_smartmedia'), 0));
+    // get_string('settings:enrichment:detectsentiment', 'local_smartmedia'),
+    // get_string('settings:enrichment:detectsentiment_help', 'local_smartmedia'), 0));
     // $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectphrases',
-    //     get_string('settings:enrichment:detectphrases', 'local_smartmedia'),
-    //     get_string('settings:enrichment:detectphrases_help', 'local_smartmedia'), 0));
+    // get_string('settings:enrichment:detectphrases', 'local_smartmedia'),
+    // get_string('settings:enrichment:detectphrases_help', 'local_smartmedia'), 0));
     // $settings->add(new admin_setting_configcheckbox('local_smartmedia/detectentities',
-    //     get_string('settings:enrichment:detectentities', 'local_smartmedia'),
-    //     get_string('settings:enrichment:detectentities_help', 'local_smartmedia'), 0));
+    // get_string('settings:enrichment:detectentities', 'local_smartmedia'),
+    // get_string('settings:enrichment:detectentities_help', 'local_smartmedia'), 0));
 
     // FFprobe settings.
     $settings->add(new admin_setting_heading('ffprobeheader',

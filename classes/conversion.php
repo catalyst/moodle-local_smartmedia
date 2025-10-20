@@ -20,7 +20,6 @@ use stdClass;
 use stored_file;
 use dml_exception;
 use core\url;
-use context;
 use core\exception\moodle_exception;
 use Exception;
 use Aws\S3\Exception\S3Exception;
@@ -134,12 +133,15 @@ class conversion {
      */
     private $config;
 
+    /**
+     * @var aws_media_convert
+     */
     private $mediaconvert;
 
     /**
      * Class constructor.
      *
-     * @param aws_elastic_transcoder $transcoder
+     * @param aws_media_convert $mediaconvert
      *
      * @throws dml_exception
      */
@@ -147,26 +149,6 @@ class conversion {
         $this->config = get_config('local_smartmedia');
         $this->mediaconvert = $mediaconvert;
     }
-
-    /**
-     * Helper function to determin if our haystack string
-     * starts with our needle string.
-     *
-     * @param string $haystack The string to search.
-     * @param string $needle The value to check with.
-     * @return bool $startswith True if haystack starts with needle.
-     */
-    private function string_starts_with(string $haystack, string $needle): bool {
-        $startswith = false;
-        $length = strlen($needle);
-
-        if (substr($haystack, 0, $length) === $needle) {
-            $startswith = true;
-        }
-
-        return $startswith;
-    }
-
 
     /**
      * Given a conversion id create records for each configured transcoding preset id,
@@ -497,7 +479,7 @@ class conversion {
         // By checking just _mpegdash_playlist.mpd we exclude these.
         $toplevelplaylistendings = [
             '_mpegdash_playlist.mpd',
-            '_hls_playlist.m3u8'
+            '_hls_playlist.m3u8',
         ];
 
         foreach ($toplevelplaylistendings as $toplevelplaylistending) {
@@ -509,6 +491,11 @@ class conversion {
         return false;
     }
 
+    /**
+     * Is this a standalone Mp4 or mp3 (i.e. not a playlist, or file referenced by a playlist)
+     * @param stored_file $file
+     * @return bool
+     */
     private function is_standalone_file(stored_file $file): bool {
         // Is this a standalone mp4 or mp3?
         // Note, playlists also have Mp4's but these are NOT standalone.
@@ -959,7 +946,7 @@ class conversion {
 
         if (!empty($objectlist['Contents'])) {
             foreach ($objectlist['Contents'] as $object) {
-                if ($this->string_starts_with($object['Key'], $key)) { // Check if list key starts with the given has.
+                if (str_starts_with($object['Key'], $key)) { // Check if list key starts with the given has.
                     $keys[] = ['Key' => $object['Key']];
                 }
             }

@@ -34,6 +34,9 @@ use Aws\S3\S3Client;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class provision {
+    /**
+     * @var string dir where mediaconvert preset json is stored
+     */
     private const MEDIACONVERT_PRESETS_DIR = '/local/smartmedia/aws/presets';
 
     /**
@@ -459,6 +462,12 @@ class provision {
         return $this->lambdaclient;
     }
 
+    /**
+     * Create mediaconvert client
+     *
+     * @param \GuzzleHttp\Handler $handler Optional handler.
+     * @return \Aws\MediaConvert\MediaConvert The created Media convert client.
+     */
     public function create_mediaconvert_client($handler=null) {
         $connectionoptions = [
             'version' => 'latest',
@@ -568,7 +577,7 @@ class provision {
         $client = $this->create_mediaconvert_client();
         try {
             $client->getPreset([
-                'Name' => $name
+                'Name' => $name,
             ]);
             // Could get it, so it exists.
             return true;

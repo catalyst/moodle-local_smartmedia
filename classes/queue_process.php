@@ -42,6 +42,9 @@ class queue_process {
      */
     private $client;
 
+    /**
+     * @var \Aws\MediaConvert\MediaConvertClient
+     */
     private $mediaconvertclient;
 
     /**
@@ -93,6 +96,12 @@ class queue_process {
         return $this->client;
     }
 
+    /**
+     * Create AWS MediaConvert client.
+     *
+     * @param \GuzzleHttp\Handler $handler Optional handler.
+     * @return \Aws\MediaConvert\MediaConvertClient
+     */
     public function create_media_convert_client($handler = null) {
         $connectionoptions = [
             'version' => 'latest',
@@ -148,6 +157,10 @@ class queue_process {
         return $messages;
     }
 
+    /**
+     * Handle queue message received from SQS
+     * @param array $message raw message from SQS queue
+     */
     private function handle_message(array $message) {
         // First extract the record that goes into the DB local_smartmedia_queue_msgs.
         $record = $this->extract_record_from_message($message);
@@ -162,6 +175,10 @@ class queue_process {
         $this->delete_sqs_queue_message($message['ReceiptHandle']);
     }
 
+    /**
+     * Delete message from SQS queue
+     * @param string $receipthandle SQS receipt handle (identifier for SQS message)
+     */
     private function delete_sqs_queue_message(string $receipthandle) {
         $deleteparams = [
             'QueueUrl' => $this->config->sqs_queue_url,
@@ -170,6 +187,11 @@ class queue_process {
         $this->client->deleteMessage($deleteparams);
     }
 
+    /**
+     * Store message record into local_smartmedia_queue_msgs if not already there
+     * Deduplication is required as SQS messages can appear multiple times
+     * @param object $record
+     */
     private function store_message_record_if_not_already_stored(object $record) {
         global $DB;
 
@@ -186,6 +208,11 @@ class queue_process {
         $transaction->allow_commit();
     }
 
+    /**
+     * Extract the record from the raw sqs message
+     * @param array $message raw SQS message
+     * @return object|null Object record, otherwise null if unhandled.
+     */
     private function extract_record_from_message(array $message): ?object {
         $messagebody = json_decode($message['Body']);
 
@@ -198,6 +225,11 @@ class queue_process {
         return null;
     }
 
+    /**
+     * Extract a local_smartmedia_queue_msgs record from raw SQS mediaconvert message
+     * @param array $message raw SQS message
+     * @return object record to insert into the database
+     */
     private function extract_record_from_mediaconvert_message(array $message): object {
         $messagejson = $message['Body'];
         $messagebody = json_decode($messagejson);

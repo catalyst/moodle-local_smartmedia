@@ -31,7 +31,7 @@ class ffprobe {
     /**
      * @var string path to ffprobe
      */
-    private string $ffprobe_path;
+    private string $ffprobepath;
 
     /**
      * Class constructor

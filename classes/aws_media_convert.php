@@ -71,7 +71,7 @@ class aws_media_convert {
      * This is created in MediaConvert by provision script
      */
     public const PRESET_HLS_VIDEO_600K = 'Smartmedia-HLS-Video-600k';
-    
+
     /**
      * @var string HLS Video 1m preset name
      * This is created in MediaConvert by provision script
@@ -122,7 +122,7 @@ class aws_media_convert {
         self::PRESET_MPD_VIDEO_600K,
         self::PRESET_MPD_VIDEO_1_2M,
         self::PRESET_MPD_VIDEO_2_4M,
-        self::PRESET_MPD_VIDEO_4_8M
+        self::PRESET_MPD_VIDEO_4_8M,
     ];
 
     /**
@@ -209,6 +209,10 @@ class aws_media_convert {
         self::PRESET_MPD_AUDIO,
     ];
 
+    /**
+     * Create
+     * @param MediaConvertClient $mediaconvertclient
+     */
     public function __construct(MediaConvertClient $mediaconvertclient) {
         $this->mediaconvertclient = $mediaconvertclient;
         $this->retrievedpresets = [];
@@ -286,8 +290,8 @@ class aws_media_convert {
         // NOTE - Custom presets are disabled since MediaConvert migration.
         // Now we want to add any custom presets enabled for the account.
         // if (!empty($pluginconfig->usecustompresets)) {
-        //     $custompresets = explode(',', str_replace(' ', '', $pluginconfig->custompresets));
-        //     $presetids = array_merge($custompresets, $presetids);
+        // $custompresets = explode(',', str_replace(' ', '', $pluginconfig->custompresets));
+        // $presetids = array_merge($custompresets, $presetids);
         // }
 
         return array_unique($presetids);
