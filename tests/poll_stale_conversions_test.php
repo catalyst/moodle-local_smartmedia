@@ -30,6 +30,7 @@ use Aws\CommandInterface;
 use Aws\Result;
 use Aws\MockHandler;
 use Aws\S3\Exception\S3Exception;
+use local_smartmedia\aws_media_convert;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -135,7 +136,7 @@ final class poll_stale_conversions_test extends advanced_testcase {
         $method = new ReflectionMethod($task, 'poll_conversion_status');
         $method->setAccessible(true);
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $conversion = new conversion($transcoder);
 
         $baserecord = [

@@ -8,6 +8,8 @@ This guide shows you how to migrate your existing site using Smartmedia to the n
 Please note some features have not been updated or migrated, and are broken for the time being, including:
 
 1. Rekonition (label, face, etc.. detection)
+2. Custom presets
+3. Unit test coverage
 
 Also check https://github.com/catalyst/moodle-local_smartmedia/issues for known issues
 
