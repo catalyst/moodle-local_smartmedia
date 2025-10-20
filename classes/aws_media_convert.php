@@ -283,11 +283,12 @@ class aws_media_convert {
             $presetids = array_merge(self::AUDIO_PRESETS, $presetids);
         }
 
+        // NOTE - Custom presets are disabled since MediaConvert migration.
         // Now we want to add any custom presets enabled for the account.
-        if (!empty($pluginconfig->usecustompresets)) {
-            $custompresets = explode(',', str_replace(' ', '', $pluginconfig->custompresets));
-            $presetids = array_merge($custompresets, $presetids);
-        }
+        // if (!empty($pluginconfig->usecustompresets)) {
+        //     $custompresets = explode(',', str_replace(' ', '', $pluginconfig->custompresets));
+        //     $presetids = array_merge($custompresets, $presetids);
+        // }
 
         return array_unique($presetids);
     }
