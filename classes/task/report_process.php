@@ -340,6 +340,9 @@ class report_process extends scheduled_task {
         // Get the preset ids for this conversion.
         $presetids = $this->get_conversion_presets($record->id);
 
+        // Ignore any invalid presets (these will mostly be legacy Elastic transcoder presets).
+        $presetids = array_filter($presetids, fn($presetid) => aws_media_convert::is_valid_preset($presetid));
+
         // Get the Elastic Transcoder presets which have been set.
         $presets = $transcoder->get_presets($presetids);
         $enrichmentsettings = $this->get_enrichment_settings($record->id);
@@ -418,7 +421,7 @@ class report_process extends scheduled_task {
      * @param aws_ets_pricing_client $transcodepricingclient
      * @param aws_rekog_pricing_client $rekogpricingclient
      * @param aws_transcribe_pricing_client $transcribepricingclient
-     * @param aws_elastic_transcoder $transcoder
+     * @param aws_media_convert $transcoder
      */
     private function process_overview_report(aws_ets_pricing_client $transcodepricingclient,
         aws_rekog_pricing_client $rekogpricingclient,

@@ -71,7 +71,7 @@ class poll_stale_conversions extends scheduled_task {
         global $DB;
 
         // Start from the back forwards, and check for pending conversions with no completion or error messages.
-        $endstatus = ['SUCCEEDED', 'COMPLETED', 'ERROR'];
+        $endstatus = ['SUCCEEDED', 'COMPLETE', 'ERROR'];
         list($in, $inparams) = $DB->get_in_or_equal($endstatus, SQL_PARAMS_NAMED);
         $sql = "SELECT *
                   FROM {local_smartmedia_conv} conv

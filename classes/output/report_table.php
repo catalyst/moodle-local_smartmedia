@@ -107,7 +107,7 @@ class report_table extends sql_table implements renderable {
         $api = new aws_api;
         $client = $api->create_media_convert_client();
         $transcoder = new aws_media_convert($client);
-        $this->presets = $transcoder->get_all_presets();
+        $this->presets = $transcoder->get_presets();
     }
 
     /**

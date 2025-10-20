@@ -47,7 +47,7 @@ $output = $PAGE->get_renderer('local_smartmedia');
 $api = new aws_api;
 $transcoderclient = $api->create_media_convert_client();
 $transcoder = new aws_media_convert($transcoderclient);
-$presets = $transcoder->get_all_presets();
+$presets = $transcoder->get_presets();
 
 $sql = "SELECT f.filename, ro.type, ro.format, ro.resolution, ro.duration, ro.filesize, ro.cost, ro.status,
                ro.files, ro.timecreated, ro.timecompleted, conv.id as convid

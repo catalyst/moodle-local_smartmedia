@@ -43,70 +43,96 @@ class aws_media_convert {
     private $retrievedpresets;
 
     /**
-     * @var const HLS Audio preset name
+     * @var string HLS Audio preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_HLS_AUDIO = 'Smartmedia-HLS-Audio';
 
     /**
-     * @var const Mpeg Dash audio preset name
+     * @var string Mpeg Dash audio preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_MPD_AUDIO = 'Smartmedia-MPD-Audio';
 
     /**
-     * @var const Mp3 (raw) audio preset name
+     * @var string Mp3 (raw) audio preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_MP3_AUDIO = 'Smartmedia-MP3-Audio';
 
     /**
-     * @var const Web (audio and video) preset name
+     * @var string Web (audio and video) preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_WEB = 'Smartmedia-Web';
 
     /**
-     * @var const HLS Video 600k preset name
+     * @var string HLS Video 600k preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_HLS_VIDEO_600K = 'Smartmedia-HLS-Video-600k';
     
     /**
-     * @var const HLS Video 1m preset name
+     * @var string HLS Video 1m preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_HLS_VIDEO_1M = 'Smartmedia-HLS-Video-1m';
 
     /**
-     * @var const HLS Video 2m preset name
+     * @var string HLS Video 2m preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_HLS_VIDEO_2M = 'Smartmedia-HLS-Video-2m';
 
     /**
-     * @var const Mpeg Dash Video 600k preset name
+     * @var string Mpeg Dash Video 600k preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_MPD_VIDEO_600K = 'Smartmedia-MPD-Video-600k';
 
     /**
-     * @var const Mpeg Dash Video 1.2m preset name
+     * @var string Mpeg Dash Video 1.2m preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_MPD_VIDEO_1_2M = 'Smartmedia-MPD-Video-1.2m';
 
     /**
-     * @var const Mpeg Dash Video 2.4m preset name
+     * @var string Mpeg Dash Video 2.4m preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_MPD_VIDEO_2_4M = 'Smartmedia-MPD-Video-2.4m';
 
     /**
-     * @var const Mpeg Dash Video 4.8m preset name
+     * @var string Mpeg Dash Video 4.8m preset name
      * This is created in MediaConvert by provision script
      */
     public const PRESET_MPD_VIDEO_4_8M = 'Smartmedia-MPD-Video-4.8m';
+
+    /**
+     * @var array all the valid presets that the application can use
+     */
+    public const VALID_PRESETS = [
+        self::PRESET_HLS_AUDIO,
+        self::PRESET_MPD_AUDIO,
+        self::PRESET_MP3_AUDIO,
+        self::PRESET_WEB,
+        self::PRESET_HLS_VIDEO_600K,
+        self::PRESET_HLS_VIDEO_1M,
+        self::PRESET_HLS_VIDEO_2M,
+        self::PRESET_MPD_VIDEO_600K,
+        self::PRESET_MPD_VIDEO_1_2M,
+        self::PRESET_MPD_VIDEO_2_4M,
+        self::PRESET_MPD_VIDEO_4_8M
+    ];
+
+    /**
+     * If a given preset is valid.
+     * @param string $presetname
+     * @return bool
+     */
+    public static function is_valid_preset(string $presetname): bool {
+        return in_array($presetname, self::VALID_PRESETS);
+    }
 
     /**
      * Transcoder presets for low quality video file conversion.
@@ -312,21 +338,5 @@ class aws_media_convert {
         }
 
         return $preset;
-    }
-
-    /**
-     * This function gets all preset objects that can be used in the plugin.
-     *
-     * @return array
-     */
-    public function get_all_presets(): array {
-        return array_merge(
-            self::LOW_PRESETS,
-            self::MEDIUM_PRESETS,
-            self::HIGH_PRESETS,
-            self::EXTRA_HIGH_PRESETS,
-            self::AUDIO_PRESETS,
-            self::DOWNLOAD_PRESETS
-        );
     }
 }

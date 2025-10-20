@@ -85,6 +85,7 @@ class renderer extends plugin_renderer_base {
         $html = '';
         $html .= $this->header();
         $html .= $this->heading(get_string('dashboard:heading', 'local_smartmedia', $region));
+        $html .= $this->render(new  \core\output\notification(get_string('reports:legacywarning', 'local_smartmedia'), \core\output\notification::NOTIFY_INFO, false));
         $html .= $this->render_report_summary();
         $html .= $this->heading(get_string('report:heading', 'local_smartmedia'), 2, 'local-smartmedia local-smartmedia-heading');
         $html .= html_writer::div(get_string('report:heading_desc', 'local_smartmedia'));
