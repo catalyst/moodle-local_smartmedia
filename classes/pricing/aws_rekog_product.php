@@ -25,7 +25,6 @@ namespace local_smartmedia\pricing;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class aws_rekog_product extends aws_base_product {
-
     /**
      * @var string the description returned from the pricing API.
      */

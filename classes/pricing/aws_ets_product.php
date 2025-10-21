@@ -25,7 +25,6 @@ namespace local_smartmedia\pricing;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class aws_ets_product extends aws_base_product {
-
     /**
      * @var string enumerated value of 'Error' if this product fails transcoding or
      * 'Success' if this product passes transcoding tests currently.

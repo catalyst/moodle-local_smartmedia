@@ -29,7 +29,6 @@ use local_smartmedia\pricing\location_transcribe_pricing;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class pricing_calculator {
-
     /**
      * @var location_transcode_pricing object containing location pricing information.
      */
@@ -76,7 +75,8 @@ class pricing_calculator {
         location_transcribe_pricing $transcribelocationpricing,
         array $presets = [],
         array $rekogsettings = [],
-        $transcribe = false) {
+        $transcribe = false
+    ) {
 
         $this->transcodelocationpricing = $transcodelocationpricing;
         $this->rekoglocationpricing = $rekoglocationpricing;

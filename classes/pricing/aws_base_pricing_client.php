@@ -30,7 +30,6 @@ use Aws\Pricing\PricingClient;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class aws_base_pricing_client {
-
     /**
      * The default filter field for getting pricing information.
      */

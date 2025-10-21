@@ -25,7 +25,6 @@ use local_smartmedia\pricing\aws_ets_product;
  * @group      local_smartmedia
  */
 final class aws_ets_product_test extends advanced_testcase {
-
     /**
      * @var array of json objects representing the expected API response from \Aws\Pricing\PricingClient::getProducts
      * for 'ServiceCode' = AmazonETS.

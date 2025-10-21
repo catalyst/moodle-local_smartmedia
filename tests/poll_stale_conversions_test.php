@@ -43,7 +43,6 @@ use Psr\Http\Message\RequestInterface;
  * @group      local_smartmedia
  */
 final class poll_stale_conversions_test extends advanced_testcase {
-
     public function test_get_stale_conversions(): void {
         global $DB;
         $this->resetAfterTest(true);
@@ -187,5 +186,4 @@ final class poll_stale_conversions_test extends advanced_testcase {
         $this->assertEquals(conversion::CONVERSION_ERROR, $updatedrecord->transcribe_status);
         $this->assertEquals(conversion::CONVERSION_NOT_FOUND, $updatedrecord->detect_sentiment_status);
     }
-
 }

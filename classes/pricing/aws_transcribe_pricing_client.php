@@ -27,7 +27,6 @@ use Aws\Pricing\PricingClient;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class aws_transcribe_pricing_client extends aws_base_pricing_client {
-
     /**
      * aws_transcribe_pricing_client constructor.
      *

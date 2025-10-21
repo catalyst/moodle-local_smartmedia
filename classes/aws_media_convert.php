@@ -29,7 +29,6 @@ use core\exception\moodle_exception;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class aws_media_convert {
-
     /**
      * @var \Aws\MediaConvert\MediaConvertClient
      */
@@ -304,14 +303,13 @@ class aws_media_convert {
      * @return array $presets array of aws_ets_preset objects.
      * @throws \core\exception\moodle_exception
      */
-    public function get_presets(array $presetids=[]): array {
+    public function get_presets(array $presetids = []): array {
         $presets = [];
         if (empty($presetids)) {
             $presetids = $this->get_preset_ids();
         }
 
         if (!empty($presetids)) {
-
             foreach ($presetids as $presetid) {
                 try {
                     $presetdata = $this->read_preset($presetid);

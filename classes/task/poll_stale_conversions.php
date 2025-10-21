@@ -31,7 +31,6 @@ use local_smartmedia\conversion;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class poll_stale_conversions extends scheduled_task {
-
     /**
      * Name getter for task.
      *
@@ -72,7 +71,7 @@ class poll_stale_conversions extends scheduled_task {
 
         // Start from the back forwards, and check for pending conversions with no completion or error messages.
         $endstatus = ['SUCCEEDED', 'COMPLETE', 'ERROR'];
-        list($in, $inparams) = $DB->get_in_or_equal($endstatus, SQL_PARAMS_NAMED);
+        [$in, $inparams] = $DB->get_in_or_equal($endstatus, SQL_PARAMS_NAMED);
         $sql = "SELECT *
                   FROM {local_smartmedia_conv} conv
                  WHERE conv.timecreated < :timeboundary
@@ -101,9 +100,10 @@ class poll_stale_conversions extends scheduled_task {
      */
     private function poll_conversion_status(stdClass $record, conversion $conversion, $handler = null) {
         // Here we should attempt to pull files, as if we had a completion message from a service.
-        if ($record->transcoder_status == conversion::CONVERSION_IN_PROGRESS ||
-                $record->transcoder_status == conversion::CONVERSION_ACCEPTED) {
-
+        if (
+            $record->transcoder_status == conversion::CONVERSION_IN_PROGRESS ||
+                $record->transcoder_status == conversion::CONVERSION_ACCEPTED
+        ) {
             // Get Elastic Transcoder files. If we found some, this was a win.
             $files = $conversion->get_transcode_files($record, $handler);
 
@@ -124,9 +124,10 @@ class poll_stale_conversions extends scheduled_task {
         ];
         // Now we want to check all of the pending enrichment types.
         foreach ($services as $service => $filecode) {
-            if ($record->$service == conversion::CONVERSION_IN_PROGRESS ||
-                $record->$service == conversion::CONVERSION_ACCEPTED) {
-
+            if (
+                $record->$service == conversion::CONVERSION_IN_PROGRESS ||
+                $record->$service == conversion::CONVERSION_ACCEPTED
+            ) {
                 // Get Elastic Transcoder files. If we found some, this was a win.
                 $success = $conversion->get_data_file($record, $filecode, $handler);
 
@@ -142,5 +143,4 @@ class poll_stale_conversions extends scheduled_task {
 
         mtrace("Finished polling stale conversion {$record->contenthash}");
     }
-
 }

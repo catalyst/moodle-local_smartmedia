@@ -142,7 +142,8 @@ final class report_process_test extends advanced_testcase {
 
         $fs->create_file_from_string($filerecord3, $filecontent);
 
-        $contenthash = $file1->get_contenthash();;
+        $contenthash = $file1->get_contenthash();
+        ;
 
         // We're testing a private method, so we need to setup reflector magic.
         $task = new report_process();

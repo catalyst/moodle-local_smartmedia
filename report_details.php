@@ -33,8 +33,13 @@ require_once($CFG->libdir . '/tablelib.php');
 $hash = required_param('hash', PARAM_TEXT);
 
 // Calls require_login and performs permissions checks for admin pages.
-admin_externalpage_setup('local_smartmedia_report', '', null, '',
-    ['pagelayout' => 'report']);
+admin_externalpage_setup(
+    'local_smartmedia_report',
+    '',
+    null,
+    '',
+    ['pagelayout' => 'report']
+);
 
 $title = get_string('pluginname', 'local_smartmedia');
 
@@ -44,7 +49,7 @@ $PAGE->set_heading($title);
 $output = $PAGE->get_renderer('local_smartmedia');
 
 // Setup a transcoder to get all preset information and store it.
-$api = new aws_api;
+$api = new aws_api();
 $transcoderclient = $api->create_media_convert_client();
 $transcoder = new aws_media_convert($transcoderclient);
 $presets = $transcoder->get_presets();

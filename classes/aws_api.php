@@ -30,7 +30,6 @@ use Aws\Pricing\PricingClient;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class aws_api {
-
     /**
      * Region specifically for use with AWS Pricing List API.
      * (The AWS Pricing List API is only available to this region.)
@@ -66,7 +65,8 @@ class aws_api {
         $this->region = get_config('local_smartmedia', 'api_region');
         $this->set_credentials(
             get_config('local_smartmedia', 'api_key'),
-            get_config('local_smartmedia', 'api_secret'));
+            get_config('local_smartmedia', 'api_secret')
+        );
     }
 
     /**

@@ -29,7 +29,6 @@ use local_smartmedia\aws_media_convert;
  * @package     local_smartmedia
  */
 class process_conversions extends scheduled_task {
-
     /**
      * Get a descriptive name for this task (shown to admins).
      *
@@ -70,7 +69,6 @@ class process_conversions extends scheduled_task {
             $createdconversions = $conversion->create_conversions();
 
             mtrace('local_smartmedia: Total number of created conversions: ' . count($createdconversions));
-
         }
 
         // Process new conversions.
@@ -82,14 +80,11 @@ class process_conversions extends scheduled_task {
             if ($value != conversion::CONVERSION_IN_PROGRESS) {
                 mtrace('local_smartmedia: Failed to start processing for file with conversion id: ' . $key);
             }
-
         }
 
         // Update pending conversions.
         mtrace('local_smartmedia: Updating pending conversions');
         $updated = $conversion->update_pending_conversions();
         mtrace('local_smartmedia: Total number of updated conversions: ' . count($updated));
-
     }
-
 }

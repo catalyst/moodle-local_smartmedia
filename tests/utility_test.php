@@ -24,7 +24,6 @@ use local_smartmedia\utility;
  * @group      local_smartmedia
  */
 final class utility_test extends advanced_testcase {
-
     /**
      * Test for updating arg array..
      */

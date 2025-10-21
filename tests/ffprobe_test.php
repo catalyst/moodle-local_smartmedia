@@ -25,7 +25,6 @@ use local_smartmedia\ffprobe;
  * @group      local_smartmedia
  */
 final class ffprobe_test extends advanced_testcase {
-
     /**
      * @var array Fixtures used in this test.
      */
@@ -130,5 +129,4 @@ final class ffprobe_test extends advanced_testcase {
         $this->assertEquals(0, $proxy['data']['duration']);
         $this->assertEquals(0, $proxy['data']['bitrate']);
     }
-
 }

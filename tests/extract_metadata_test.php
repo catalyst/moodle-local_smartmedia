@@ -25,7 +25,6 @@ use local_smartmedia\task\extract_metadata;
  * @group      local_smartmedia
  */
 final class extract_metadata_test extends advanced_testcase {
-
     public function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();
@@ -131,7 +130,6 @@ final class extract_metadata_test extends advanced_testcase {
         $this->assertArrayHasKey($file2->get_id(), $proxy);
         $this->assertArrayHasKey($file3->get_id(), $proxy);
         $this->assertArrayNotHasKey($file4->get_id(), $proxy);
-
     }
 
     /**
@@ -250,5 +248,4 @@ final class extract_metadata_test extends advanced_testcase {
 
         $this->assertFalse($result);
     }
-
 }

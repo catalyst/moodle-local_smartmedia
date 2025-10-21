@@ -28,11 +28,11 @@ use core\exception\moodle_exception;
 define('CLI_SCRIPT', true);
 define('CACHE_DISABLE_ALL', true);
 
-require(__DIR__.'/../../../config.php');
-require_once($CFG->libdir.'/clilib.php');
+require(__DIR__ . '/../../../config.php');
+require_once($CFG->libdir . '/clilib.php');
 
 // Get cli options.
-list($options, $unrecognized) = cli_get_params(
+[$options, $unrecognized] = cli_get_params(
     [
         'keyid'             => false,
         'secret'            => false,
@@ -83,7 +83,7 @@ $provisioner = new provision(
     $options['keyid'],
     $options['secret'],
     $options['region']
-    );
+);
 $now = time();
 
 // Create media convert presets if they don't exist already.
@@ -94,17 +94,17 @@ echo get_string('provision:presetscreated', 'local_smartmedia') . PHP_EOL . PHP_
 $identifier = $options['identifier'] ? $options['identifier'] : $now;
 
 // Resource stack name.
-$stackname = 'smr-'. $identifier;
+$stackname = 'smr-' . $identifier;
 
 // Transcoder stack name.
-$transcoderstackname = 'smt-'. $identifier;
+$transcoderstackname = 'smt-' . $identifier;
 
 // Create S3 resource bucket.
 cli_heading(get_string('provision:creatings3', 'local_smartmedia'));
 
 $bucketname = $stackname . '-' . 'resource';
 $resourcebucketresposnse = $provisioner->create_bucket($bucketname);
-if ($resourcebucketresposnse->code != 0 ) {
+if ($resourcebucketresposnse->code != 0) {
     $errormsg = $resourcebucketresposnse->code . ': ' . $resourcebucketresposnse->message;
     throw new moodle_exception($errormsg);
     exit(1);
@@ -121,14 +121,16 @@ $archives = glob($archivepath . '/*.{zip}', GLOB_BRACE);
 
 foreach ($archives as $archive) {
     $lambdaarchiveuploadresponse = $provisioner->upload_file($archive, $resourcebucketresposnse->bucketname);
-    if ($lambdaarchiveuploadresponse->code != 0 ) {
+    if ($lambdaarchiveuploadresponse->code != 0) {
         $errormsg = $lambdaarchiveuploadresponse->code . ': ' . $lambdaarchiveuploadresponse->message;
         throw new moodle_exception($errormsg);
         exit(1);
     } else {
         echo get_string(
             'provision:lambdaarchiveuploaded',
-            'local_smartmedia', $lambdaarchiveuploadresponse->message) . PHP_EOL . PHP_EOL;
+            'local_smartmedia',
+            $lambdaarchiveuploadresponse->message
+        ) . PHP_EOL . PHP_EOL;
     }
 }
 
@@ -146,7 +148,7 @@ $params = [
 ];
 
 $createstackresponse = $provisioner->create_stack($transcoderstackname, $params);
-if ($createstackresponse->code != 0 ) {
+if ($createstackresponse->code != 0) {
     $errormsg = $createstackresponse->code . ': ' . $createstackresponse->message;
     throw new moodle_exception($errormsg);
     exit(1);
@@ -159,11 +161,13 @@ cli_heading(get_string('provision:stack', 'local_smartmedia'));
 echo get_string(
     'provision:s3useraccesskey',
     'local_smartmedia',
-    $createstackresponse->outputs['SmartMediaS3UserAccessKey']) . PHP_EOL;
+    $createstackresponse->outputs['SmartMediaS3UserAccessKey']
+) . PHP_EOL;
 echo get_string(
     'provision:s3usersecretkey',
     'local_smartmedia',
-    $createstackresponse->outputs['SmartMediaS3UserSecretKey']) . PHP_EOL;
+    $createstackresponse->outputs['SmartMediaS3UserSecretKey']
+) . PHP_EOL;
 echo get_string('provision:inputbucket', 'local_smartmedia', $createstackresponse->outputs['InputBucket']) . PHP_EOL;
 echo get_string('provision:outputbucket', 'local_smartmedia', $createstackresponse->outputs['OutputBucket']) . PHP_EOL;
 echo get_string('provision:sqsqueue', 'local_smartmedia', $createstackresponse->outputs['SmartmediaSqsQueue']) . PHP_EOL;

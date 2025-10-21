@@ -80,13 +80,13 @@ class aws_ets_pricing_client extends aws_base_pricing_client {
         foreach ($products as $product) {
             $productfamily = $product->get_productfamily();
             switch ($productfamily) {
-                case self::MEDIATYPE_STANDARD_DEFINITION :
+                case self::MEDIATYPE_STANDARD_DEFINITION:
                     $locationpricing->set_sd_pricing($product->get_cost());
                     break;
-                case self::MEDIATYPE_HIGH_DEFINITION :
+                case self::MEDIATYPE_HIGH_DEFINITION:
                     $locationpricing->set_hd_pricing($product->get_cost());
                     break;
-                default :
+                default:
                     $locationpricing->set_audio_pricing($product->get_cost());
                     break;
             }

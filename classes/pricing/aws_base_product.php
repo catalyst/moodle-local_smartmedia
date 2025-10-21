@@ -25,7 +25,6 @@ namespace local_smartmedia\pricing;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 abstract class aws_base_product {
-
     /**
      * @var string unique identifier of product.
      */
@@ -108,5 +107,4 @@ abstract class aws_base_product {
     public function get_servicecode() {
         return $this->servicecode;
     }
-
 }

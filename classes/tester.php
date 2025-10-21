@@ -27,7 +27,6 @@ use Aws\S3\Exception\S3Exception;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class tester {
-
     /**
      * The AWS S3 input bucket name.
      *
@@ -75,7 +74,6 @@ class tester {
 
         $this->inputbucket = $inputbucket;
         $this->outputbucket = $outputbucket;
-
     }
 
     /**
@@ -114,7 +112,6 @@ class tester {
         try {
             $putobject = $client->putObject($uploadparams);
             $result->message = $putobject['ObjectURL'];
-
         } catch (S3Exception $e) {
             $result->status = false;
             $result->code = $e->getAwsErrorCode();
@@ -150,7 +147,5 @@ class tester {
         }
 
         return $result;
-
     }
-
 }

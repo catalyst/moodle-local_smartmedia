@@ -29,7 +29,6 @@ use Aws\S3\Exception\S3Exception;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class aws_s3_test extends advanced_testcase {
-
     /**
      * Test is_config_set method with missing configuration.
      */
@@ -192,5 +191,4 @@ final class aws_s3_test extends advanced_testcase {
 
         $this->assertTrue($result->success);
     }
-
 }

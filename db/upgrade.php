@@ -68,7 +68,6 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
     }
 
     if ($oldversion < 2020011503) {
-
         // Changing type of field filesize on table local_smartmedia_report_over to int.
         $table = new xmldb_table('local_smartmedia_report_over');
         $field = new xmldb_field('filesize', XMLDB_TYPE_INTEGER, '20', null, XMLDB_NOTNULL, null, null, 'duration');
@@ -81,7 +80,6 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
     }
 
     if ($oldversion < 2020011504) {
-
         // Define field timecreated to be added to local_smartmedia_report_over.
         $table = new xmldb_table('local_smartmedia_report_over');
         $field = new xmldb_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, 0, 'files');
@@ -103,7 +101,6 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
     }
 
     if ($oldversion < 2020011700) {
-
         // Define field timecreated to be added to local_smartmedia_data.
         $table = new xmldb_table('local_smartmedia_data');
         $field = new xmldb_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'metadata');
@@ -188,8 +185,16 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         // Define field transcribe_status to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $field = new xmldb_field('transcribe_status', XMLDB_TYPE_INTEGER, '3', null,
-            XMLDB_NOTNULL, null, '404', 'transcoder_status');
+        $field = new xmldb_field(
+            'transcribe_status',
+            XMLDB_TYPE_INTEGER,
+            '3',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '404',
+            'transcoder_status'
+        );
 
         // Conditionally launch add field transcribe_status.
         if (!$dbman->field_exists($table, $field)) {
@@ -198,8 +203,16 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         // Define field rekog_label_status to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $field = new xmldb_field('rekog_label_status', XMLDB_TYPE_INTEGER, '3', null,
-            XMLDB_NOTNULL, null, '404', 'transcribe_status');
+        $field = new xmldb_field(
+            'rekog_label_status',
+            XMLDB_TYPE_INTEGER,
+            '3',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '404',
+            'transcribe_status'
+        );
 
         // Conditionally launch add field rekog_label_status.
         if (!$dbman->field_exists($table, $field)) {
@@ -208,8 +221,16 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         // Define field rekog_moderation_status to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $field = new xmldb_field('rekog_moderation_status', XMLDB_TYPE_INTEGER, '3', null,
-            XMLDB_NOTNULL, null, '404', 'rekog_label_status');
+        $field = new xmldb_field(
+            'rekog_moderation_status',
+            XMLDB_TYPE_INTEGER,
+            '3',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '404',
+            'rekog_label_status'
+        );
 
         // Conditionally launch add field rekog_moderation_status.
         if (!$dbman->field_exists($table, $field)) {
@@ -218,8 +239,16 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         // Define field rekog_face_status to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $field = new xmldb_field('rekog_face_status', XMLDB_TYPE_INTEGER, '3', null,
-            XMLDB_NOTNULL, null, '404', 'rekog_moderation_status');
+        $field = new xmldb_field(
+            'rekog_face_status',
+            XMLDB_TYPE_INTEGER,
+            '3',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '404',
+            'rekog_moderation_status'
+        );
 
         // Conditionally launch add field rekog_face_status.
         if (!$dbman->field_exists($table, $field)) {
@@ -228,8 +257,16 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         // Define field rekog_person_status to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $field = new xmldb_field('rekog_person_status', XMLDB_TYPE_INTEGER, '3', null,
-            XMLDB_NOTNULL, null, '404', 'rekog_face_status');
+        $field = new xmldb_field(
+            'rekog_person_status',
+            XMLDB_TYPE_INTEGER,
+            '3',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '404',
+            'rekog_face_status'
+        );
 
         // Conditionally launch add field rekog_person_status.
         if (!$dbman->field_exists($table, $field)) {
@@ -238,8 +275,16 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         // Define field detect_sentiment_status to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $field = new xmldb_field('detect_sentiment_status', XMLDB_TYPE_INTEGER, '3', null,
-            XMLDB_NOTNULL, null, '404', 'rekog_person_status');
+        $field = new xmldb_field(
+            'detect_sentiment_status',
+            XMLDB_TYPE_INTEGER,
+            '3',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '404',
+            'rekog_person_status'
+        );
 
         // Conditionally launch add field detect_sentiment_status.
         if (!$dbman->field_exists($table, $field)) {
@@ -248,8 +293,16 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
         // Define field detect_phrases_status to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $field = new xmldb_field('detect_phrases_status', XMLDB_TYPE_INTEGER, '3', null,
-            XMLDB_NOTNULL, null, '404', 'detect_sentiment_status');
+        $field = new xmldb_field(
+            'detect_phrases_status',
+            XMLDB_TYPE_INTEGER,
+            '3',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '404',
+            'detect_sentiment_status'
+        );
 
         // Conditionally launch add field detect_phrases_status.
         if (!$dbman->field_exists($table, $field)) {
@@ -258,8 +311,16 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
 
          // Define field detect_entities_status to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
-        $field = new xmldb_field('detect_entities_status', XMLDB_TYPE_INTEGER, '3', null,
-            XMLDB_NOTNULL, null, '404', 'detect_phrases_status');
+        $field = new xmldb_field(
+            'detect_entities_status',
+            XMLDB_TYPE_INTEGER,
+            '3',
+            null,
+            XMLDB_NOTNULL,
+            null,
+            '404',
+            'detect_phrases_status'
+        );
 
         // Conditionally launch add field detect_entities_status.
         if (!$dbman->field_exists($table, $field)) {
@@ -317,7 +378,6 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
     }
 
     if ($oldversion < 2021031000) {
-
         // Define table local_smartmedia_data_fail to be created.
         $table = new xmldb_table('local_smartmedia_data_fail');
 
@@ -341,7 +401,6 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
     }
 
     if ($oldversion < 2021111001) {
-
         // Define key contenthash (foreign-unique) to be added to local_smartmedia_conv.
         $table = new xmldb_table('local_smartmedia_conv');
         $key = new xmldb_key('contenthash', XMLDB_KEY_FOREIGN_UNIQUE, ['contenthash'], 'local_smartmedia_data', ['contenthash']);
@@ -356,7 +415,6 @@ function xmldb_local_smartmedia_upgrade($oldversion) {
     }
 
     if ($oldversion < 2022101800) {
-
         // Define index objectkey (not unique) to be added to local_smartmedia_queue_msgs.
         $table = new xmldb_table('local_smartmedia_queue_msgs');
         $index = new xmldb_index('objectkey', XMLDB_INDEX_NOTUNIQUE, ['objectkey']);

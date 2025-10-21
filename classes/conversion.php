@@ -33,7 +33,6 @@ use core\context as CoreContext;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class conversion {
-
     /**
      * @var array Audio mimetypes
      */
@@ -188,7 +187,7 @@ class conversion {
                 aws_media_convert::HIGH_PRESETS,
                 aws_media_convert::EXTRA_HIGH_PRESETS,
                 aws_media_convert::DOWNLOAD_PRESETS
-                );
+            );
             $presetids = array_diff($presetids, $videostreams);
         }
 
@@ -295,10 +294,13 @@ class conversion {
 
         $contenthash = $file->get_contenthash();
         $conditions = ['contenthash' => $contenthash];
-        $result = $DB->get_record('local_smartmedia_conv', $conditions,
+        $result = $DB->get_record(
+            'local_smartmedia_conv',
+            $conditions,
             'status, transcoder_status, transcribe_status,
             rekog_label_status, rekog_moderation_status, rekog_face_status, rekog_person_status,
-            detect_sentiment_status, detect_phrases_status, detect_entities_status');
+            detect_sentiment_status, detect_phrases_status, detect_entities_status'
+        );
 
         if (!$result) {
             $result = new stdClass();
@@ -339,12 +341,12 @@ class conversion {
         $filepath = '/';
 
         // If item id is non zero then it will be the fourth element in the array.
-        if ($argumentcount > 4 ) {
+        if ($argumentcount > 4) {
             $itemid = (int)$hrefarguments[3];
         }
 
         // Handle complex file paths in href.
-        if ($argumentcount > 5 ) {
+        if ($argumentcount > 5) {
             $filepatharray = array_slice($hrefarguments, 4, -1);
             $filepath = '/' . implode('/', $filepatharray) . '/';
         }
@@ -578,8 +580,14 @@ class conversion {
         $urls = [];
         foreach ($files as $file) {
             // Build the custom serve URL.
-            $url = url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
-                    $fileid, $file->get_filepath(), $file->get_filename());
+            $url = url::make_pluginfile_url(
+                $file->get_contextid(),
+                $file->get_component(),
+                $file->get_filearea(),
+                $fileid,
+                $file->get_filepath(),
+                $file->get_filename()
+            );
             $urls[] = $url;
         }
         return $urls;
@@ -646,7 +654,7 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return int $status The status code of the upload.
      */
-    private function send_file_for_processing(stored_file $file, array $settings, $handler=null): int {
+    private function send_file_for_processing(stored_file $file, array $settings, $handler = null): int {
         $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
 
@@ -667,7 +675,6 @@ class conversion {
         // TODO: add event for file sending include status etc.
 
         return $status;
-
     }
 
     /**
@@ -738,46 +745,64 @@ class conversion {
         // Only get messages for conversions that have not yet finished.
         $services = [];
 
-        if ($conversionrecord->transcoder_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->transcoder_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->transcoder_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->transcoder_status == self::CONVERSION_IN_PROGRESS
+        ) {
                 $services[] = 'mediaconvert';
         }
-        if ($conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'StartLabelDetection';
         }
-        if ($conversionrecord->rekog_moderation_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->rekog_moderation_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->rekog_moderation_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_moderation_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'StartContentModeration';
         }
-        if ($conversionrecord->rekog_face_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->rekog_face_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->rekog_face_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_face_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'StartFaceDetection';
         }
-        if ($conversionrecord->rekog_person_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->rekog_person_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->rekog_person_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_person_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'StartPersonTracking';
         }
-        if ($conversionrecord->transcribe_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->transcribe_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->transcribe_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->transcribe_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'TranscribeComplete';
         }
-        if ($conversionrecord->detect_sentiment_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->detect_sentiment_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->detect_sentiment_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->detect_sentiment_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'SentimentComplete';
         }
-        if ($conversionrecord->detect_phrases_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->detect_phrases_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->detect_phrases_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->detect_phrases_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'PhrasesComplete';
         }
-        if ($conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->detect_entities_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->detect_entities_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'EntitiesComplete';
         }
 
         // Get all queue messages for this object.
-        list($processinsql, $processinparams) = $DB->get_in_or_equal($services);
-        list($statusinsql, $statusinparams) = $DB->get_in_or_equal(self::SQS_MESSAGE_STATES);
+        [$processinsql, $processinparams] = $DB->get_in_or_equal($services);
+        [$statusinsql, $statusinparams] = $DB->get_in_or_equal(self::SQS_MESSAGE_STATES);
         $params = array_merge($processinparams, $statusinparams);
         $params[] = $conversionrecord->contenthash;
 
@@ -832,7 +857,7 @@ class conversion {
      *
      * @return array $transcodedfiles Array of \stored_file objects.
      */
-    public function get_transcode_files(stdClass $conversionrecord, $handler=null): array {
+    public function get_transcode_files(stdClass $conversionrecord, $handler = null): array {
         $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
         $transcodedfiles = [];
@@ -841,8 +866,8 @@ class conversion {
         // So first we get a list of the files.
         $listparams = [
                 'Bucket' => $this->config->s3_output_bucket,
-                'MaxKeys' => 1000,  // The maximum allowed before we need to page, we should NEVER have this many.
-                'Prefix' => $conversionrecord->contenthash . '/conversions/',  // Location in the S3 bucket where the files live.
+                'MaxKeys' => 1000, // The maximum allowed before we need to page, we should NEVER have this many.
+                'Prefix' => $conversionrecord->contenthash . '/conversions/', // Location in the S3 bucket where the files live.
         ];
         $availableobjects = $s3client->listObjects($listparams)->get('Contents') ?? [];
 
@@ -874,7 +899,6 @@ class conversion {
                     $filecontent = $this->replace_playlist_urls_with_pluginfile_urls($filecontent, $conversionrecord->contenthash);
 
                     $transcodedfile = $fs->create_file_from_string($filerecord, $filecontent);
-
                 } else {
                     // Video file handling. Might be too big for memory, write to disk first.
                     $filetarget = $requestdir . '/' . $filename;
@@ -923,7 +947,7 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return array $keys The keys (paths) of the deleted objects.
      */
-    private function cleanup_aws_files(string $key, $handler=null): array {
+    private function cleanup_aws_files(string $key, $handler = null): array {
         $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
         $keys = [];
@@ -980,7 +1004,7 @@ class conversion {
      * @param string $process The process to get the file for.
      * @param \Aws\MockHandler|null $handler Optional handler.
      */
-    public function get_data_file(stdClass $conversionrecord, string $process, $handler=null): bool {
+    public function get_data_file(stdClass $conversionrecord, string $process, $handler = null): bool {
         $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
 
@@ -1038,7 +1062,7 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return stdClass $conversionrecord The updated conversion record.
      */
-    private function process_conversion(stdClass $conversionrecord, array $queuemessages, $handler=null): stdClass {
+    private function process_conversion(stdClass $conversionrecord, array $queuemessages, $handler = null): stdClass {
         global $DB;
 
         // If there are no queue messages exit early.
@@ -1060,7 +1084,6 @@ class conversion {
                 $conversionrecord->timecompleted = time();
 
                 break;
-
             } else if ($message->status == 'COMPLETE' || $message->status == 'SUCCEEDED') {
                 // For each successful status get the file/s for the conversion.
                 if ($message->process == 'mediaconvert') {
@@ -1068,7 +1091,6 @@ class conversion {
                     $this->get_transcode_files($conversionrecord, $handler);
 
                     $conversionrecord->transcoder_status = self::CONVERSION_FINISHED;
-
                 } else {
                     // Get other process data files.
                     $this->get_data_file($conversionrecord, $message->process, $handler);
@@ -1076,7 +1098,6 @@ class conversion {
                     $statusfield = self::SERVICE_MAPPING[$message->process][0];
                     $conversionrecord->{$statusfield} = self::CONVERSION_FINISHED;
                 }
-
             } else if ($message->status == 'ERROR') {
                 // For each failed status mark it as failed in the record.
                 $statusfield = self::SERVICE_MAPPING[$message->process][0];
@@ -1099,7 +1120,7 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return stdClass $updatedrecord The updated completion record.
      */
-    public function update_completion_status(stdClass $record, $handler=null): stdClass {
+    public function update_completion_status(stdClass $record, $handler = null): stdClass {
         global $DB;
 
         $completionfields = [
@@ -1157,7 +1178,6 @@ class conversion {
         $conversionrecords = $this->get_conversion_records(self::CONVERSION_IN_PROGRESS); // Get pending conversion records.
 
         foreach ($conversionrecords as $conversionrecord) { // Itterate through pending records.
-
             // Get recevied messages for this conversion record that are not related to already completed processes.
             $queuemessages = $this->get_queue_messages($conversionrecord);
 
@@ -1166,7 +1186,6 @@ class conversion {
 
             // If all conversions have reached a final state (complete or failed) update overall conversion status.
             $results[] = $this->update_completion_status($updatedrecord);
-
         }
 
         return $results;
@@ -1202,7 +1221,6 @@ class conversion {
         $fileids = $DB->get_records_sql($sql, $params, 0, $limit);
 
         return $fileids;
-
     }
 
     /**
@@ -1264,7 +1282,6 @@ class conversion {
         }
 
         return self::CONVERSION_NOT_FOUND;
-
     }
 
     /**
@@ -1290,7 +1307,7 @@ class conversion {
 
         // id is specifically named to prevent overlapping between the two tables.
         $fields = [];
-        $fields[] = $filesprefix.'.id AS id';
+        $fields[] = $filesprefix . '.id AS id';
         foreach ($filefields as $field) {
             $fields[] = "{$filesprefix}.{$field}";
         }

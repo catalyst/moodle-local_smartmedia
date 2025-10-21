@@ -27,7 +27,6 @@ use core\task\scheduled_task;
  * @package     local_smartmedia
  */
 class extract_metadata extends scheduled_task {
-
     /**
      * Max files to get from Moodle files table per processing run.
      */
@@ -60,7 +59,7 @@ class extract_metadata extends scheduled_task {
         'video/x-ms-wmv',
         'video/x-matroska',
         'video/x-matroska-3d',
-        'video/MP2T'.
+        'video/MP2T' .
         'video/x-sgi-movie',
     ];
     /**
@@ -91,10 +90,11 @@ class extract_metadata extends scheduled_task {
      * @param boolean $asstring If true return types as string, false return array.
      * @return boolean | string $mimetypes The supported mime types.
      */
-    private function get_supported_mime_types($asstring=false) {
+    private function get_supported_mime_types($asstring = false) {
 
         if ($asstring) {
-            $mimetypes = "'" . implode("','", self::SUPPORTED_MIME_TYPES) . "'";;
+            $mimetypes = "'" . implode("','", self::SUPPORTED_MIME_TYPES) . "'";
+            ;
         } else {
             $mimetypes = self::SUPPORTED_MIME_TYPES;
         }
@@ -171,7 +171,6 @@ class extract_metadata extends scheduled_task {
         $deletehashes = $DB->get_records_sql($sql);
 
         return $deletehashes;
-
     }
 
     /**
@@ -336,7 +335,5 @@ class extract_metadata extends scheduled_task {
             mtrace('local_smartmedia: Count of metadata records to remove: ' . count($toremove));
             $this->remove_metadata_records($toremove);
         }
-
     }
-
 }

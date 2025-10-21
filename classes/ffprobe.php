@@ -27,7 +27,6 @@ use stored_file;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class ffprobe {
-
     /**
      * @var string path to ffprobe
      */
@@ -104,7 +103,6 @@ class ffprobe {
                     'bitrate' => !empty($stream->bit_rate) ? $stream->bit_rate : 0,
                 ];
             }
-
         }
 
         // Populate general data.
@@ -119,7 +117,6 @@ class ffprobe {
         $metadata['data']['totalaudiostreams'] = $totalaudiostreams;
 
         return $metadata;
-
     }
 
     /**
@@ -194,5 +191,4 @@ class ffprobe {
 
         return $metadata;
     }
-
 }

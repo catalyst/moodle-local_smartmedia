@@ -36,8 +36,13 @@ $perpage = optional_param('perpage', 50, PARAM_INT);
 $baseurl = $CFG->wwwroot . "/local/smartmedia/report.php";
 
 // Calls require_login and performs permissions checks for admin pages.
-admin_externalpage_setup('local_smartmedia_report', '', null, '',
-    ['pagelayout' => 'report']);
+admin_externalpage_setup(
+    'local_smartmedia_report',
+    '',
+    null,
+    '',
+    ['pagelayout' => 'report']
+);
 
 $title = get_string('pluginname', 'local_smartmedia');
 $url = new url($baseurl);

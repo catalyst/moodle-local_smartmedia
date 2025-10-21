@@ -29,7 +29,6 @@ use stdClass;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class queue_process {
-
     /**
      *
      * @var object Plugin confiuration.
@@ -136,7 +135,7 @@ class queue_process {
     private function read_up_until_max_messages(): array {
         $messageparams = [
             'AttributeNames' => ['All'],
-            'MaxNumberOfMessages' => 10,  // 10 is AWS maximum per call.
+            'MaxNumberOfMessages' => 10, // 10 is AWS maximum per call.
             'MessageAttributeNames' => ['All'],
             'QueueUrl' => $this->config->sqs_queue_url,
             'VisibilityTimeout' => 60,

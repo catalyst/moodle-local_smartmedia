@@ -122,7 +122,6 @@ class provision {
             if ($errorcode != 403) {
                 $bucketexists = false;
             }
-
         }
         return $bucketexists;
     }
@@ -134,7 +133,7 @@ class provision {
      * @param \GuzzleHttp\Handler $handler Optional handler.
      * @return \Aws\S3\S3Client
      */
-    public function create_s3_client($handler=null) {
+    public function create_s3_client($handler = null) {
         $connectionoptions = [
             'version' => 'latest',
             'region' => $this->region,
@@ -219,7 +218,6 @@ class provision {
         }
 
         return $result;
-
     }
 
 
@@ -251,7 +249,6 @@ class provision {
         try {
             $putobject = $client->putObject($uploadparams);
             $result->message = $putobject['ObjectURL'];
-
         } catch (S3Exception $e) {
             $result->status = false;
             $result->code = $e->getAwsErrorCode();
@@ -289,7 +286,6 @@ class provision {
         }
 
         return $result;
-
     }
 
     /**
@@ -298,7 +294,7 @@ class provision {
      * @param \GuzzleHttp\Handler $handler Optional handler.
      * @return \Aws\CloudFormation\CloudFormationClient The create Cloudformation client.
      */
-    public function create_cloudformation_client($handler=null) {
+    public function create_cloudformation_client($handler = null) {
         $connectionoptions = [
             'version' => 'latest',
             'region' => $this->region,
@@ -371,7 +367,6 @@ class provision {
         try {
             $createstack = $client->createStack($stackparams);
             $result->message = $createstack['StackId'];
-
         } catch (CloudFormationException $e) {
             $result->status = false;
             $result->code = $e->getAwsErrorCode();
@@ -417,13 +412,11 @@ class provision {
                     $outputs[$output['OutputKey']] = $output['OutputValue'];
                 }
                 $result->outputs = $outputs;
-
             } else {
                 $result->status = false;
                 $result->code = $stackstatus;
                 $result->message = 'Stack creation failed';
             }
-
         }
 
         return $result;
@@ -436,7 +429,7 @@ class provision {
      * @param \GuzzleHttp\Handler $handler Optional handler.
      * @return \Aws\Lambda\LambdaClient The created Lambda client.
      */
-    public function create_lambda_client($handler=null) {
+    public function create_lambda_client($handler = null) {
         $connectionoptions = [
             'version' => 'latest',
             'region' => $this->region,
@@ -468,7 +461,7 @@ class provision {
      * @param \GuzzleHttp\Handler $handler Optional handler.
      * @return \Aws\MediaConvert\MediaConvert The created Media convert client.
      */
-    public function create_mediaconvert_client($handler=null) {
+    public function create_mediaconvert_client($handler = null) {
         $connectionoptions = [
             'version' => 'latest',
             'region' => $this->region,
@@ -492,7 +485,6 @@ class provision {
         }
 
         return $this->mediaconvertclient;
-
     }
 
     /**
