@@ -311,7 +311,7 @@ class report_process extends scheduled_task {
      * @param aws_ets_pricing_client $transcodepricingclient
      * @param aws_rekog_pricing_client $rekogpricingclient
      * @param aws_transcribe_pricing_client $transcribepricingclient
-     * @param aws_elastic_transcoder $transcoder
+     * @param aws_media_convert $transcoder
      * @param stdClass $record Record from metadata table for file.
      * @return float $cost The calculated transcoding cost.
      */
@@ -499,7 +499,7 @@ class report_process extends scheduled_task {
      * @param aws_ets_pricing_client $transcodepricingclient
      * @param aws_rekog_pricing_client $rekogpricingclient
      * @param aws_transcribe_pricing_client $transcribepricingclient
-     * @param aws_elastic_transcoder $transcoder
+     * @param aws_media_convert $transcoder
      * @return float|int|null $total cost for all transcoding across all presets, null if total cannot be calculated.
      *
      * @throws \dml_exception

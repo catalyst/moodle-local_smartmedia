@@ -151,7 +151,7 @@ class pricing_calculator {
 
             foreach ($this->presets as $preset) {
                 // All video media can be transcoded by standard definition presets providing it has at least one video stream.
-                if ($preset->is_output_standard_definition() && $preset->is_input_video($height) && !empty($videostreams)) {
+                if ($preset->is_output_standard_definition() && !empty($videostreams)) {
                     $cost += $this->transcodelocationpricing->calculate_standard_definition_cost($durationminutes);
                 } else if ($preset->is_output_high_definition() && !empty($videostreams)) {
                     // Only high definition video can be transcoded by high definition presets.

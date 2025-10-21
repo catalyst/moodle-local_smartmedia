@@ -472,6 +472,9 @@ class conversion {
     /**
      * If file is meant to be played in the player.
      * I.e. top level playlists
+     *
+     * @param stored_file $file
+     * @return bool
      */
     private function is_player_file(stored_file $file): bool {
         // Is top level playlist?
@@ -493,6 +496,7 @@ class conversion {
 
     /**
      * Is this a standalone Mp4 or mp3 (i.e. not a playlist, or file referenced by a playlist)
+     *
      * @param stored_file $file
      * @return bool
      */
