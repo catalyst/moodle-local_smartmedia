@@ -396,7 +396,7 @@ class conversion {
                    AND f.filearea = 'media'
                    AND f.itemid = 0
                    AND f.filepath = ?
-                   ORDER BY mimetype ASC
+                   ORDER BY mimetype DESC
                    ";
         $filepath = "/$contenthash/conversions/";
         $filerecords = $DB->get_records_sql($sql, [$filepath]);
