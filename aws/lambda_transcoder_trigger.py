@@ -166,7 +166,7 @@ def get_job_settings(input_object_key, input_bucket, output_bucket, metadata):
             {
                 "AudioSelectors": {
                     "Audio Selector 1": {
-                        "DefaultSelection": "DEFAULT"
+                        "DefaultSelection": "DEFAULT",
                     }
                 },
                 "FileInput": f"s3://{input_bucket}/{input_object_key}"
@@ -196,7 +196,7 @@ def lambda_handler(event, context):
     """
 
     #  Set logging
-    logging_level = logging.INFO # DEBUG os.environ.get('LoggingLevel', logging.INFO)
+    logging_level = os.environ.get('LoggingLevel', logging.INFO)
     logger.setLevel(int(logging_level))
 
     queue_id = get_media_convert_queue_name()
