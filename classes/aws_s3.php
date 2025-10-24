@@ -18,7 +18,6 @@ namespace local_smartmedia;
 
 use stdClass;
 use Aws\S3\Exception\S3Exception;
-use Aws\S3\S3Client;
 
 /**
  * Class for converting files between different formats using unoconv.

@@ -16,15 +16,12 @@
 
 namespace local_smartmedia;
 
-use Aws\CloudFormation\CloudFormationClient;
 use stdClass;
 use Aws\S3\Exception\S3Exception;
 use Aws\CloudFormation\Exception\CloudFormationException;
 use Aws\Lambda\Exception\LambdaException;
-use Aws\Lambda\LambdaClient;
 use Aws\MediaConvert\Exception\MediaConvertException;
 use Aws\MediaConvert\MediaConvertClient;
-use Aws\S3\S3Client;
 
 /**
  * Class for provisioning AWS resources.

@@ -17,7 +17,6 @@
 namespace local_smartmedia;
 
 use Aws\MediaConvert\MediaConvertClient;
-use Aws\Sqs\SqsClient;
 use core\exception\coding_exception;
 use stdClass;
 
