@@ -70,7 +70,7 @@ class report_process extends scheduled_task {
         'video/x-ms-wmv',
         'video/x-matroska',
         'video/x-matroska-3d',
-        'video/MP2T' .
+        'video/MP2T',
         'video/x-sgi-movie',
     ];
 

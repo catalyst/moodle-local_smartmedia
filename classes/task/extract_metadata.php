@@ -59,7 +59,7 @@ class extract_metadata extends scheduled_task {
         'video/x-ms-wmv',
         'video/x-matroska',
         'video/x-matroska-3d',
-        'video/MP2T' .
+        'video/MP2T',
         'video/x-sgi-movie',
     ];
     /**
@@ -94,7 +94,6 @@ class extract_metadata extends scheduled_task {
 
         if ($asstring) {
             $mimetypes = "'" . implode("','", self::SUPPORTED_MIME_TYPES) . "'";
-            ;
         } else {
             $mimetypes = self::SUPPORTED_MIME_TYPES;
         }

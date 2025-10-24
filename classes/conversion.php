@@ -23,7 +23,7 @@ use core\url;
 use core\exception\moodle_exception;
 use Exception;
 use Aws\S3\Exception\S3Exception;
-use core\context as CoreContext;
+use core\context;
 
 /**
  * Class for smart media conversion operations.
@@ -434,7 +434,7 @@ class conversion {
             return $smartmedia;
         }
         // Keep a hold of the context so we know where we are targeting the file.
-        $smartmedia['context'] = CoreContext::instance_by_id($file->get_contextid());
+        $smartmedia['context'] = context::instance_by_id($file->get_contextid());
 
         // Query conversion table for status.
         $conversionstatuses = $this->get_conversion_statuses($file);

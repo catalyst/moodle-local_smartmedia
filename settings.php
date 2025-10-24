@@ -153,15 +153,6 @@ if ($hassiteconfig) {
         1
     ));
 
-    // NOTE - Custom presets are disabled since MediaConvert migration.
-    // $settings->add(new admin_setting_configcheckbox('local_smartmedia/usecustompresets',
-    // get_string('settings:output:usecustompresets', 'local_smartmedia'),
-    // get_string('settings:output:usecustompresets_help', 'local_smartmedia'), 0));
-
-    // $settings->add(new admin_setting_configtextarea('local_smartmedia/custompresets',
-    // get_string('settings:output:custompresets', 'local_smartmedia'),
-    // get_string('settings:output:usecustompresets_help', 'local_smartmedia'), '', PARAM_TEXT));
-
     // Processing settings.
     $settings->add(new admin_setting_heading(
         'processingheader',
