@@ -73,13 +73,8 @@ Resources:
         Statement:
         - Effect: Allow
           Action:
-          - logs:*
-          Resource: arn:aws:logs:*:*:*
-        - Effect: Allow
-          Action:
           - s3:GetObject
           - s3:PutObject
-          - s3:DeleteObject
           Resource:
           - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
           - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
