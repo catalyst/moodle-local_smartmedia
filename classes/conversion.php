@@ -398,6 +398,7 @@ class conversion {
                    AND f.filearea = 'media'
                    AND f.itemid = 0
                    AND f.filepath = ?
+                   AND f.filename != '.'
                    ORDER BY mimetype DESC
                    ";
         $filepath = "/$contenthash/conversions/";
@@ -448,7 +449,7 @@ class conversion {
         }
 
         // If processing complete get all urls and data for source href.
-        if ($conversionstatuses->status == self::CONVERSION_FINISHED) {
+        if ($conversionstatuses->status == self::CONVERSION_FINISHED || $conversionstatuses->status == self::CONVERSION_IN_PROGRESS) {
             $convertedfiles = $this->get_downloaded_converted_files($file->get_contenthash());
             $playerfiles = array_filter($convertedfiles, fn($f) => $this->is_player_file($f));
             $downloadfiles = array_filter($convertedfiles, fn($f) => $this->is_standalone_file($f));
