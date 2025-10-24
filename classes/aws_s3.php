@@ -82,7 +82,7 @@ class aws_s3 {
 
         // Only create client if it hasn't already been done.
         if ($this->client == null) {
-            $this->client = new S3Client($connectionoptions);
+            $this->client = client_factory::get_client('\Aws\S3\S3Client', $connectionoptions);
         }
 
         return $this->client;

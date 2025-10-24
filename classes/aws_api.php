@@ -118,7 +118,7 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->pricingclient == null) {
-            $this->pricingclient = new PricingClient($args);
+            $this->pricingclient = client_factory::get_client('\Aws\Pricing\PricingClient', $args);
         }
 
         return $this->pricingclient;
@@ -151,7 +151,7 @@ class aws_api {
 
         // Only create client if it hasn't already been done.
         if ($this->mediaconvertclient == null) {
-            $this->mediaconvertclient = new MediaConvertClient($args);
+            $this->mediaconvertclient = client_factory::get_client('\Aws\MediaConvert\MediaConvertClient', $args);
         }
 
         return $this->mediaconvertclient;
