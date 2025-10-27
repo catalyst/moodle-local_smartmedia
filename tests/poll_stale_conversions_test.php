@@ -30,6 +30,7 @@ use Aws\CommandInterface;
 use Aws\Result;
 use Aws\MockHandler;
 use Aws\S3\Exception\S3Exception;
+use local_smartmedia\aws_media_convert;
 use Psr\Http\Message\RequestInterface;
 
 /**
@@ -42,7 +43,6 @@ use Psr\Http\Message\RequestInterface;
  * @group      local_smartmedia
  */
 final class poll_stale_conversions_test extends advanced_testcase {
-
     public function test_get_stale_conversions(): void {
         global $DB;
         $this->resetAfterTest(true);
@@ -135,7 +135,7 @@ final class poll_stale_conversions_test extends advanced_testcase {
         $method = new ReflectionMethod($task, 'poll_conversion_status');
         $method->setAccessible(true);
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $conversion = new conversion($transcoder);
 
         $baserecord = [
@@ -186,5 +186,4 @@ final class poll_stale_conversions_test extends advanced_testcase {
         $this->assertEquals(conversion::CONVERSION_ERROR, $updatedrecord->transcribe_status);
         $this->assertEquals(conversion::CONVERSION_NOT_FOUND, $updatedrecord->detect_sentiment_status);
     }
-
 }

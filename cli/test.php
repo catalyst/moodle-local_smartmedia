@@ -28,11 +28,11 @@ use core\exception\moodle_exception;
 define('CLI_SCRIPT', true);
 define('CACHE_DISABLE_ALL', true);
 
-require(__DIR__.'/../../../config.php');
-require_once($CFG->libdir.'/clilib.php');
+require(__DIR__ . '/../../../config.php');
+require_once($CFG->libdir . '/clilib.php');
 
 // Now get cli options.
-list($options, $unrecognized) = cli_get_params(
+[$options, $unrecognized] = cli_get_params(
     [
         'keyid'             => false,
         'secret'            => false,
@@ -52,8 +52,10 @@ if ($unrecognized) {
     cli_error(get_string('cliunknowoption', 'admin', $unrecognized));
 }
 
-if ($options['help'] || !$options['keyid'] || !$options['secret'] || !$options['region']
-    || !$options['input-bucket'] || !$options['output-bucket']) {
+if (
+    $options['help'] || !$options['keyid'] || !$options['secret'] || !$options['region']
+    || !$options['input-bucket'] || !$options['output-bucket']
+) {
     $help = "Command line Smartmedia test script.
 This command line script will test the Smartmedia environment in AWS.
 It will upload a test file to the input S3 bucket and watch the output.
@@ -90,13 +92,14 @@ $tester = new tester(
     $options['secret'],
     $options['region'],
     $options['input-bucket'],
-    $options['output-bucket']);
+    $options['output-bucket']
+);
 
 // Upload file to input S3 bucket.
 cli_heading(get_string('test:uploadfile', 'local_smartmedia'));
 
 $uploadresposnse = $tester->upload_file($options['file']);
-if ($uploadresposnse->code != 0 ) {
+if ($uploadresposnse->code != 0) {
     $errormsg = $uploadresposnse->code . ': ' . $uploadresposnse->message;
     throw new moodle_exception($errormsg);
     exit(1);

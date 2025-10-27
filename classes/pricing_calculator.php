@@ -29,7 +29,6 @@ use local_smartmedia\pricing\location_transcribe_pricing;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class pricing_calculator {
-
     /**
      * @var location_transcode_pricing object containing location pricing information.
      */
@@ -61,11 +60,6 @@ class pricing_calculator {
     private $transcribe;
 
     /**
-     * @var string $region the AWS region applying to this calculator.
-     */
-    private $region;
-
-    /**
      * pricing_calculator constructor.
      *
      * @param location_transcode_pricing $transcodelocationpricing object containing pricing information for region.
@@ -81,12 +75,12 @@ class pricing_calculator {
         location_transcribe_pricing $transcribelocationpricing,
         array $presets = [],
         array $rekogsettings = [],
-        $transcribe = false) {
+        $transcribe = false
+    ) {
 
         $this->transcodelocationpricing = $transcodelocationpricing;
         $this->rekoglocationpricing = $rekoglocationpricing;
         $this->transcribelocationpricing = $transcribelocationpricing;
-        $this->region = $transcodelocationpricing->get_region();
         $this->presets = $presets;
         $this->rekogsettings = $rekogsettings;
         $this->transcribe = $transcribe;
@@ -157,7 +151,7 @@ class pricing_calculator {
 
             foreach ($this->presets as $preset) {
                 // All video media can be transcoded by standard definition presets providing it has at least one video stream.
-                if ($preset->is_output_standard_definition() && $preset->is_input_video($height) && !empty($videostreams)) {
+                if ($preset->is_output_standard_definition() && !empty($videostreams)) {
                     $cost += $this->transcodelocationpricing->calculate_standard_definition_cost($durationminutes);
                 } else if ($preset->is_output_high_definition() && !empty($videostreams)) {
                     // Only high definition video can be transcoded by high definition presets.

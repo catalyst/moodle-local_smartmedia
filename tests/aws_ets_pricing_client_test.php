@@ -30,7 +30,6 @@ use local_smartmedia\pricing\location_transcode_pricing;
  * @group      local_smartmedia
  */
 final class aws_ets_pricing_client_test extends advanced_testcase {
-
     /**
      * @var array of json objects representing the expected API response from \Aws\Pricing\PricingClient::getProducts
      * for 'ServiceCode' = AmazonETS.
@@ -102,7 +101,7 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
     public function test_get_products(): void {
 
         // Mock the pricing client so it returns fixture data.
-        list($mock, $mockresult) = $this->create_mock_pricing_client($this->fixture['getProducts']);
+        [$mock, $mockresult] = $this->create_mock_pricing_client($this->fixture['getProducts']);
 
         // Instantiate the class, injecting our mock.
         $pricingclient = new aws_ets_pricing_client($mock);
@@ -116,7 +115,6 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
         }
 
         $this->assertEquals($expected, $actual);
-
     }
 
     /**
@@ -126,7 +124,7 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
     public function test_describe_service(): void {
 
         // Mock the pricing client so it returns fixture data.
-        list($mock, $mockresult) = $this->create_mock_pricing_client($this->fixture['describeServices']);
+        [$mock, $mockresult] = $this->create_mock_pricing_client($this->fixture['describeServices']);
 
         // Instantiate the class, injecting our mock.
         $pricingservice = new aws_ets_pricing_client($mock);
@@ -173,7 +171,7 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
         $apiresponse = json_decode($fixture, true);
 
         // Mock the pricing client so it returns fixture data.
-        list($mock, $mockresult) = $this->create_mock_pricing_client($apiresponse);
+        [$mock, $mockresult] = $this->create_mock_pricing_client($apiresponse);
 
         // Instantiate the class, injecting our stub.
         $pricingservice = new aws_ets_pricing_client($mock);
@@ -217,7 +215,7 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
     public function test_get_location_pricing($region): void {
 
         // Mock the pricing client so it returns fixture data.
-        list($mock, $mockresult) = $this->create_mock_pricing_client($this->fixture['getProducts']);
+        [$mock, $mockresult] = $this->create_mock_pricing_client($this->fixture['getProducts']);
 
         // Instantiate the class, injecting our stub.
         $pricingservice = new aws_ets_pricing_client($mock);
@@ -231,5 +229,4 @@ final class aws_ets_pricing_client_test extends advanced_testcase {
         $this->assertNotNull($actual->get_hd_pricing());
         $this->assertNotNull($actual->get_audio_pricing());
     }
-
 }

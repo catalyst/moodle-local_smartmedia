@@ -30,7 +30,6 @@ use local_smartmedia\pricing\location_transcode_pricing;
  * @group      local_smartmedia
  */
 final class location_transcode_pricing_test extends smartmedia_testcase {
-
     public function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();

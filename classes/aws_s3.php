@@ -18,7 +18,6 @@ namespace local_smartmedia;
 
 use stdClass;
 use Aws\S3\Exception\S3Exception;
-use core\aws\client_factory;
 
 /**
  * Class for converting files between different formats using unoconv.
@@ -28,7 +27,6 @@ use core\aws\client_factory;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class aws_s3 {
-
     /**
      *
      * @var object Plugin confiuration.
@@ -47,14 +45,13 @@ class aws_s3 {
      *
      * @param stdClass|null $config Optional configuarion object to use.
      */
-    public function __construct($config=null) {
+    public function __construct($config = null) {
 
         if ($config) {
             $this->config = $config;
         } else {
             $this->config = get_config('local_smartmedia');
         }
-
     }
 
     /**
@@ -63,7 +60,7 @@ class aws_s3 {
      * @param \GuzzleHttp\Handler $handler Optional handler.
      * @return \Aws\S3\S3Client
      */
-    public function create_client($handler=null) {
+    public function create_client($handler = null) {
         $connectionoptions = [
             'version' => 'latest',
             'region' => $this->config->api_region,
@@ -127,11 +124,13 @@ class aws_s3 {
     private function is_config_set(): bool {
         $isset = true;
 
-        if (empty($this->config->api_key) ||
+        if (
+            empty($this->config->api_key) ||
             empty($this->config->api_secret) ||
             empty($this->config->s3_input_bucket) ||
             empty($this->config->s3_output_bucket) ||
-            empty($this->config->api_region)) {
+            empty($this->config->api_region)
+        ) {
                 $isset = false;
         }
             return $isset;
@@ -260,7 +259,4 @@ class aws_s3 {
 
         return true;
     }
-
-
-
 }

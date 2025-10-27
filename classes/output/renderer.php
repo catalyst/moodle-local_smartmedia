@@ -28,7 +28,6 @@ use core\output\html_writer;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class renderer extends plugin_renderer_base {
-
     /**
      * Render the html for the report table.
      *
@@ -75,8 +74,12 @@ class renderer extends plugin_renderer_base {
      * @throws \dml_exception
      * @throws \core\exception\moodle_exception
      */
-    public function render_report(string $baseurl, int $page = 0,
-                                  int $perpage = 50, string $download = ''): string {
+    public function render_report(
+        string $baseurl,
+        int $page = 0,
+        int $perpage = 50,
+        string $download = ''
+    ): string {
         $region = get_config('local_smartmedia', 'api_region');
 
         // Get the table output first to prevent output being buffered before download.
@@ -85,6 +88,7 @@ class renderer extends plugin_renderer_base {
         $html = '';
         $html .= $this->header();
         $html .= $this->heading(get_string('dashboard:heading', 'local_smartmedia', $region));
+        $html .= $this->render(new  \core\output\notification(get_string('reports:legacywarning', 'local_smartmedia'), \core\output\notification::NOTIFY_INFO, false));
         $html .= $this->render_report_summary();
         $html .= $this->heading(get_string('report:heading', 'local_smartmedia'), 2, 'local-smartmedia local-smartmedia-heading');
         $html .= html_writer::div(get_string('report:heading_desc', 'local_smartmedia'));

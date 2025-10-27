@@ -20,10 +20,10 @@ use stdClass;
 use stored_file;
 use dml_exception;
 use core\url;
-use context;
 use core\exception\moodle_exception;
 use Exception;
 use Aws\S3\Exception\S3Exception;
+use core\context;
 
 /**
  * Class for smart media conversion operations.
@@ -33,7 +33,6 @@ use Aws\S3\Exception\S3Exception;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class conversion {
-
     /**
      * @var array Audio mimetypes
      */
@@ -49,26 +48,6 @@ class conversion {
         'audio/x-ms-wma',
         'audio/x-pn-realaudio-plugin',
         'audio/x-matroska',
-    ];
-
-    /**
-     * @var array Video mimetypes
-     */
-    private const VIDEO_MIMETYPES = [
-        'video/mp4',
-        'video/mpeg',
-        'video/ogg',
-        'video/quicktime',
-        'video/webm',
-        'video/x-dv',
-        'video/x-flv',
-        'video/x-ms-asf',
-        'video/x-ms-wm',
-        'video/x-ms-wmv',
-        'video/x-matroska',
-        'video/x-matroska-3d',
-        'video/MP2T'.
-        'video/x-sgi-movie',
     ];
 
     /**
@@ -122,8 +101,8 @@ class conversion {
      */
     private const SQS_MESSAGE_STATES = [
         'SUCCEEDED', // Rekognition success status.
-        'COMPLETED', // Elastic Transcoder success status.
-        'ERROR', // Elastic Transcoder error status.
+        'COMPLETE', // Media convert success status.
+        'ERROR', // Media convert error status.
     ];
 
     /**
@@ -132,7 +111,7 @@ class conversion {
      * @var array
      */
     public const SERVICE_MAPPING = [
-        'elastic_transcoder' => ['transcoder_status'],
+        'mediaconvert' => ['transcoder_status'],
         'StartLabelDetection' => ['rekog_label_status', 'Labels'],
         'StartContentModeration' => ['rekog_moderation_status', 'ModerationLabels'],
         'StartFaceDetection' => ['rekog_face_status', 'Faces'],
@@ -142,16 +121,6 @@ class conversion {
         'PhrasesComplete' => ['detect_phrases_status', 'phrases'],
         'EntitiesComplete' => ['detect_entities_status', 'entities'],
     ];
-
-    /**
-     *
-     */
-    private const FILTER_PLAYLIST = 1;
-
-    /**
-     *
-     */
-    private const FILTER_DOWNLOAD = 2;
 
     /**
      *  The file is not found on disk to transcode.
@@ -164,42 +133,21 @@ class conversion {
     private $config;
 
     /**
-     * @var aws_elastic_transcoder the transcoder for accessing communicating with the
-     * AWS Elastic Transcoding Service.
+     * @var aws_media_convert
      */
-    private $transcoder;
+    private $mediaconvert;
 
     /**
      * Class constructor.
      *
-     * @param aws_elastic_transcoder $transcoder
+     * @param aws_media_convert $mediaconvert
      *
      * @throws dml_exception
      */
-    public function __construct(aws_elastic_transcoder $transcoder) {
+    public function __construct(aws_media_convert $mediaconvert) {
         $this->config = get_config('local_smartmedia');
-        $this->transcoder = $transcoder;
+        $this->mediaconvert = $mediaconvert;
     }
-
-    /**
-     * Helper function to determin if our haystack string
-     * starts with our needle string.
-     *
-     * @param string $haystack The string to search.
-     * @param string $needle The value to check with.
-     * @return bool $startswith True if haystack starts with needle.
-     */
-    private function string_starts_with(string $haystack, string $needle): bool {
-        $startswith = false;
-        $length = strlen($needle);
-
-        if (substr($haystack, 0, $length) === $needle) {
-            $startswith = true;
-        }
-
-        return $startswith;
-    }
-
 
     /**
      * Given a conversion id create records for each configured transcoding preset id,
@@ -216,7 +164,7 @@ class conversion {
     private function get_preset_records(int $convid, string $contenthash): array {
         global $DB;
         $presetrecords = [];
-        $presetids = $this->transcoder->get_preset_ids();
+        $presetids = $this->mediaconvert->get_preset_ids();
 
         // Get metadata for file from database.
         $streams = $DB->get_record('local_smartmedia_data', ['contenthash' => $contenthash], 'videostreams, audiostreams');
@@ -224,9 +172,9 @@ class conversion {
         // If file is video only remove audio streams.
         if ($streams && $streams->audiostreams == 0) {
             $audiostreams = array_merge(
-                aws_elastic_transcoder::AUDIO_PRESETS,
-                aws_elastic_transcoder::MPD_AUDIO,
-                aws_elastic_transcoder::HLS_AUDIO
+                aws_media_convert::AUDIO_PRESETS,
+                aws_media_convert::MPD_AUDIO,
+                aws_media_convert::HLS_AUDIO
             );
             $presetids = array_diff($presetids, $audiostreams);
         }
@@ -234,17 +182,17 @@ class conversion {
         // If file is audio only remove video streams.
         if ($streams && $streams->videostreams == 0) {
             $videostreams = array_merge(
-                aws_elastic_transcoder::LOW_PRESETS,
-                aws_elastic_transcoder::MEDIUM_PRESETS,
-                aws_elastic_transcoder::HIGH_PRESETS,
-                aws_elastic_transcoder::EXTRA_HIGH_PRESETS,
-                aws_elastic_transcoder::DOWNLOAD_PRESETS
-                );
+                aws_media_convert::LOW_PRESETS,
+                aws_media_convert::MEDIUM_PRESETS,
+                aws_media_convert::HIGH_PRESETS,
+                aws_media_convert::EXTRA_HIGH_PRESETS,
+                aws_media_convert::DOWNLOAD_PRESETS
+            );
             $presetids = array_diff($presetids, $videostreams);
         }
 
         // Get all configured presets available.
-        $presets = $this->transcoder->get_presets();
+        $presets = $this->mediaconvert->get_presets();
 
         foreach ($presets as $preset) {
             // Only add records for presets which weren't filtered out based on stream data.
@@ -346,10 +294,13 @@ class conversion {
 
         $contenthash = $file->get_contenthash();
         $conditions = ['contenthash' => $contenthash];
-        $result = $DB->get_record('local_smartmedia_conv', $conditions,
+        $result = $DB->get_record(
+            'local_smartmedia_conv',
+            $conditions,
             'status, transcoder_status, transcribe_status,
             rekog_label_status, rekog_moderation_status, rekog_face_status, rekog_person_status,
-            detect_sentiment_status, detect_phrases_status, detect_entities_status');
+            detect_sentiment_status, detect_phrases_status, detect_entities_status'
+        );
 
         if (!$result) {
             $result = new stdClass();
@@ -390,12 +341,12 @@ class conversion {
         $filepath = '/';
 
         // If item id is non zero then it will be the fourth element in the array.
-        if ($argumentcount > 4 ) {
+        if ($argumentcount > 4) {
             $itemid = (int)$hrefarguments[3];
         }
 
         // Handle complex file paths in href.
-        if ($argumentcount > 5 ) {
+        if ($argumentcount > 5) {
             $filepatharray = array_slice($hrefarguments, 4, -1);
             $filepath = '/' . implode('/', $filepatharray) . '/';
         }
@@ -420,43 +371,12 @@ class conversion {
     }
 
     /**
-     * Helper function to filter array of smartmedia files
-     * to playlists only.
-     *
-     * @param stored_file $mediafile The file object to check.
-     * @return bool
-     */
-    private function filter_file_playlist(stored_file $mediafile): bool {
-        if ($mediafile->get_mimetype() == 'application/dash+xml' || $mediafile->get_mimetype() == 'application/x-mpegURL') {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Helper function to filter array of smartmedia files
-     * to downloads only.
-     *
-     * @param stored_file $mediafile The file object to check.
-     * @return bool
-     */
-    private function filter_file_download(stored_file $mediafile): bool {
-        if ($mediafile->get_mimetype() == 'video/mp4' || $mediafile->get_mimetype() == 'audio/mp3') {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
-     * Get the media files for delivery to the smartmedia filter.
+     * Finds files downloaded from MediaConvert that we have stored locally.
      *
      * @param string $contenthash
-     * @param int $filter
      * @return array $mediafiles
      */
-    private function get_media_files(string $contenthash, int $filter=self::FILTER_PLAYLIST): array {
+    private function get_downloaded_converted_files(string $contenthash): array {
         global $DB;
 
         // Get all media files for this source file.
@@ -466,6 +386,9 @@ class conversion {
         // a filepath filter which should drastically reduce the number of records loaded into memory.
         // When the number of media files start to exceed 100,000, this extra filter is required to
         // reduce page loading times.
+
+        // ORDER BY mimetype is added to ensure the ordering is consistent
+        // (order matters to the Videojs player - it tries to play them in order).
         $sql = "SELECT " . self::instance_sql_fields() . "
                   FROM {files} f
              LEFT JOIN {files_reference} r
@@ -474,7 +397,10 @@ class conversion {
                    AND f.component = 'local_smartmedia'
                    AND f.filearea = 'media'
                    AND f.itemid = 0
-                   AND f.filepath = ?";
+                   AND f.filepath = ?
+                   AND f.filename != '.'
+                   ORDER BY mimetype DESC
+                   ";
         $filepath = "/$contenthash/conversions/";
         $filerecords = $DB->get_records_sql($sql, [$filepath]);
         $mediafiles = [];
@@ -482,111 +408,7 @@ class conversion {
             $mediafiles[$filerecord->pathnamehash] = $fs->get_file_instance($filerecord);
         }
 
-        if ($filter == self::FILTER_PLAYLIST) {
-            $mediafiles = array_filter($mediafiles, [$this, 'filter_file_playlist']);
-        } else if ($filter == self::FILTER_DOWNLOAD) {
-            $mediafiles = array_filter($mediafiles, [$this, 'filter_file_download']);
-        }
-
         return $mediafiles;
-
-    }
-
-    /**
-     * Filter out non master playlists from
-     * media files.
-     *
-     * @param array $mediafiles
-     * @return array $mediafiles
-     */
-    private function filter_playlists(array $mediafiles): array {
-        // Next filter the file list to only include: playlists, the mp4 and mp3 download files.
-        foreach ($mediafiles as $key => $mediafile) {
-            $match = preg_match('/\_hls_playlist\.m3u8|_mpegdash_playlist\.mpd|\.mp4|\.mp3/', $mediafile->get_filename());
-            if (!$match) {
-                unset($mediafiles[$key]);
-            }
-        }
-
-        $sort = array_values($mediafiles);
-        usort($sort, function($a, $b){
-            // Move non-mpds to the back using boolean int trickery.
-            $a = (int) preg_match('/\_mpegdash_playlist\.mpd/', $a->get_filename());
-            $b = (int) preg_match('/\_mpegdash_playlist\.mpd/', $b->get_filename());
-
-            return ($a + $b);
-        });
-
-        return $sort;
-    }
-
-    /**
-     * Replace the item ids in URLs in playlist files.
-     *
-     * @param string $filecontent File content to replace URLs in.
-     * @param int $id Item id to be used in replacement.
-     * @return string $replacedcontent Updated file content.
-     */
-    private function replace_urls(string $filecontent, int $id): string {
-        $matches = [];
-        preg_match_all('/pluginfile\.php\/1\/local_smartmedia\/media\/(0)\/(.*)\/conversions\/(.*)\./',
-            $filecontent, $matches, PREG_SET_ORDER);
-
-        foreach ($matches as $match) {
-            $filename = $match[2] . '_' . $match[3];
-            $filecontent = preg_replace(
-                '/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/0\/.{40}\/conversions\/)('.$match[3].')(?=\.)/',
-                $filename, $filecontent);
-        }
-
-        $replacedcontent = preg_replace('/(?<=pluginfile\.php\/1\/local_smartmedia\/media\/)(0)/', $id, $filecontent);
-
-        return $replacedcontent;
-
-    }
-
-    /**
-     * We need to make specific playlist files for each smartmedia object
-     * that relate explicitily to each source file. This means that there will
-     * end up being many playlist files per smartmedia object. Therefore we
-     * only generate these playlists when we first need them.
-     *
-     * We store the playlist after it is generated.
-     *
-     * @param array $mappedfiles
-     * @param int $fileid
-     * @return array
-     */
-    private function generate_playlists(array $mappedfiles, int $fileid): array {
-        $fs = get_file_storage();
-
-        // For each playlist try to get playlist.
-        // If playlist doesn't exist create it.
-        foreach ($mappedfiles as $key => $mappedfile) {
-            $match = preg_match('/\.m3u8|\.mpd/', $mappedfile->get_filename());
-            if ($match) {
-                $playlist = $fs->get_file(1, 'local_smartmedia', 'media', $fileid,
-                    $mappedfile->get_filepath(), $mappedfile->get_filename());
-                if (!$playlist) {
-                    $filerecord = new stdClass();
-                    $filerecord->contextid = 1;
-                    $filerecord->component = 'local_smartmedia';
-                    $filerecord->filearea = 'media';
-                    $filerecord->itemid = $fileid;
-                    $filerecord->filepath = $mappedfile->get_filepath();
-                    $filerecord->filename = $mappedfile->get_filename();
-
-                    $filecontent = $mappedfile->get_content();
-                    $updatedcontent = $this->replace_urls($filecontent, $fileid);
-                    $playlist = $fs->create_file_from_string($filerecord, $updatedcontent);
-
-                }
-
-                $mappedfiles[$key] = $playlist;
-            }
-        }
-
-        return $mappedfiles;
     }
 
     /**
@@ -627,18 +449,14 @@ class conversion {
         }
 
         // If processing complete get all urls and data for source href.
-        if ($conversionstatuses->status == self::CONVERSION_IN_PROGRESS ||
-                $conversionstatuses->status == self::CONVERSION_FINISHED) {
+        if ($conversionstatuses->status == self::CONVERSION_FINISHED || $conversionstatuses->status == self::CONVERSION_IN_PROGRESS) {
+            $convertedfiles = $this->get_downloaded_converted_files($file->get_contenthash());
+            $playerfiles = array_filter($convertedfiles, fn($f) => $this->is_player_file($f));
+            $downloadfiles = array_filter($convertedfiles, fn($f) => $this->is_standalone_file($f));
 
             // Get media files.
-            $mediafiles = $this->get_media_files($file->get_contenthash());
-            $updatedplaylists = $this->generate_playlists($mediafiles, $file->get_id());
-            $filteredfiles = $this->filter_playlists($updatedplaylists);
-            $smartmedia['media'] = $rawfiles ? $filteredfiles : $this->map_files_to_urls($filteredfiles, $file->get_id());
-
-            // Get download files.
-            $datafiles = $this->get_media_files($file->get_contenthash(), self::FILTER_DOWNLOAD);
-            $smartmedia['download'] = $rawfiles ? $datafiles : $this->map_files_to_urls($datafiles, $file->get_id());
+            $smartmedia['media'] = $rawfiles ? $playerfiles : $this->map_files_to_urls($playerfiles, $file->get_id());
+            $smartmedia['download'] = $rawfiles ? $downloadfiles : $this->map_files_to_urls($downloadfiles, $file->get_id());
 
             // Get data files.
             $fs = get_file_storage();
@@ -652,7 +470,61 @@ class conversion {
         // and when processing is finished we will explictly clear the cache.
 
         return $smartmedia;
+    }
 
+    /**
+     * If file is meant to be played in the player.
+     * I.e. top level playlists
+     *
+     * @param stored_file $file
+     * @return bool
+     */
+    private function is_player_file(stored_file $file): bool {
+        // Is top level playlist?
+        // This works as sub level playlists have the preset name before the file extension (e.g. _mpegdash_playlistSmartmedia-HLS-600k.mpd)
+        // By checking just _mpegdash_playlist.mpd we exclude these.
+        $toplevelplaylistendings = [
+            '_mpegdash_playlist.mpd',
+            '_hls_playlist.m3u8',
+        ];
+
+        foreach ($toplevelplaylistendings as $toplevelplaylistending) {
+            if (str_ends_with($file->get_filename(), $toplevelplaylistending)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Is this a standalone Mp4 or mp3 (i.e. not a playlist, or file referenced by a playlist)
+     *
+     * @param stored_file $file
+     * @return bool
+     */
+    private function is_standalone_file(stored_file $file): bool {
+        // Is this a standalone mp4 or mp3?
+        // Note, playlists also have Mp4's but these are NOT standalone.
+        // So we look for files with the standalone preset name in their name.
+        // TODO for this to be backwards compatibler, we need to update the old preset its to the new names.
+        $standalonepresetnames = [
+            aws_media_convert::PRESET_MP3_AUDIO . '.mp3',
+            aws_media_convert::PRESET_WEB . '.mp4',
+
+            // Legacy backwards compatibility.
+            // These are the same as above, but the old Elastic Transcode versions.
+            '1351620000001-300020.mp3', // MP3 audio
+            '1351620000001-100070.mp4', // MP4 "Web" standalone
+        ];
+
+        foreach ($standalonepresetnames as $standalonepresetname) {
+            if (str_ends_with($file->get_filename(), (string) $standalonepresetname)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**
@@ -709,15 +581,21 @@ class conversion {
         $urls = [];
         foreach ($files as $file) {
             // Build the custom serve URL.
-            $url = url::make_pluginfile_url($file->get_contextid(), $file->get_component(), $file->get_filearea(),
-                    $fileid, $file->get_filepath(), $file->get_filename());
+            $url = url::make_pluginfile_url(
+                $file->get_contextid(),
+                $file->get_component(),
+                $file->get_filearea(),
+                $fileid,
+                $file->get_filepath(),
+                $file->get_filename()
+            );
             $urls[] = $url;
         }
         return $urls;
     }
 
     /**
-     * Get the configured covnersion for this conversion record in a format that will
+     * Get the configured conversion for this conversion record in a format that will
      * be sent to AWS for processing.
      *
      * @param stdClass $conversionrecord The conversion record to get the settings for.
@@ -777,7 +655,7 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return int $status The status code of the upload.
      */
-    private function send_file_for_processing(stored_file $file, array $settings, $handler=null): int {
+    private function send_file_for_processing(stored_file $file, array $settings, $handler = null): int {
         $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
 
@@ -798,7 +676,6 @@ class conversion {
         // TODO: add event for file sending include status etc.
 
         return $status;
-
     }
 
     /**
@@ -869,46 +746,64 @@ class conversion {
         // Only get messages for conversions that have not yet finished.
         $services = [];
 
-        if ($conversionrecord->transcoder_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->transcoder_status == self::CONVERSION_IN_PROGRESS) {
-                $services[] = 'elastic_transcoder';
+        if (
+            $conversionrecord->transcoder_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->transcoder_status == self::CONVERSION_IN_PROGRESS
+        ) {
+                $services[] = 'mediaconvert';
         }
-        if ($conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->rekog_label_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_label_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'StartLabelDetection';
         }
-        if ($conversionrecord->rekog_moderation_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->rekog_moderation_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->rekog_moderation_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_moderation_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'StartContentModeration';
         }
-        if ($conversionrecord->rekog_face_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->rekog_face_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->rekog_face_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_face_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'StartFaceDetection';
         }
-        if ($conversionrecord->rekog_person_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->rekog_person_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->rekog_person_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->rekog_person_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'StartPersonTracking';
         }
-        if ($conversionrecord->transcribe_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->transcribe_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->transcribe_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->transcribe_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'TranscribeComplete';
         }
-        if ($conversionrecord->detect_sentiment_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->detect_sentiment_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->detect_sentiment_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->detect_sentiment_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'SentimentComplete';
         }
-        if ($conversionrecord->detect_phrases_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->detect_phrases_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->detect_phrases_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->detect_phrases_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'PhrasesComplete';
         }
-        if ($conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED
-            || $conversionrecord->detect_entities_status == self::CONVERSION_IN_PROGRESS) {
+        if (
+            $conversionrecord->detect_entities_status == self::CONVERSION_ACCEPTED
+            || $conversionrecord->detect_entities_status == self::CONVERSION_IN_PROGRESS
+        ) {
             $services[] = 'EntitiesComplete';
         }
 
         // Get all queue messages for this object.
-        list($processinsql, $processinparams) = $DB->get_in_or_equal($services);
-        list($statusinsql, $statusinparams) = $DB->get_in_or_equal(self::SQS_MESSAGE_STATES);
+        [$processinsql, $processinparams] = $DB->get_in_or_equal($services);
+        [$statusinsql, $statusinparams] = $DB->get_in_or_equal(self::SQS_MESSAGE_STATES);
         $params = array_merge($processinparams, $statusinparams);
         $params[] = $conversionrecord->contenthash;
 
@@ -963,7 +858,7 @@ class conversion {
      *
      * @return array $transcodedfiles Array of \stored_file objects.
      */
-    public function get_transcode_files(stdClass $conversionrecord, $handler=null): array {
+    public function get_transcode_files(stdClass $conversionrecord, $handler = null): array {
         $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
         $transcodedfiles = [];
@@ -972,15 +867,15 @@ class conversion {
         // So first we get a list of the files.
         $listparams = [
                 'Bucket' => $this->config->s3_output_bucket,
-                'MaxKeys' => 1000,  // The maximum allowed before we need to page, we should NEVER have this many.
-                'Prefix' => $conversionrecord->contenthash . '/conversions/',  // Location in the S3 bucket where the files live.
+                'MaxKeys' => 1000, // The maximum allowed before we need to page, we should NEVER have this many.
+                'Prefix' => $conversionrecord->contenthash . '/conversions/', // Location in the S3 bucket where the files live.
         ];
-        $availableobjects = $s3client->listObjects($listparams);
+        $availableobjects = $s3client->listObjects($listparams)->get('Contents') ?? [];
 
         // Then we iterate over that list and get all the files available.
         $fs = get_file_storage();
         $requestdir = make_request_directory();
-        foreach ($availableobjects->get('Contents') as $availableobject) {
+        foreach ($availableobjects as $availableobject) {
             $filename = basename($availableobject['Key']);
             $filerecord = [
                 'contextid' => 1, // Put files in the site level context as they aren't associated with a specific context.
@@ -996,17 +891,15 @@ class conversion {
             ];
 
             try {
-                // The playlist files (including iframe playlists) created in s3 transcoding contain
-                // relative file paths to Variant Streams for adaptive bitsteaming media, these need to be amended
-                // to have Moodle plugin filepaths.
-                if ($this->is_file_playlist($filename)) {
+                // Playlist files (MPD and HLS) link to other playlists and video streams inside of them
+                // So we need to update these references to be pluginfile links instead.
+                if (str_ends_with($filename, '.mpd') || str_ends_with($filename, '.m3u8')) {
                     // This is small enough that we can just pull direct to memory.
                     $result = $s3client->getObject($downloadparams);
                     $filecontent = $result->get('Body');
                     $filecontent = $this->replace_playlist_urls_with_pluginfile_urls($filecontent, $conversionrecord->contenthash);
 
                     $transcodedfile = $fs->create_file_from_string($filerecord, $filecontent);
-
                 } else {
                     // Video file handling. Might be too big for memory, write to disk first.
                     $filetarget = $requestdir . '/' . $filename;
@@ -1038,30 +931,14 @@ class conversion {
      * @return string $updatedcontent The updated file content.
      */
     private function replace_playlist_urls_with_pluginfile_urls($filecontent, string $contenthash): string {
+        // New path.
+        $pluginfilepath = "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/$contenthash";
 
-        $pluginfilepath = "/pluginfile.php/1/local_smartmedia/media/0/$contenthash/conversions/";
-        // Replace all matching content hashes with the plugin file path for smartmedia with this content.
-        $updatedcontent = preg_replace('/' . $contenthash . '_/', $pluginfilepath, $filecontent);
+        // Replace contenthash (prefix used in all playlist references)
+        // to be a pluginfile url instead.
+        $updatedcontent = preg_replace('/' . $contenthash . '/', $pluginfilepath, $filecontent);
 
         return $updatedcontent;
-    }
-
-
-    /**
-     * Check if a file is a playlist file by filename.
-     *
-     * @param string $filename the file to check (including file extension)
-     *
-     * @return bool true if the file is playlist, false otherwise.
-     */
-    private function is_file_playlist(string $filename): bool {
-        $result = false;
-
-        if (preg_match('/.m3u8|.mpd/', $filename)) {
-            $result = true;
-        }
-
-        return $result;
     }
 
     /**
@@ -1071,7 +948,7 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return array $keys The keys (paths) of the deleted objects.
      */
-    private function cleanup_aws_files(string $key, $handler=null): array {
+    private function cleanup_aws_files(string $key, $handler = null): array {
         $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
         $keys = [];
@@ -1098,7 +975,7 @@ class conversion {
 
         if (!empty($objectlist['Contents'])) {
             foreach ($objectlist['Contents'] as $object) {
-                if ($this->string_starts_with($object['Key'], $key)) { // Check if list key starts with the given has.
+                if (str_starts_with($object['Key'], $key)) { // Check if list key starts with the given has.
                     $keys[] = ['Key' => $object['Key']];
                 }
             }
@@ -1128,7 +1005,7 @@ class conversion {
      * @param string $process The process to get the file for.
      * @param \Aws\MockHandler|null $handler Optional handler.
      */
-    public function get_data_file(stdClass $conversionrecord, string $process, $handler=null): bool {
+    public function get_data_file(stdClass $conversionrecord, string $process, $handler = null): bool {
         $awss3 = new aws_s3();
         $s3client = $awss3->create_client($handler);
 
@@ -1186,7 +1063,7 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return stdClass $conversionrecord The updated conversion record.
      */
-    private function process_conversion(stdClass $conversionrecord, array $queuemessages, $handler=null): stdClass {
+    private function process_conversion(stdClass $conversionrecord, array $queuemessages, $handler = null): stdClass {
         global $DB;
 
         // If there are no queue messages exit early.
@@ -1195,8 +1072,8 @@ class conversion {
         }
 
         foreach ($queuemessages as $message) {
-            if ($message->status == 'ERROR' && $message->process == 'elastic_transcoder') {
-                // If Elastic Transcoder conversion has failed then all other conversions have also failed.
+            if ($message->status == 'ERROR' && $message->process == 'mediaconvert') {
+                // If MediaConvert conversion has failed then all other conversions have also failed.
                 // It is also highly likely this will be the only message recevied.
                 $conversionrecord->status = self::CONVERSION_ERROR;
                 $conversionrecord->transcoder_status = self::CONVERSION_ERROR;
@@ -1208,15 +1085,13 @@ class conversion {
                 $conversionrecord->timecompleted = time();
 
                 break;
-
-            } else if ($message->status == 'COMPLETED' || $message->status == 'SUCCEEDED') {
+            } else if ($message->status == 'COMPLETE' || $message->status == 'SUCCEEDED') {
                 // For each successful status get the file/s for the conversion.
-                if ($message->process == 'elastic_transcoder') {
-                    // Get Elastic Transcoder files.
+                if ($message->process == 'mediaconvert') {
+                    // Get converted files.
                     $this->get_transcode_files($conversionrecord, $handler);
 
                     $conversionrecord->transcoder_status = self::CONVERSION_FINISHED;
-
                 } else {
                     // Get other process data files.
                     $this->get_data_file($conversionrecord, $message->process, $handler);
@@ -1224,7 +1099,6 @@ class conversion {
                     $statusfield = self::SERVICE_MAPPING[$message->process][0];
                     $conversionrecord->{$statusfield} = self::CONVERSION_FINISHED;
                 }
-
             } else if ($message->status == 'ERROR') {
                 // For each failed status mark it as failed in the record.
                 $statusfield = self::SERVICE_MAPPING[$message->process][0];
@@ -1247,7 +1121,7 @@ class conversion {
      * @param \Aws\MockHandler|null $handler Optional handler.
      * @return stdClass $updatedrecord The updated completion record.
      */
-    public function update_completion_status(stdClass $record, $handler=null): stdClass {
+    public function update_completion_status(stdClass $record, $handler = null): stdClass {
         global $DB;
 
         $completionfields = [
@@ -1305,7 +1179,6 @@ class conversion {
         $conversionrecords = $this->get_conversion_records(self::CONVERSION_IN_PROGRESS); // Get pending conversion records.
 
         foreach ($conversionrecords as $conversionrecord) { // Itterate through pending records.
-
             // Get recevied messages for this conversion record that are not related to already completed processes.
             $queuemessages = $this->get_queue_messages($conversionrecord);
 
@@ -1314,7 +1187,6 @@ class conversion {
 
             // If all conversions have reached a final state (complete or failed) update overall conversion status.
             $results[] = $this->update_completion_status($updatedrecord);
-
         }
 
         return $results;
@@ -1350,7 +1222,6 @@ class conversion {
         $fileids = $DB->get_records_sql($sql, $params, 0, $limit);
 
         return $fileids;
-
     }
 
     /**
@@ -1412,7 +1283,6 @@ class conversion {
         }
 
         return self::CONVERSION_NOT_FOUND;
-
     }
 
     /**
@@ -1438,7 +1308,7 @@ class conversion {
 
         // id is specifically named to prevent overlapping between the two tables.
         $fields = [];
-        $fields[] = $filesprefix.'.id AS id';
+        $fields[] = $filesprefix . '.id AS id';
         foreach ($filefields as $field) {
             $fields[] = "{$filesprefix}.{$field}";
         }

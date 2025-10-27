@@ -25,10 +25,11 @@ import io
 import json
 from botocore.exceptions import ClientError
 from datetime import datetime
+from collections import defaultdict
 
 s3_client = boto3.client('s3')
 sqs_client = boto3.client('sqs')
-et_client = boto3.client('elastictranscoder')
+mc_client = boto3.client('mediaconvert')
 logger = logging.getLogger()
 
 
@@ -68,73 +69,122 @@ def sqs_send_message(key, bucket, record, metadata):
     )
 
 
-def submit_transcode_jobs(s3key, pipeline_id, presets):
+def submit_transcode_jobs(queue_id, settings):
     """
-    Submits jobs to Elastic Transcoder.
+    Submits jobs to Media Convert
     """
 
-    logger.info('Triggering transcode job...')
+    logger.info('Creating media convert job...')
 
-    outputs = []
-    playlists = {} # Start as a dictionary, so we can add outputs by playlist key.
+    role = get_lambda_execution_role_arn()
+    logger.info(role)
 
-    # Create a playlist for MPEG-DASH adaptive streaming if required.
-    if 'fmp4' in presets.values() :
-        fmp4playlist = {}
-        fmp4playlist['Name'] = '{0}_mpegdash_playlist'.format(s3key)
-        fmp4playlist['Format'] = 'MPEG-DASH'
-        fmp4playlist['OutputKeys'] = []
-        playlists['fmp4playlist'] = fmp4playlist
-
-    # Create a playlist for HLS adaptive streaming if required.
-    if 'ts' in presets.values() :
-        tsplaylist = {}
-        tsplaylist['Name'] = '{0}_hls_playlist'.format(s3key)
-        tsplaylist['Format'] = 'HLSv4'
-        tsplaylist['OutputKeys'] = []
-        playlists['tsplaylist'] = tsplaylist
-
-    for preset_id, container in presets.items() :
-        output = {}
-        filename = '{0}_{1}'.format(s3key, preset_id)
-        # HLS outputs will add .ts file extension automatically, so don't append container type.
-        if container == 'ts' :
-            output['Key'] = filename
-        else :
-            output['Key'] = '{0}.{1}'.format(filename, container)
-        output['PresetId'] = preset_id
-        output['ThumbnailPattern'] = ''
-
-        # Add output to appropriate playlist if the preset outputs fragmented media.
-        if container == 'fmp4' or container == 'ts' :
-            output['SegmentDuration'] = '6' # Hard code segments to 3 seconds duration.
-            if container == 'fmp4' :
-                playlists['fmp4playlist']['OutputKeys'].append(output['Key'])
-            if container == 'ts' :
-                playlists['tsplaylist']['OutputKeys'].append(filename)
-
-        outputs.append(output)
-
-    response = et_client.create_job(
-        PipelineId=pipeline_id,
-         OutputKeyPrefix=s3key + '/conversions/',
-         Input={
-            'Key': s3key,
-        },
-        Outputs=outputs,
-        Playlists=list(playlists.values()) # Convert dictionary to list.
+    response = mc_client.create_job(
+        Queue=queue_id,
+        Settings=settings,
+        Role=role
     )
 
-    logger.info(response)
+def get_job_settings(input_object_key, input_bucket, output_bucket, metadata):
+    """
+    Get the job settings from the S3 Object metadata
+    """
 
-def get_presets(key, bucket, metadata):
-    """
-    Get applicable elastic transcoder presets from S3 metadata
-    """
-    raw_preset_data = metadata['presets']
-    decoded_presets = json.loads(raw_preset_data)
-    logger.info(decoded_presets)
-    return decoded_presets
+    raw_presets_data = metadata['presets']
+    decoded_presets = json.loads(raw_presets_data)
+    
+
+    # Group presets together by container
+    # So say all .mpd are in one mpd playlist (with varying qualities)
+    grouped_presets = defaultdict(list)
+    for key, value in decoded_presets.items():
+        grouped_presets[value].append(key)
+
+    output_groups = []
+    for container, presets in grouped_presets.items():
+        output_group_settings = {}
+
+        logger.info(container)
+        logger.info(presets)
+
+        outputs = [{
+            "Preset": p,
+            "NameModifier": p
+        } for p in presets]
+
+        # HLS
+        if container == "M3U8":
+            output_group_settings = {
+                "Type": "HLS_GROUP_SETTINGS",
+                "HlsGroupSettings": {
+                    "Destination": f"s3://{output_bucket}/{input_object_key}/conversions/{input_object_key}_hls_playlist",
+                    "SegmentControl": "SINGLE_FILE",
+                    # These two are required by the SDK but we don't care about them.
+                    # So just use the defaults (segmentlength=10,minsegmentlength=0)
+                    "SegmentLength": 10,
+                    "MinSegmentLength": 0,
+                }
+            }
+
+            # This cannot be added in presets, so it must be added here instead.
+            outputs = [{**o, **{ "OutputSettings": { "HlsSettings": { "IFrameOnlyManifest": "INCLUDE" }}}} for o in outputs]
+        
+        # MPEG Dash
+        elif container == "MPD":
+            output_group_settings = {
+                "Type": "DASH_ISO_GROUP_SETTINGS",
+                "DashIsoGroupSettings": {
+                    "Destination": f"s3://{output_bucket}/{input_object_key}/conversions/{input_object_key}_mpegdash_playlist",
+                    "SegmentControl": "SINGLE_FILE",
+                    # This is required by the SDK but we don't care about them.
+                    # So just use the defaults (segmentlength=10,fragmentlength=1)
+                    "SegmentLength": 10,
+                    "FragmentLength": 1
+                }
+            }
+        
+        # MP4 / MP3 (aka RAW)
+        elif container == "MP4" or container == "RAW":
+            output_group_settings = {
+                "Type": "FILE_GROUP_SETTINGS",
+                "FileGroupSettings": {
+                    "Destination": f"s3://{output_bucket}/{input_object_key}/conversions/"
+                }
+            }
+        
+        else:
+            logger.info(f"Unhandled container {container} - skipping")
+            continue
+
+        output_groups.append({
+            "OutputGroupSettings": output_group_settings,
+            "Outputs": outputs
+        })
+
+    settings = {
+        "Inputs": [
+            {
+                "AudioSelectors": {
+                    "Audio Selector 1": {
+                        "DefaultSelection": "DEFAULT",
+                    }
+                },
+                "FileInput": f"s3://{input_bucket}/{input_object_key}"
+            }
+        ],
+        "OutputGroups": output_groups
+    }
+
+    return settings
+
+def get_lambda_execution_role_arn():
+    return os.environ.get('MediaConvertRoleArn')
+
+def get_output_bucket_name():
+    return os.environ.get('OutputBucketArn').split(':')[-1]
+
+def get_media_convert_queue_name():
+    return os.environ.get('MediaConvertQueueArn').split('/')[1]
 
 def lambda_handler(event, context):
     """
@@ -146,38 +196,36 @@ def lambda_handler(event, context):
     """
 
     #  Set logging
-    logging_level = os.environ.get('LoggingLevel', logging.ERROR)
+    logging_level = os.environ.get('LoggingLevel', logging.INFO)
     logger.setLevel(int(logging_level))
 
-    logger.info(event)
-
-    #  Get Pipeline ID from environment variable
-    pipeline_id = os.environ.get('PipelineId')
-    logger.info('Executing Pipeline: {}'.format(pipeline_id))
+    queue_id = get_media_convert_queue_name()
+    output_bucket = get_output_bucket_name()
 
     #  Now get and process the file from the input bucket.
     for record in event['Records']:
-        bucket = record['s3']['bucket']['name']
+        input_bucket = record['s3']['bucket']['name']
         key = record['s3']['object']['key']
 
         #  Filter out permissions check file.
         #  This is initiated by Moodle to check bucket access is correct
         if key == 'permissions_check_file':
             continue
+        
+        logger.info('File uploaded: {}'.format(key))
 
         # Get input object metadata as we will need for SQS message sending.
         input_object_headdata_object = s3_client.head_object(
-            Bucket=bucket,
+            Bucket=input_bucket,
             Key=key
             )
 
         metadata = input_object_headdata_object['Metadata']
 
-        logger.info('File uploaded: {}'.format(key))
-
         # Send message to SQS queue.
-        sqs_send_message(key, bucket, record, metadata)
+        logger.info('Sending metadata to SQS')
+        sqs_send_message(key, input_bucket, record, metadata)
 
-        presets = get_presets(key, bucket, metadata)
-
-        submit_transcode_jobs(key, pipeline_id, presets)
+        logger.info('Submitting transcode job to queue {}'.format(queue_id))
+        settings = get_job_settings(key, input_bucket, output_bucket, metadata)
+        submit_transcode_jobs(queue_id, settings)

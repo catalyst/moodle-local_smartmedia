@@ -27,6 +27,10 @@ use stored_file;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class ffprobe {
+    /**
+     * @var string path to ffprobe
+     */
+    private string $ffprobepath;
 
     /**
      * Class constructor
@@ -44,7 +48,7 @@ class ffprobe {
      * Given the results from an FFProbe inspection extract
      * relevant media data.
      *
-     * @param array $resultobject Array of raw JSON from FFProbe.
+     * @param object $resultobject Array of raw JSON from FFProbe.
      * @return array $metadata The metadata array with extracted media file data.
      */
     private function decode_ffprobe_json($resultobject): array {
@@ -99,7 +103,6 @@ class ffprobe {
                     'bitrate' => !empty($stream->bit_rate) ? $stream->bit_rate : 0,
                 ];
             }
-
         }
 
         // Populate general data.
@@ -114,7 +117,6 @@ class ffprobe {
         $metadata['data']['totalaudiostreams'] = $totalaudiostreams;
 
         return $metadata;
-
     }
 
     /**
@@ -189,5 +191,4 @@ class ffprobe {
 
         return $metadata;
     }
-
 }

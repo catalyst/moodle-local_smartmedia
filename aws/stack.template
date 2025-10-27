@@ -44,10 +44,6 @@ Parameters:
     Type: String
     Default: lambda_transcribe_complete.zip
     Description: The S3 Key (filename) for the Lambda Transcribe complete function archive.
-  LambdaTranscodeResourceFunctionArn:
-    Type: String
-    Default: arn:aws:lambda:ap-southeast-2:693620471840:function:resourcestack_lambda_transcoder_resource
-    Description: Lambda function ARN that provides Elastic Transcoder custom resource.
 
 # These are the resources and AWS services that the stack creates.
 Resources:
@@ -55,21 +51,78 @@ Resources:
 # These are the IAM roles and policies used by resources and services in the stack.
 # Roles and polices grant the services and services permissions to carry out their
 # operations.
-  LambdaTranscodeTriggerRole:
-    Description: The role that the 'LambdaTranscodeTriggerFunction' assumes when it runs
+  MediaConvertRole:
+    Description: The role that the Media Convert assumes when it runs
     Type: AWS::IAM::Role
     Properties:
-      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'elastic-transcode-trigger-role'] ]
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'media-convert-role'] ]
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
         - Sid: ''
           Effect: Allow
           Principal:
-            Service: lambda.amazonaws.com
+            Service:
+              - mediaconvert.amazonaws.com
+          Action: sts:AssumeRole
+  MediaConvertPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - s3:GetObject
+          - s3:PutObject
+          Resource:
+          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
+          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'media-convert-policy'] ]
+      Roles:
+        - !Ref MediaConvertRole
+  EventBridgeNotifyQueueRole:
+    Description: The role that event bridge assumes to foward MediaConvert events to SQS queue
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'eventbridge-sqs-notify-role'] ]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service:
+              - events.amazonaws.com
+          Action: sts:AssumeRole
+  EventBridgeNotifyQueuePolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Action:
+          - sqs:SendMessage
+          Resource: !GetAtt SqsQueue.Arn
+      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'eventbridge-sqs-notify-policy'] ]
+      Roles:
+        - !Ref EventBridgeNotifyQueueRole
+  LambdaTranscodeTriggerRole:
+    Description: The role that the 'LambdaTranscodeTriggerFunction' assumes when it runs
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-role'] ]
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Sid: ''
+          Effect: Allow
+          Principal:
+            Service:
+              - lambda.amazonaws.com
           Action: sts:AssumeRole
   LambdaTranscodeTriggerPolicy:
-    # This is the policy that is applied to the LambdaTranscodeTriggerRole
     Type: AWS::IAM::Policy
     Properties:
       PolicyDocument:
@@ -89,15 +142,17 @@ Resources:
           - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
         - Effect: Allow
           Action:
-          - elastictranscoder:CreateJob
-          - elastictranscoder:ReadJob
-          - elastictranscoder:ReadPipeline
-          - elastictranscoder:ReadPreset
-          Resource: '*'
-        - Effect: Allow
-          Action:
           - sqs:SendMessage
           Resource: !GetAtt SqsQueue.Arn
+        - Effect: Allow
+          Action:
+          - mediaconvert:CreateJob
+          Resource:
+            - !GetAtt MediaConvertQueue.Arn
+            - !Sub "arn:*:mediaconvert:*:${AWS::AccountId}:presets/*"
+        - Effect: Allow
+          Action: iam:PassRole
+          Resource: !GetAtt MediaConvertRole.Arn
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-transcode-trigger-policy'] ]
       Roles:
         - !Ref LambdaTranscodeTriggerRole
@@ -203,61 +258,6 @@ Resources:
       PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'lambda-ai-policy'] ]
       Roles:
         - !Ref LambdaAiRole
-  ElasticTranscoderPolicy:
-    Type: AWS::IAM::Policy
-    Properties:
-      PolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: '1'
-          Effect: Allow
-          Action:
-          - s3:ListBucket
-          Resource:
-          - !GetAtt InputS3Bucket.Arn
-          - !GetAtt OutputS3Bucket.Arn
-        - Sid: '2'
-          Effect: Allow
-          Action:
-          - s3:Put*
-          - s3:Get*
-          - s3:*MultipartUpload*
-          Resource:
-          - !Join [ '', [!GetAtt InputS3Bucket.Arn, '/*'] ]
-          - !Join [ '', [!GetAtt OutputS3Bucket.Arn, '/*'] ]
-        - Sid: '3'
-          Effect: Allow
-          Action:
-          - sns:Publish
-          Resource:
-          - !Ref 'SnsTopicConversion'
-          - !Ref 'SnsTopicRekognitionComplete'
-        - Sid: '4'
-          Effect: Deny
-          Action:
-          - s3:*Policy*
-          - sns:*Permission*
-          - sns:*Delete*
-          - s3:*Delete*
-          - sns:*Remove*
-          Resource:
-          - "*"
-      PolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'transcoder-process-policy'] ]
-      Roles:
-        - !Ref ElasticTranscoderRole
-  ElasticTranscoderRole:
-    Type: AWS::IAM::Role
-    Description: Elastic Transcoder Role
-    Properties:
-      RoleName: !Join [ '-', [!Ref 'AWS::StackName', 'elastic-transcoder-role'] ]
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Sid: '1'
-          Effect: Allow
-          Principal:
-            Service: elastictranscoder.amazonaws.com
-          Action: sts:AssumeRole
   SqsQueuePolicy:
     Type: AWS::SQS::QueuePolicy
     Properties:
@@ -307,7 +307,8 @@ Resources:
           - '*'
         - Effect: Allow
           Action:
-          - elastictranscoder:ReadPreset
+          - mediaconvert:GetPreset
+          - mediaconvert:GetJob
           Resource:
           - '*'
       ManagedPolicyName: !Join [ '-', [!Ref 'AWS::StackName', 'moodle-policy'] ]
@@ -357,6 +358,9 @@ Resources:
       Environment:
         Variables:
           SmartmediaSqsQueue: !Ref SqsQueue
+          OutputBucketArn: !GetAtt OutputS3Bucket.Arn
+          MediaConvertQueueArn: !GetAtt MediaConvertQueue.Arn
+          MediaConvertRoleArn: !GetAtt MediaConvertRole.Arn
       FunctionName: !Join [ '_', [!Ref 'AWS::StackName', 'transcoder_trigger'] ]
       Handler: lambda_transcoder_trigger.lambda_handler
       MemorySize: 128
@@ -446,24 +450,6 @@ Resources:
         -
           Endpoint: !GetAtt LambdaRekognitionCompleteFunction.Arn
           Protocol: 'lambda'
-# Custom Resources.
-# Custom resources setup AWS services that are not natively supported by Cloudformation.
-  ElasticTranscoderPipeline:
-    DependsOn:
-      - InputS3Bucket
-      - OutputS3Bucket
-    Type: Custom::ElasticTranscoderPipeline
-    Properties:
-      ServiceToken: !Ref LambdaTranscodeResourceFunctionArn
-      Name: !Join [ '-', [!Ref 'AWS::StackName', 'Pipeline'] ]
-      Role: !GetAtt ElasticTranscoderRole.Arn
-      InputBucket: !Ref InputS3Bucket
-      OutputBucket: !Ref OutputS3Bucket
-      Notifications:
-        Completed: !Ref SnsTopicConversion
-        Error: !Ref SnsTopicConversion
-        Progressing: !Ref SnsTopicConversion
-        Warning: !Ref SnsTopicConversion
 # Cloudwatch events.
 # Trigger actions based on custom events.
   TranscribeEventRule:
@@ -502,6 +488,33 @@ Resources:
     Properties:
       BucketName: !Join [ '-', [!Ref 'AWS::StackName', 'output'] ]
       AccessControl: Private
+
+# Elemental Mediaconvert queues.
+  MediaConvertQueue:
+    Type: AWS::MediaConvert::Queue
+    Properties:
+        Name: !Join [ '-', [!Ref 'AWS::StackName', 'queue'] ]
+        PricingPlan: ON_DEMAND
+        Status: ACTIVE
+# EventBridge rules.
+  MediaConvertEventBridgePassToSqsRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: !Join [ '-', [!Ref 'AWS::StackName', 'mediaconvert-pass-to-sqs'] ]
+      EventPattern:
+        source:
+          - "aws.mediaconvert"
+        detail-type:
+          - "MediaConvert Job State Change"
+        detail:
+          queue:
+            - !GetAtt MediaConvertQueue.Arn
+      State: ENABLED
+      EventBusName: default
+      Targets:
+        - Id: Sqstarget
+          Arn: !GetAtt SqsQueue.Arn
+          RoleArn: !GetAtt EventBridgeNotifyQueueRole.Arn
 # Users
 # These are the IAM users created by the stack.
 # They are used by external systems interacting with the stack.
@@ -530,14 +543,11 @@ Outputs:
     Description: S3 Output Bucket
     Value: !Ref OutputS3Bucket
   TranscodeLambdaArn:
-   Description: The ARN of the Lambda transcode funciton
-   Value: !GetAtt LambdaTranscodeTriggerFunction.Arn
-  TranscodePipelineId:
-    Description: Elastic Transcoder Pipeline ID
-    Value: !GetAtt ElasticTranscoderPipeline.PipelineId
+    Description: The ARN of the Lambda transcode funciton
+    Value: !GetAtt LambdaTranscodeTriggerFunction.Arn
   RekognitionCompleteLambdaArn:
-   Description: The ARN of the Lambda transcode funciton
-   Value: !GetAtt LambdaRekognitionCompleteFunction.Arn
+    Description: The ARN of the Lambda transcode funciton
+    Value: !GetAtt LambdaRekognitionCompleteFunction.Arn
   SnsTopicRekognitionCompleteArn:
     Description: Rekognition complete SNS topic ARN
     Value: !Ref SnsTopicRekognitionComplete

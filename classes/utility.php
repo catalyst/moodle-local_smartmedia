@@ -24,7 +24,6 @@ namespace local_smartmedia;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class utility {
-
     /**
      * Due to the way VideoJS handles slash (/) arguments in URLs
      * we may need to clean up the provided args that are passed
@@ -48,5 +47,4 @@ class utility {
 
         return $args;
     }
-
 }

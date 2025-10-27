@@ -16,24 +16,23 @@
 
 namespace local_smartmedia;
 
-use core\exception\moodle_exception;
-use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Exception\AwsException;
+use Aws\MediaConvert\MediaConvertClient;
+use core\exception\moodle_exception;
 
 /**
  * Class for accessing AWS Elastic Transcode Services (ETS).
  *
  * @package     local_smartmedia
- * @author      Tom Dickman <tomdickman@catalyst-au.net>
- * @copyright   2019 Catalyst IT Australia {@link http://www.catalyst-au.net}
+ * @author      Matthew Hilton <matthewhilton@catalyst-au.net>
+ * @copyright   2025 Catalyst IT Australia {@link http://www.catalyst-au.net}
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class aws_elastic_transcoder {
-
+class aws_media_convert {
     /**
-     * @var \Aws\ElasticTranscoder\ElasticTranscoderClient
+     * @var \Aws\MediaConvert\MediaConvertClient
      */
-    private $transcoderclient;
+    private $mediaconvertclient;
 
     /**
      * Retrieved Preset ID information
@@ -43,13 +42,105 @@ class aws_elastic_transcoder {
     private $retrievedpresets;
 
     /**
+     * @var string HLS Audio preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_HLS_AUDIO = 'Smartmedia-HLS-Audio';
+
+    /**
+     * @var string Mpeg Dash audio preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_MPD_AUDIO = 'Smartmedia-MPD-Audio';
+
+    /**
+     * @var string Mp3 (raw) audio preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_MP3_AUDIO = 'Smartmedia-MP3-Audio';
+
+    /**
+     * @var string Web (audio and video) preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_WEB = 'Smartmedia-Web';
+
+    /**
+     * @var string HLS Video 600k preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_HLS_VIDEO_600K = 'Smartmedia-HLS-Video-600k';
+
+    /**
+     * @var string HLS Video 1m preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_HLS_VIDEO_1M = 'Smartmedia-HLS-Video-1m';
+
+    /**
+     * @var string HLS Video 2m preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_HLS_VIDEO_2M = 'Smartmedia-HLS-Video-2m';
+
+    /**
+     * @var string Mpeg Dash Video 600k preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_MPD_VIDEO_600K = 'Smartmedia-MPD-Video-600k';
+
+    /**
+     * @var string Mpeg Dash Video 1.2m preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_MPD_VIDEO_1_2M = 'Smartmedia-MPD-Video-1.2m';
+
+    /**
+     * @var string Mpeg Dash Video 2.4m preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_MPD_VIDEO_2_4M = 'Smartmedia-MPD-Video-2.4m';
+
+    /**
+     * @var string Mpeg Dash Video 4.8m preset name
+     * This is created in MediaConvert by provision script
+     */
+    public const PRESET_MPD_VIDEO_4_8M = 'Smartmedia-MPD-Video-4.8m';
+
+    /**
+     * @var array all the valid presets that the application can use
+     */
+    public const VALID_PRESETS = [
+        self::PRESET_HLS_AUDIO,
+        self::PRESET_MPD_AUDIO,
+        self::PRESET_MP3_AUDIO,
+        self::PRESET_WEB,
+        self::PRESET_HLS_VIDEO_600K,
+        self::PRESET_HLS_VIDEO_1M,
+        self::PRESET_HLS_VIDEO_2M,
+        self::PRESET_MPD_VIDEO_600K,
+        self::PRESET_MPD_VIDEO_1_2M,
+        self::PRESET_MPD_VIDEO_2_4M,
+        self::PRESET_MPD_VIDEO_4_8M,
+    ];
+
+    /**
+     * If a given preset is valid.
+     * @param string $presetname
+     * @return bool
+     */
+    public static function is_valid_preset(string $presetname): bool {
+        return in_array($presetname, self::VALID_PRESETS);
+    }
+
+    /**
      * Transcoder presets for low quality video file conversion.
      *
      * @var array
      */
     public const LOW_PRESETS = [
-        '1351620000001-200045', // System preset: HLS Video - 600k.
-        '1351620000001-500050', // System preset: MPEG-Dash Video - 600k.
+        self::PRESET_HLS_VIDEO_600K,
+        self::PRESET_MPD_VIDEO_600K,
     ];
 
     /**
@@ -58,8 +149,8 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const MEDIUM_PRESETS = [
-        '1351620000001-200035', // System preset: HLS Video - 1M.
-        '1351620000001-500040', // System preset: MPEG-Dash Video - 1.2M.
+        self::PRESET_HLS_VIDEO_1M,
+        self::PRESET_MPD_VIDEO_1_2M,
     ];
 
     /**
@@ -68,8 +159,8 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const HIGH_PRESETS = [
-        '1351620000001-200015', // System preset: HLS Video - 2M.
-        '1351620000001-500030', // System preset: MPEG-Dash Video - 2.4M.
+        self::PRESET_HLS_VIDEO_2M,
+        self::PRESET_MPD_VIDEO_2_4M,
     ];
 
     /**
@@ -78,7 +169,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const EXTRA_HIGH_PRESETS = [
-        '1351620000001-500020', // System preset: MPEG-Dash Video - 4.8M.
+        self::PRESET_MPD_VIDEO_4_8M,
     ];
 
     /**
@@ -87,7 +178,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const AUDIO_PRESETS = [
-        '1351620000001-300020', // System preset: Audio MP3 - 192 kilobits/second.
+        self::PRESET_MP3_AUDIO,
     ];
 
     /**
@@ -96,7 +187,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const DOWNLOAD_PRESETS = [
-        '1351620000001-100070', // System preset: Facebook, SmugMug, Vimeo, YouTube.
+        self::PRESET_WEB,
     ];
 
     /**
@@ -105,7 +196,7 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const HLS_AUDIO = [
-        '1351620000001-200060',  // System preset: HLS v3 and v4 Audio, 160 k.
+        self::PRESET_HLS_AUDIO,
     ];
 
     /**
@@ -114,39 +205,16 @@ class aws_elastic_transcoder {
      * @var array
      */
     public const MPD_AUDIO = [
-        '1351620000001-500060', // System preset: MPEG-DASH Audio 128 k.
+        self::PRESET_MPD_AUDIO,
     ];
 
     /**
-     * aws_ets_pricing_client constructor.
-     *
-     * @param \Aws\ElasticTranscoder\ElasticTranscoderClient $transcoderclient the client for accessing AWS ETS.
+     * Create
+     * @param MediaConvertClient $mediaconvertclient
      */
-    public function __construct(ElasticTranscoderClient $transcoderclient) {
-        $this->transcoderclient = $transcoderclient;
+    public function __construct(MediaConvertClient $mediaconvertclient) {
+        $this->mediaconvertclient = $mediaconvertclient;
         $this->retrievedpresets = [];
-    }
-
-    /**
-     * Read the details of an AWS Elastic Transcoder preset.
-     *
-     * @param string $presetid the AWS preset ID to read the preset for.
-     *
-     * @return mixed|null
-     */
-    private function read_preset(string $presetid) {
-        // Retrieve preset information if already stored.
-        if (array_key_exists($presetid, $this->retrievedpresets)) {
-            $preset = $this->retrievedpresets[$presetid];
-        } else {
-            $params = ['Id' => $presetid];
-            $result = $this->transcoderclient->readPreset($params);
-            $preset = $result->get('Preset');
-            // Store the info for later.
-            $this->retrievedpresets[$presetid] = $preset;
-        }
-
-        return $preset;
     }
 
     /**
@@ -218,12 +286,6 @@ class aws_elastic_transcoder {
             $presetids = array_merge(self::AUDIO_PRESETS, $presetids);
         }
 
-        // Now we want to add any custom presets enabled for the account.
-        if (!empty($pluginconfig->usecustompresets)) {
-            $custompresets = explode(',', str_replace(' ', '', $pluginconfig->custompresets));
-            $presetids = array_merge($custompresets, $presetids);
-        }
-
         return array_unique($presetids);
     }
 
@@ -234,21 +296,20 @@ class aws_elastic_transcoder {
      * @return array $presets array of aws_ets_preset objects.
      * @throws \core\exception\moodle_exception
      */
-    public function get_presets(array $presetids=[]): array {
+    public function get_presets(array $presetids = []): array {
         $presets = [];
         if (empty($presetids)) {
             $presetids = $this->get_preset_ids();
         }
 
         if (!empty($presetids)) {
-
             foreach ($presetids as $presetid) {
                 try {
                     $presetdata = $this->read_preset($presetid);
-                    $presets[] = new aws_ets_preset($presetdata);
+                    $presets[] = new media_convert_preset($presetdata);
                 } catch (AwsException $e) {
                     debugging($e->getAwsErrorMessage());
-                    throw new moodle_exception("Invalid AWS Elastic Transcoder Preset ID in SmartMedia settings: '$presetid'");
+                    throw new moodle_exception("Invalid AWS MediaConvert preset name: '$presetid'");
                 }
             }
         }
@@ -256,21 +317,22 @@ class aws_elastic_transcoder {
     }
 
     /**
-     * This function gets all preset objects that can be used in the plugin.
+     * Read the details of an AWS Media convert preset.
      *
-     * @return array
+     * @param string $presetname
+     * @return mixed|null
      */
-    public function get_all_presets(): array {
+    private function read_preset(string $presetname) {
+        // Retrieve preset information if already stored.
+        if (array_key_exists($presetname, $this->retrievedpresets)) {
+            $preset = $this->retrievedpresets[$presetname];
+        } else {
+            $result = $this->mediaconvertclient->getPreset(["Name" => $presetname]);
+            $preset = $result->get('Preset');
+            // Store the info for later.
+            $this->retrievedpresets[$presetname] = $preset;
+        }
 
-        $presetids = array_merge(
-            self::LOW_PRESETS,
-            self::MEDIUM_PRESETS,
-            self::HIGH_PRESETS,
-            self::EXTRA_HIGH_PRESETS,
-            self::AUDIO_PRESETS,
-            self::DOWNLOAD_PRESETS
-        );
-
-        return $this->get_presets($presetids);
+        return $preset;
     }
 }

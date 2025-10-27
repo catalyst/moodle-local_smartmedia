@@ -23,7 +23,6 @@
  * @group      local_smartmedia
  */
 final class report_summary_test extends advanced_testcase {
-
     public function setUp(): void {
         parent::setUp();
         $this->resetAfterTest();
@@ -71,6 +70,5 @@ final class report_summary_test extends advanced_testcase {
         $this->assertEquals(($record1->value - ($record2->value + $record3->value)), $proxy[0]);
         $this->assertEquals($record2->value, $proxy[1]);
         $this->assertEquals($record3->value, $proxy[2]);
-
     }
 }

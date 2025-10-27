@@ -18,9 +18,8 @@ namespace local_smartmedia;
 
 use dml_exception;
 use Aws\Credentials\Credentials;
-use Aws\ElasticTranscoder\ElasticTranscoderClient;
+use Aws\MediaConvert\MediaConvertClient;
 use Aws\Pricing\PricingClient;
-use core\aws\client_factory;
 
 /**
  * API using the AWS PHP SDK to make service calls.
@@ -31,7 +30,6 @@ use core\aws\client_factory;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class aws_api {
-
     /**
      * Region specifically for use with AWS Pricing List API.
      * (The AWS Pricing List API is only available to this region.)
@@ -54,9 +52,9 @@ class aws_api {
     private $pricingclient;
 
     /**
-     * @var \Aws\ElasticTranscoder\ElasticTranscoderClient for accessing Elastic Transcoder services.
+     * @var \Aws\MediaConvert\MediaConvertClient
      */
-    private $transcoderclient;
+    private $mediaconvertclient;
 
     /**
      * aws_api constructor.
@@ -67,7 +65,8 @@ class aws_api {
         $this->region = get_config('local_smartmedia', 'api_region');
         $this->set_credentials(
             get_config('local_smartmedia', 'api_key'),
-            get_config('local_smartmedia', 'api_secret'));
+            get_config('local_smartmedia', 'api_secret')
+        );
     }
 
     /**
@@ -125,16 +124,15 @@ class aws_api {
         return $this->pricingclient;
     }
 
-
     /**
-     * Get the AWS Elastic Transcoder Client for utilising the AWS Elastic Transcoder Service.
+     * Get the AWS Media Convert Client
      *
      * @param \Aws\MockHandler|null $handler Optional handler.
-     * @param string $version the AWS Pricing Client version to use for API calls.
+     * @param string $version the AWS version to use for API calls.
      *
-     * @return \Aws\ElasticTranscoder\ElasticTranscoderClient
+     * @return \Aws\MediaConvert\MediaConvertClient
      */
-    public function create_elastic_transcoder_client($handler = null, $version = '2012-09-25'): ElasticTranscoderClient {
+    public function create_media_convert_client($handler = null, $version = '2017-08-29'): MediaConvertClient {
 
         // Set up the minimum arguments required for client.
         $args = [
@@ -152,11 +150,10 @@ class aws_api {
         }
 
         // Only create client if it hasn't already been done.
-        if ($this->transcoderclient == null) {
-            $this->transcoderclient = client_factory::get_client('\Aws\ElasticTranscoder\ElasticTranscoderClient', $args);
+        if ($this->mediaconvertclient == null) {
+            $this->mediaconvertclient = client_factory::get_client('\Aws\MediaConvert\MediaConvertClient', $args);
         }
 
-        return $this->transcoderclient;
+        return $this->mediaconvertclient;
     }
-
 }

@@ -16,8 +16,8 @@
 
 namespace local_smartmedia\privacy;
 
+use core\context;
 use core_privacy\local\request\core_userlist_provider;
-use context;
 use core_privacy\local\metadata\collection;
 use core_privacy\local\request\contextlist;
 use core_privacy\local\request\approved_contextlist;
@@ -31,11 +31,7 @@ use core_privacy\local\request\approved_userlist;
  * @copyright   2019 Matt Porritt <mattp@catalyst-au.net>
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements
-        \core_privacy\local\metadata\provider,
-        core_userlist_provider,
-        \core_privacy\local\request\plugin\provider {
-
+class provider implements core_userlist_provider, \core_privacy\local\metadata\provider, \core_privacy\local\request\plugin\provider {
     /**
      * Returns meta data about this system.
      *

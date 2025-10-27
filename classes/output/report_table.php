@@ -19,10 +19,10 @@ namespace local_smartmedia\output;
 use core_table\sql_table;
 use core\url;
 use core\output\html_writer;
+use core\output\renderable;
 use stdClass;
 use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
-use renderable;
+use local_smartmedia\aws_media_convert;
 
 /**
  * Renderable table for the AWS Elastic Transcode report.
@@ -33,7 +33,6 @@ use renderable;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class report_table extends sql_table implements renderable {
-
     /**
      * The required fields from the DB for this report_table.
      *
@@ -67,8 +66,13 @@ class report_table extends sql_table implements renderable {
      *
      * @throws \coding_exception
      */
-    public function __construct(string $uniqueid, string $baseurl, int $page = 0,
-                                int $perpage = 50, string $download = '') {
+    public function __construct(
+        string $uniqueid,
+        string $baseurl,
+        int $page = 0,
+        int $perpage = 50,
+        string $download = ''
+    ) {
         parent::__construct($uniqueid);
 
         $this->set_attribute('id', 'local_smartmedia_report_table');
@@ -85,7 +89,8 @@ class report_table extends sql_table implements renderable {
                 'files',
                 'timecreated',
                 'timecompleted',
-            ]);
+            ]
+        );
         $this->define_headers([
             get_string('filename', 'repository'),
             get_string('report:status', 'local_smartmedia'),
@@ -104,10 +109,10 @@ class report_table extends sql_table implements renderable {
         $this->set_sql(self::FIELDS, self::FROM, self::DEFAULT_WHERE);
 
         // Setup a transcoder to get all preset information and store it.
-        $api = new aws_api;
-        $transcoderclient = $api->create_elastic_transcoder_client();
-        $transcoder = new aws_elastic_transcoder($transcoderclient);
-        $this->presets = $transcoder->get_all_presets();
+        $api = new aws_api();
+        $client = $api->create_media_convert_client();
+        $transcoder = new aws_media_convert($client);
+        $this->presets = $transcoder->get_presets();
     }
 
     /**
@@ -204,5 +209,4 @@ class report_table extends sql_table implements renderable {
 
         return $this->format_text($date);
     }
-
 }

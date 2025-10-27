@@ -16,8 +16,9 @@
 
 namespace local_smartmedia;
 
+use Aws\MediaConvert\MediaConvertClient;
+use core\exception\coding_exception;
 use stdClass;
-use core\aws\client_factory;
 
 /**
  * Class for AWS SQS processing operations.
@@ -27,7 +28,6 @@ use core\aws\client_factory;
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class queue_process {
-
     /**
      *
      * @var object Plugin confiuration.
@@ -39,6 +39,11 @@ class queue_process {
      * @var \Aws\Sqs\SqsClient SQS client.
      */
     private $client;
+
+    /**
+     * @var \Aws\MediaConvert\MediaConvertClient
+     */
+    private $mediaconvertclient;
 
     /**
      * Max messages to get from AWS SQS queue per run..
@@ -62,7 +67,7 @@ class queue_process {
      * @param \GuzzleHttp\Handler $handler Optional handler.
      * @return \Aws\Sqs\SqsClient
      */
-    public function create_client($handler = null) {
+    public function create_sqs_client($handler = null) {
         $connectionoptions = [
             'version' => 'latest',
             'region' => $this->config->api_region,
@@ -89,119 +94,161 @@ class queue_process {
         return $this->client;
     }
 
+    /**
+     * Create AWS MediaConvert client.
+     *
+     * @param \GuzzleHttp\Handler $handler Optional handler.
+     * @return \Aws\MediaConvert\MediaConvertClient
+     */
+    public function create_media_convert_client($handler = null) {
+        $connectionoptions = [
+            'version' => 'latest',
+            'region' => $this->config->api_region,
+        ];
+
+        $usesdkcreds = get_config('local_smartmedia', 'usesdkcreds');
+        if (!$usesdkcreds) {
+            $connectionoptions['credentials'] = [
+                'key' => $this->config->api_key,
+                'secret' => $this->config->api_secret,
+            ];
+        }
+
+        // We should use the test handler if provided.
+        if (isset($handler)) {
+            $connectionoptions['handler'] = $handler;
+        }
+
+        // Only create client if it hasn't already been done.
+        if (!isset($this->mediaconvertclient)) {
+            $this->mediaconvertclient = new MediaConvertClient($connectionoptions);
+        }
+
+        return $this->mediaconvertclient;
+    }
 
     /**
-     * Get pending messages from the AWS SQS queue.
-     *
-     * @return array $messages The messages retreived from the SQS Queue.
+     * Reads up until self::MAX_MESSAGES messages from queue, returns raw data.
+     * @return array
      */
-    private function get_queue_messages(): array {
-        global $CFG;
-
-        // Get current messages from queue.
-        $messages = [];
+    private function read_up_until_max_messages(): array {
         $messageparams = [
             'AttributeNames' => ['All'],
-            'MaxNumberOfMessages' => 10,  // 10 is AWS maximum per call.
+            'MaxNumberOfMessages' => 10, // 10 is AWS maximum per call.
             'MessageAttributeNames' => ['All'],
             'QueueUrl' => $this->config->sqs_queue_url,
             'VisibilityTimeout' => 60,
             'WaitTimeSeconds' => 10, // To quick and we miss messages, to long and it's slow.
         ];
 
+        $messages = [];
         while (count($messages) < self::MAX_MESSAGES) {
             $result = $this->client->receiveMessage($messageparams);
-            $newmessages = $result->get('Messages'); // Number of received messages varies unpredictably.
+            $newmessages = $result->get('Messages') ?? []; // Number of received messages varies unpredictably.
+            $messages = array_merge($messages, $newmessages);
 
-            if ($newmessages == null || count($newmessages) == 0) {
-                // No messages received so end early.
+            // Queue empty, exit early.
+            if (empty($newmessages)) {
                 break;
             }
-
-            // Not only do the number of messages received vary,
-            // SQS can also deliver the same message multiple times.
-            foreach ($newmessages as $newmessage) {
-                $messagebody = json_decode($newmessage['Body']);
-                $messagehash = md5(json_encode($messagebody->message));
-                $messagesiteid = $newmessage['MessageAttributes']['siteid']['StringValue'];
-
-                // We could be using the same AWS queue for multiple Moodles,
-                // so we only store messages for our Moodle.
-                if ($messagesiteid === $CFG->siteidentifier) {
-                    $messages[$messagehash] = $newmessage;
-                }
-            }
         }
-
         return $messages;
     }
 
     /**
-     * Store received SQS queue messages in the DB.
-     *
-     * @param array $messages THe messages to store.
+     * Handle queue message received from SQS
+     * @param array $message raw message from SQS queue
      */
-    private function store_messages(array $messages): void {
+    private function handle_message(array $message) {
+        // First extract the record that goes into the DB local_smartmedia_queue_msgs.
+        $record = $this->extract_record_from_message($message);
+
+        // Only store messages we care about and handle.
+        if (!empty($record)) {
+            // Then ensure it is stored.
+            $this->store_message_record_if_not_already_stored($record);
+        }
+
+        // Now successfully stored (or unhandled), delete the SQS message.
+        $this->delete_sqs_queue_message($message['ReceiptHandle']);
+    }
+
+    /**
+     * Delete message from SQS queue
+     * @param string $receipthandle SQS receipt handle (identifier for SQS message)
+     */
+    private function delete_sqs_queue_message(string $receipthandle) {
+        $deleteparams = [
+            'QueueUrl' => $this->config->sqs_queue_url,
+            'ReceiptHandle' => $receipthandle,
+        ];
+        $this->client->deleteMessage($deleteparams);
+    }
+
+    /**
+     * Store message record into local_smartmedia_queue_msgs if not already there
+     * Deduplication is required as SQS messages can appear multiple times
+     * @param object $record
+     */
+    private function store_message_record_if_not_already_stored(object $record) {
         global $DB;
-        $messagerecords = [];
-        $messagehashes = [];
 
-        if (empty($messages)) {
-            // Return early if no messages.
-            return;
+        if (empty($record->messagehash)) {
+            throw new coding_exception("Message must have message hash");
         }
 
-        foreach ($messages as $message) {
-            $messagebody = json_decode($message['Body']);
-            $messagejson = json_encode($messagebody->message);
-            $record = new stdClass();
-            $record->objectkey = $messagebody->objectkey;
-            $record->process = $messagebody->process;
-            $record->status = $messagebody->status;
-            $record->messagehash = md5($messagejson);
-            $record->message = $messagejson;
-            $record->senttime = $messagebody->timestamp;
-            $record->timecreated = time();
-
-            $messagerecords[md5($messagejson)] = $record;
-            $messagehashes[] = md5($messagejson);
-        }
-
-        // Because AWS SQS can deliver the same message more than once,
-        // we need to make sure we dont inset them into
-        // the database more than once.
-        // So check the DB and only add records that aren't already there.
+        // Check if this record is already stored (SQS can sometimes emit duplicates).
         $transaction = $DB->start_delegated_transaction();
-
-        list($insql, $inparams) = $DB->get_in_or_equal($messagehashes);
-        $sql = "SELECT messagehash FROM {local_smartmedia_queue_msgs} WHERE messagehash $insql";
-        $existingmessages = $DB->get_records_sql($sql, $inparams);
-        $recordstoinsert = array_diff_key($messagerecords, $existingmessages);
-        $DB->insert_records('local_smartmedia_queue_msgs', $recordstoinsert);
-
+        $existing = $DB->get_record('local_smartmedia_queue_msgs', ['messagehash' => $record->messagehash]);
+        if (empty($existing)) {
+            $DB->insert_record('local_smartmedia_queue_msgs', $record);
+        }
         $transaction->allow_commit();
     }
 
     /**
-     * Deletes messages from AWS SQS queue.
-     *
-     * @param array $messages Messages to delete.
-     * @return array $results Results of message deletions.
+     * Extract the record from the raw sqs message
+     * @param array $message raw SQS message
+     * @return object|null Object record, otherwise null if unhandled.
      */
-    private function delete_queue_messages(array $messages): array {
-        $result = [];
+    private function extract_record_from_message(array $message): ?object {
+        $messagebody = json_decode($message['Body']);
 
-        foreach ($messages as $message) {
-            $deleteparams = [
-                'QueueUrl' => $this->config->sqs_queue_url,
-                'ReceiptHandle' => $message['ReceiptHandle'],
-            ];
-
-            $result[] = $this->client->deleteMessage($deleteparams)->get('@metadata');
-
+        if (!empty($messagebody->source) && $messagebody->source === 'aws.mediaconvert') {
+            return $this->extract_record_from_mediaconvert_message($message);
         }
 
-        return $result;
+        // For now, we just ignore these and return null.
+        // TODO handle others e.g. rekognition.
+        return null;
+    }
+
+    /**
+     * Extract a local_smartmedia_queue_msgs record from raw SQS mediaconvert message
+     * @param array $message raw SQS message
+     * @return object record to insert into the database
+     */
+    private function extract_record_from_mediaconvert_message(array $message): object {
+        $messagejson = $message['Body'];
+        $messagebody = json_decode($messagejson);
+
+        // Lookup job to get the input (i.e. what file this is for).
+        $mcclient = $this->create_media_convert_client();
+        $jobdetails = $mcclient->getJob(['Id' => $messagebody->resources[0]]);
+
+        // Explode the s3 objects ARN to get the object key.
+        $parts = explode("/", $jobdetails["Job"]["Settings"]["Inputs"][0]["FileInput"]);
+        $inputobjectkey = array_pop($parts);
+
+        $record = new stdClass();
+        $record->objectkey = $inputobjectkey;
+        $record->process = "mediaconvert";
+        $record->status = $messagebody->detail->status;
+        $record->messagehash = md5($messagejson);
+        $record->message = $messagejson;
+        $record->senttime = strtotime($messagebody->time);
+        $record->timecreated = time();
+        return $record;
     }
 
     /**
@@ -210,14 +257,13 @@ class queue_process {
      * @return int Count of messages processed.
      */
     public function process_queue(): int {
-        $this->create_client();
+        $this->create_sqs_client();
+        $this->create_media_convert_client();
 
-        $messages = $this->get_queue_messages(); // Get current messages from queue.
-        $this->store_messages($messages); // Store messages in database.
-        $this->delete_queue_messages($messages); // Remove messages from queue.
-
+        $messages = $this->read_up_until_max_messages();
+        foreach ($messages as $message) {
+            $this->handle_message($message);
+        }
         return count($messages);
-
     }
-
 }

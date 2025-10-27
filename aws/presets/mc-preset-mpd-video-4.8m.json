@@ -1,0 +1,56 @@
+{
+    "Name": "Smartmedia-MPD-Video-4.8m", 
+    "Description": "System preset: MPEG-Dash Video - 4.8M", 
+    "Settings": {
+        "VideoDescription": {
+            "CodecSettings": {
+                "Codec": "H_264", 
+                "H264Settings": {
+                    "CodecProfile": "MAIN", 
+                    "SpatialAdaptiveQuantization": "ENABLED", 
+                    "TemporalAdaptiveQuantization": "ENABLED", 
+                    "Softness": 0, 
+                    "RateControlMode": "CBR", 
+                    "FramerateNumerator": 30, 
+                    "MinIInterval": 0, 
+                    "UnregisteredSeiTimecode": "DISABLED", 
+                    "FramerateControl": "SPECIFIED", 
+                    "NumberReferenceFrames": 3, 
+                    "FramerateDenominator": 1, 
+                    "Bitrate": 4800000, 
+                    "GopBReference": "DISABLED", 
+                    "EntropyEncoding": "CAVLC", 
+                    "GopSizeUnits": "AUTO", 
+                    "FlickerAdaptiveQuantization": "DISABLED", 
+                    "Telecine": "NONE", 
+                    "AdaptiveQuantization": "HIGH", 
+                    "InterlaceMode": "PROGRESSIVE", 
+                    "QualityTuningLevel": "SINGLE_PASS", 
+                    "HrdBufferInitialFillPercentage": 90, 
+                    "RepeatPps": "DISABLED", 
+                    "SlowPal": "DISABLED", 
+                    "GopClosedCadence": 1, 
+                    "ParControl": "INITIALIZE_FROM_SOURCE", 
+                    "Slices": 1, 
+                    "FramerateConversionAlgorithm": "DUPLICATE_DROP", 
+                    "Syntax": "DEFAULT", 
+                    "SceneChangeDetect": "ENABLED", 
+                    "CodecLevel": "LEVEL_3_1", 
+                    "NumberBFramesBetweenReferenceFrames": 0
+                }
+            }, 
+            "Sharpness": 100, 
+            "AntiAlias": "ENABLED", 
+            "Height": 720, 
+            "Width": 1280, 
+            "ScalingBehavior": "DEFAULT", 
+            "RespondToAfd": "NONE", 
+            "ColorMetadata": "INSERT", 
+            "AfdSignaling": "NONE", 
+            "TimecodeInsertion": "DISABLED"
+        }, 
+        "ContainerSettings": {
+            "Container": "MPD"
+        }
+    }
+}

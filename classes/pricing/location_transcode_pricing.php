@@ -29,7 +29,6 @@ require_once($CFG->dirroot . '/local/smartmedia/lib.php');
  * @license     http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class location_transcode_pricing extends location_base_pricing {
-
     /**
      * @var float the cost per minute for standard definition transcoding.
      */

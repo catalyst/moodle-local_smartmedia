@@ -24,9 +24,10 @@
  */
 use local_smartmedia\utility;
 use core\url;
+use core_cache\cache;
 use local_smartmedia\conversion;
 use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\aws_media_convert;
 
 // Minimum height above which media is considered high definition.
 define('LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT', 720);
@@ -41,8 +42,10 @@ define('LOCAL_SMARTMEDIA_TYPE_VIDEO', 'Video');
 define('LOCAL_SMARTMEDIA_PRESET_OUTPUT_FRAGMENTED_CONTAINERS', ['ts', 'fmp4']);
 
 // Valid container types for preset output files.
-define('LOCAL_SMARTMEDIA_PRESET_OUTPUT_CONTAINER_TYPES',
-    ['flac', 'flv', 'fmp4', 'gif', 'mp3', 'mp4', 'mpg', 'mxf', 'oga', 'ogg', 'ts', 'webm']);
+define(
+    'LOCAL_SMARTMEDIA_PRESET_OUTPUT_CONTAINER_TYPES',
+    ['flac', 'flv', 'fmp4', 'gif', 'mp3', 'mp4', 'mpg', 'mxf', 'oga', 'ogg', 'ts', 'webm']
+);
 
 /**
  * Serve the files from the local smartmedia file areas.
@@ -56,7 +59,7 @@ define('LOCAL_SMARTMEDIA_PRESET_OUTPUT_CONTAINER_TYPES',
  * @param array $options Additional options affecting the file serving.
  * @return bool False if the file not found, just send the file otherwise and do not return anything.
  */
-function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options=[]) {
+function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $forcedownload, array $options = []) {
     global $DB;
 
     // Make sure the filearea is one of those used by the plugin.
@@ -81,11 +84,11 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
         if ($cachedata) {
             $url = new url('/local/smartmedia/serve.php', ['key' => $cachekey]);
             // Set cache headers for this redirection, safe to cache in browser only.
-            @header('Expires: '. gmdate('D, d M Y H:i:s', time() + 3600) .' GMT');
+            @header('Expires: ' . gmdate('D, d M Y H:i:s', time() + 3600) . ' GMT');
             @header_remove('Pragma');
             @header('Cache-Control: private, max-age=3600');
             @header($_SERVER['SERVER_PROTOCOL'] . ' 302 Found');
-            @header('Location: '.$url->out());
+            @header('Location: ' . $url->out());
             exit;
         }
     }
@@ -118,25 +121,22 @@ function local_smartmedia_pluginfile($course, $cm, $context, $filearea, $args, $
     if (!$args) {
         $filepath = '/'; // If $args is empty the path is '/'.
     } else {
-        $filepath = '/'.implode('/', $args).'/'; // Var $args contains elements of the filepath.
+        $filepath = '/' . implode('/', $args) . '/'; // Var $args contains elements of the filepath.
     }
 
-    // We need to handle playlist files and media files differently.
-    $fileparts = pathinfo($filename);
-    $fileextension = $fileparts['extension'];
-
-    if ($fileextension != 'mpd' && $fileextension != 'm3u8') {
-        $itemid = 0; // There is only one source of truth for media (non playlist files).
+    // Legacy handling, add contenthash to start if not there already.
+    if (!str_starts_with($filename, $contenthash)) {
+        $filename = $contenthash . '_' . $filename;
     }
 
-    $smartfile = $fs->get_file($context->id, 'local_smartmedia', $filearea, $itemid, $filepath, $filename);
+    $smartfile = $fs->get_file($context->id, 'local_smartmedia', $filearea, 0, $filepath, $filename);
     if (!$smartfile) {
         return false; // Return early if smartfile id is invalid.
     }
 
     $api = new aws_api();
-    $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-    $conversion = new conversion($transcoder);
+    $mediaconvert = new aws_media_convert($api->create_media_convert_client());
+    $conversion = new conversion($mediaconvert);
     $filecheck = $conversion->check_smartmedia_file($sourcefile, $smartfile);
     if (!$filecheck) {
         return false; // Source file doesn't match smart file.

@@ -17,14 +17,14 @@
 use core\url;
 use local_smartmedia\conversion;
 use core\context\module;
-use Aws\ElasticTranscoder\ElasticTranscoderClient;
 use Aws\Result;
 use Aws\MockHandler;
 use Aws\CommandInterface;
+use Aws\MediaConvert\MediaConvertClient;
 use Psr\Http\Message\RequestInterface;
 use Aws\S3\Exception\S3Exception;
 use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\aws_media_convert;
 
 /**
  * Unit test for local_smartmedia conversion class.
@@ -35,7 +35,6 @@ use local_smartmedia\aws_elastic_transcoder;
  * @group      local_smartmedia
  */
 final class conversion_test extends advanced_testcase {
-
     /**
      * @var array Fixtures used in this test.
      */
@@ -47,9 +46,9 @@ final class conversion_test extends advanced_testcase {
     public $region;
 
     /**
-     * @var string 'YYYY-MM-DD' date version of the AWS Elastic Transcoder Client API version to test against.
+     * @var string 'YYYY-MM-DD' date version of the AWS Media Convert Client API version to test against.
      */
-    public $etsversion;
+    public $mcversion;
 
     /**
      * @var string the AWS API Key to test against.
@@ -85,7 +84,7 @@ final class conversion_test extends advanced_testcase {
 
         // Plugin settings.
         $this->region = 'ap-southeast-2';
-        $this->etsversion = '2012-09-25';
+        $this->mcversion = '2017-08-29';
         $this->apikey = 'ABCDEFGHIJKLMNO';
         $this->apisecret = '012345678910aBcDeFgHiJkLmNOpQrSTuVwXyZ';
 
@@ -94,13 +93,12 @@ final class conversion_test extends advanced_testcase {
     }
 
     /**
-     * Create a mock of \Aws\ElasticTranscoderClient for injecting into \local_smartmedia\aws_elastic_transcoder.
+     * Create mock media convert client
      *
      * @param array $fixtures array of mock data to use for results of api calls.
-     *
-     * @return \Aws\ElasticTranscoder\ElasticTranscoderClient mock with \Aws\Result instances injected in handler.
+     * @return \Aws\MediaConvert\MediaConvertClient mock with \Aws\Result instances injected in handler.
      */
-    public function create_mock_elastic_transcoder_client(array $fixtures = []) {
+    public function create_mock_media_convert_client(array $fixtures = []) {
         // Inject our results fixture into the API dependency as a mock using a handler.
         $mockhandler = new MockHandler();
         foreach ($fixtures as $fixture) {
@@ -108,10 +106,10 @@ final class conversion_test extends advanced_testcase {
             $mockhandler->append($mockresult);
         }
 
-        // Create the mock response Elastic Transcoder Client.
-        $mock = new ElasticTranscoderClient([
+        // Create the mock response Media Convert Client.
+        $mock = new MediaConvertClient([
             'region' => $this->region,
-            'version' => $this->etsversion,
+            'version' => $this->mcversion,
             'credentials' => ['key' => $this->apikey, 'secret' => $this->apisecret],
             'handler' => $mockhandler]);
 
@@ -122,14 +120,13 @@ final class conversion_test extends advanced_testcase {
      * Test get smart media method for no media.
      */
     public function test_get_smart_media_nomedia(): void {
-        global $CFG;
         $this->resetAfterTest(true);
 
         $linkhref = 'http://moodle.local/pluginfile.php/1461/mod_label/intro/SampleVideo1mb.mp4';
         $moodleurl = new url($linkhref);
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $smartmedia = $conversion->get_smart_media($moodleurl);
@@ -208,11 +205,16 @@ final class conversion_test extends advanced_testcase {
         $DB->insert_record('local_smartmedia_conv', $conversionrecord);
 
         $href = url::make_pluginfile_url(
-            $initialfilerecord['contextid'], $initialfilerecord['component'], $initialfilerecord['filearea'],
-            $initialfilerecord['itemid'], $initialfilerecord['filepath'], $initialfilerecord['filename']);
+            $initialfilerecord['contextid'],
+            $initialfilerecord['component'],
+            $initialfilerecord['filearea'],
+            $initialfilerecord['itemid'],
+            $initialfilerecord['filepath'],
+            $initialfilerecord['filename']
+        );
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -266,7 +268,7 @@ final class conversion_test extends advanced_testcase {
         $files = [$convertedmediafile, $converteddatafile];
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -320,7 +322,7 @@ final class conversion_test extends advanced_testcase {
         $files = [$convertedmediafile, $converteddatafile];
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -360,8 +362,13 @@ final class conversion_test extends advanced_testcase {
         $file1 = $fs->create_file_from_string($filerecord1, 'the first test file');
         $filepathnamehash1 = $file1->get_pathnamehash();
         $href1 = url::make_pluginfile_url(
-            $filerecord1['contextid'], $filerecord1['component'], $filerecord1['filearea'],
-            null, $filerecord1['filepath'], $filerecord1['filename']);
+            $filerecord1['contextid'],
+            $filerecord1['component'],
+            $filerecord1['filearea'],
+            null,
+            $filerecord1['filepath'],
+            $filerecord1['filename']
+        );
 
         $filerecord2 = [
             'contextid' => 1386,
@@ -374,8 +381,13 @@ final class conversion_test extends advanced_testcase {
         $file2 = $fs->create_file_from_string($filerecord2, 'the second test file');
         $filepathnamehash2 = $file2->get_pathnamehash();
         $href2 = url::make_pluginfile_url(
-            $filerecord2['contextid'], $filerecord2['component'], $filerecord2['filearea'],
-            $filerecord2['itemid'], $filerecord2['filepath'], $filerecord2['filename']);
+            $filerecord2['contextid'],
+            $filerecord2['component'],
+            $filerecord2['filearea'],
+            $filerecord2['itemid'],
+            $filerecord2['filepath'],
+            $filerecord2['filename']
+        );
 
         $filerecord3 = [
             'contextid' => 1386,
@@ -388,8 +400,13 @@ final class conversion_test extends advanced_testcase {
         $file3 = $fs->create_file_from_string($filerecord3, 'the third test file');
         $filepathnamehash3 = $file3->get_pathnamehash();
         $href3 = url::make_pluginfile_url(
-            $filerecord3['contextid'], $filerecord3['component'], $filerecord3['filearea'],
-            $filerecord3['itemid'], $filerecord3['filepath'], $filerecord3['filename']);
+            $filerecord3['contextid'],
+            $filerecord3['component'],
+            $filerecord3['filearea'],
+            $filerecord3['itemid'],
+            $filerecord3['filepath'],
+            $filerecord3['filename']
+        );
 
         // Ensure files with URL-encoded characters are handled correctly.
         $filerecord4 = [
@@ -403,8 +420,13 @@ final class conversion_test extends advanced_testcase {
         $file4 = $fs->create_file_from_string($filerecord4, 'the fourth test file');
         $filepathnamehash4 = $file4->get_pathnamehash();
         $href4 = url::make_pluginfile_url(
-            $filerecord4['contextid'], $filerecord4['component'], $filerecord4['filearea'],
-            $filerecord4['itemid'], $filerecord4['filepath'], $filerecord4['filename']);
+            $filerecord4['contextid'],
+            $filerecord4['component'],
+            $filerecord4['filearea'],
+            $filerecord4['itemid'],
+            $filerecord4['filepath'],
+            $filerecord4['filename']
+        );
 
         $filerecord5 = [
             'contextid' => 1386,
@@ -417,12 +439,17 @@ final class conversion_test extends advanced_testcase {
         $file5 = $fs->create_file_from_string($filerecord5, 'the fifth test file');
         $filepathnamehash5 = $file5->get_pathnamehash();
         $href5 = url::make_pluginfile_url(
-            $filerecord5['contextid'], $filerecord5['component'], $filerecord5['filearea'],
-            $filerecord5['itemid'], $filerecord5['filepath'], $filerecord5['filename']);
+            $filerecord5['contextid'],
+            $filerecord5['component'],
+            $filerecord5['filearea'],
+            $filerecord5['itemid'],
+            $filerecord5['filepath'],
+            $filerecord5['filename']
+        );
 
         // Instansiate new conversion class.
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -466,7 +493,7 @@ final class conversion_test extends advanced_testcase {
     public function test_get_conversion_statuses_no_record(): void {
         $this->resetAfterTest(true);
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -499,7 +526,7 @@ final class conversion_test extends advanced_testcase {
         global $DB;
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -560,14 +587,17 @@ final class conversion_test extends advanced_testcase {
         set_config('transcribe', 0, 'local_smartmedia');
 
         // Mock the elastic transcoder client so it returns low quality and high quality presets.
-        $mockdata = array_merge(
-            $this->fixture['readPreset']['quality_low'],
-            $this->fixture['readPreset']['quality_high'],
-            $this->fixture['readPreset']['download_files']
+        $presets = array_merge(
+            aws_media_convert::HLS_AUDIO,
+            aws_media_convert::MPD_AUDIO,
+            aws_media_convert::DOWNLOAD_PRESETS,
+            aws_media_convert::LOW_PRESETS,
+            aws_media_convert::HIGH_PRESETS
         );
-        $mock = $this->create_mock_elastic_transcoder_client($mockdata);
+        $mockdata = array_filter($this->fixture['readPreset'], fn($p) => in_array($p["Preset"]["Name"], $presets));
+        $mock = $this->create_mock_media_convert_client($mockdata);
 
-        $transcoder = new aws_elastic_transcoder($mock);
+        $transcoder = new aws_media_convert($mock);
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -598,7 +628,6 @@ final class conversion_test extends advanced_testcase {
 
         $result = $DB->count_records('local_smartmedia_presets');
         $this->assertEquals(7, $result);
-
     }
 
     /**
@@ -614,14 +643,19 @@ final class conversion_test extends advanced_testcase {
         set_config('download_files', 1, 'local_smartmedia');
 
         // Mock the elastic transcoder client so it returns fixture preset data for low quality, high quality, audio and download.
-        $fixturedata = array_values(array_merge(
-            $this->fixture['readPreset']['quality_low'],
-            $this->fixture['readPreset']['quality_high'],
-            $this->fixture['readPreset']['audio_output'],
-            $this->fixture['readPreset']['download_files']));
+        $presets = array_merge(
+            aws_media_convert::AUDIO_PRESETS,
+            aws_media_convert::HLS_AUDIO,
+            aws_media_convert::MPD_AUDIO,
+            aws_media_convert::DOWNLOAD_PRESETS,
+            aws_media_convert::LOW_PRESETS,
+            aws_media_convert::HIGH_PRESETS
+        );
+        $fixturedata = array_filter($this->fixture['readPreset'], fn($p) => in_array($p["Preset"]["Name"], $presets));
+
         // We invoke the method three times, so we need to mock this data three times.
         $mockdata = array_merge($fixturedata, $fixturedata, $fixturedata);
-        $mock = $this->create_mock_elastic_transcoder_client($mockdata);
+        $mock = $this->create_mock_media_convert_client($mockdata);
 
         // Create file metadata records.
         $metadatarecord1 = new stdClass();
@@ -666,7 +700,7 @@ final class conversion_test extends advanced_testcase {
 
         $DB->insert_record('local_smartmedia_data', $metadatarecord3);
 
-        $transcoder = new aws_elastic_transcoder($mock);
+        $transcoder = new aws_media_convert($mock);
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -681,12 +715,12 @@ final class conversion_test extends advanced_testcase {
         }
 
         $this->assertCount(8, $presetids);
-        $this->assertContains('1351620000001-200015', $presetids);
-        $this->assertContains('1351620000001-500030', $presetids);
-        $this->assertContains('1351620000001-200045', $presetids);
-        $this->assertContains('1351620000001-500050', $presetids);
-        $this->assertContains('1351620000001-300020', $presetids);
-        $this->assertContains('1351620000001-100070', $presetids);
+        $this->assertContains(aws_media_convert::PRESET_HLS_VIDEO_2M, $presetids);
+        $this->assertContains(aws_media_convert::PRESET_MPD_VIDEO_2_4M, $presetids);
+        $this->assertContains(aws_media_convert::PRESET_HLS_VIDEO_600K, $presetids);
+        $this->assertContains(aws_media_convert::PRESET_MPD_VIDEO_600K, $presetids);
+        $this->assertContains(aws_media_convert::PRESET_MP3_AUDIO, $presetids);
+        $this->assertContains(aws_media_convert::PRESET_WEB, $presetids);
 
         $results = $method->invoke($conversion, 123, 'fakecontenthash2');
         $presetids = [];
@@ -695,11 +729,11 @@ final class conversion_test extends advanced_testcase {
         }
 
         $this->assertCount(5, $presetids);
-        $this->assertContains('1351620000001-200015', $presetids);
-        $this->assertContains('1351620000001-500030', $presetids);
-        $this->assertContains('1351620000001-200045', $presetids);
-        $this->assertContains('1351620000001-500050', $presetids);
-        $this->assertContains('1351620000001-100070', $presetids);
+        $this->assertContains(aws_media_convert::PRESET_HLS_VIDEO_2M, $presetids);
+        $this->assertContains(aws_media_convert::PRESET_MPD_VIDEO_2_4M, $presetids);
+        $this->assertContains(aws_media_convert::PRESET_HLS_VIDEO_600K, $presetids);
+        $this->assertContains(aws_media_convert::PRESET_MPD_VIDEO_600K, $presetids);
+        $this->assertContains(aws_media_convert::PRESET_WEB, $presetids);
 
         $results = $method->invoke($conversion, 123, 'fakecontenthash3');
         $presetids = [];
@@ -708,8 +742,7 @@ final class conversion_test extends advanced_testcase {
         }
 
         $this->assertCount(3, $presetids);
-        $this->assertContains('1351620000001-300020', $presetids);
-
+        $this->assertContains(aws_media_convert::PRESET_MP3_AUDIO, $presetids);
     }
 
     /**
@@ -729,7 +762,7 @@ final class conversion_test extends advanced_testcase {
         set_config('detectpeople', 0, 'local_smartmedia');
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -776,8 +809,9 @@ final class conversion_test extends advanced_testcase {
         set_config('detectpeople', 0, 'local_smartmedia');
 
         // Mock the elastic transcoder client so it returns fixture preset data for low quality.
-        $mockdata = array_values($this->fixture['readPreset']['quality_low']);
-        $mock = $this->create_mock_elastic_transcoder_client($mockdata);
+        $presets = array_merge(aws_media_convert::LOW_PRESETS, aws_media_convert::MPD_AUDIO, aws_media_convert::HLS_AUDIO);
+        $mockdata = array_filter($this->fixture['readPreset'], fn($p) => in_array($p["Preset"]["Name"], $presets));
+        $mock = $this->create_mock_media_convert_client($mockdata);
 
         $conversionrecord = new stdClass();
         $conversionrecord->id = 508000;
@@ -793,7 +827,7 @@ final class conversion_test extends advanced_testcase {
         $conversionrecord->detect_phrases_status = 202;
         $conversionrecord->detect_entities_status = 404;
 
-        $transcoder = new aws_elastic_transcoder($mock);
+        $transcoder = new aws_media_convert($mock);
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_conversion_settings');
@@ -802,26 +836,15 @@ final class conversion_test extends advanced_testcase {
 
         $this->assertEquals('10101010', $result['processes']);
         // Check that all low quality fixture presets are present in the metadata.
-        foreach ($this->fixture['readPreset']['quality_low'] as $preset) {
-            if (method_exists($this, 'assertStringContainsString')) {
-                $this->assertStringContainsString($preset['Preset']['Id'], $result['presets']);
-            } else {
-                $this->assertContains($preset['Preset']['Id'], $result['presets']);
-            }
+        $lowquality = array_merge(aws_media_convert::MPD_AUDIO, aws_media_convert::HLS_AUDIO, aws_media_convert::LOW_PRESETS);
+        foreach ($lowquality as $preset) {
+            $this->assertStringContainsString($preset, $result['presets']);
         }
         // Check that no medium quality fixture presets are present in the metadata.
-        foreach ($this->fixture['readPreset']['quality_medium'] as $preset) {
-            // Ignore the audio track.
-            if (in_array($preset['Preset']['Id'], aws_elastic_transcoder::HLS_AUDIO)
-                    || in_array($preset['Preset']['Id'], aws_elastic_transcoder::MPD_AUDIO)) {
-                continue;
-            }
-
-            if (method_exists($this, 'assertStringNotContainsString')) {
-                $this->assertStringNotContainsString($preset['Preset']['Id'], $result['presets']);
-            } else {
-                $this->assertNotContains($preset['Preset']['Id'], $result['presets']);
-            }
+        // (excluding Audio, which are shared between all qualities).
+        $mediumquality = aws_media_convert::MEDIUM_PRESETS;
+        foreach ($mediumquality as $preset) {
+            $this->assertStringNotContainsString($preset, $result['presets']);
         }
     }
 
@@ -833,7 +856,7 @@ final class conversion_test extends advanced_testcase {
         global $CFG;
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -896,7 +919,7 @@ final class conversion_test extends advanced_testcase {
 
         $recordid = $DB->insert_record('local_smartmedia_conv', $conversionrecord);
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -910,7 +933,6 @@ final class conversion_test extends advanced_testcase {
         $result = $DB->get_field('local_smartmedia_conv', 'status', ['id' => $recordid]);
 
         $this->assertEquals($conversion::CONVERSION_IN_PROGRESS, $result);
-
     }
 
     /**
@@ -921,7 +943,7 @@ final class conversion_test extends advanced_testcase {
         global $DB;
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -953,8 +975,8 @@ final class conversion_test extends advanced_testcase {
 
         $messagerecord2 = new stdClass();
         $messagerecord2->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
-        $messagerecord2->process = 'elastic_transcoder';
-        $messagerecord2->status = 'COMPLETED';
+        $messagerecord2->process = 'mediaconvert';
+        $messagerecord2->status = 'COMPLETE';
         $messagerecord2->messagehash = md5('b');
         $messagerecord2->message = '{}';
         $messagerecord2->senttime = '1566091817';
@@ -962,7 +984,7 @@ final class conversion_test extends advanced_testcase {
 
         $messagerecord3 = new stdClass();
         $messagerecord3->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
-        $messagerecord3->process = 'elastic_transcoder';
+        $messagerecord3->process = 'mediaconvert';
         $messagerecord3->messagehash = md5('c');
         $messagerecord3->status = 'PROGRESSING';
         $messagerecord3->message = '{}';
@@ -998,7 +1020,7 @@ final class conversion_test extends advanced_testcase {
         $this->resetAfterTest(true);
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -1021,7 +1043,7 @@ final class conversion_test extends advanced_testcase {
 
         $messagerecord1 = new stdClass();
         $messagerecord1->objectkey = '8d6985bd0d2abb09a444eb7066efc43678465fc0';
-        $messagerecord1->process = 'elastic_transcoder';
+        $messagerecord1->process = 'mediaconvert';
         $messagerecord1->status = 'ERROR';
         $messagerecord1->message = '{}';
         $messagerecord1->senttime = '1566091817';
@@ -1039,7 +1061,6 @@ final class conversion_test extends advanced_testcase {
         $this->assertEquals($conversion::CONVERSION_ERROR, $result->rekog_moderation_status);
         $this->assertEquals($conversion::CONVERSION_ERROR, $result->rekog_face_status);
         $this->assertEquals($conversion::CONVERSION_ERROR, $result->rekog_person_status);
-
     }
 
     /**
@@ -1049,7 +1070,7 @@ final class conversion_test extends advanced_testcase {
         $this->resetAfterTest(true);
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -1107,7 +1128,7 @@ final class conversion_test extends advanced_testcase {
         }
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -1130,8 +1151,8 @@ final class conversion_test extends advanced_testcase {
 
         $messagerecord1 = new stdClass();
         $messagerecord1->objectkey = 'SampleVideo1mb';
-        $messagerecord1->process = 'elastic_transcoder';
-        $messagerecord1->status = 'COMPLETED';
+        $messagerecord1->process = 'mediaconvert';
+        $messagerecord1->status = 'COMPLETE';
         $messagerecord1->message = '{}';
         $messagerecord1->senttime = '1566091817';
         $messagerecord1->timecreated = '1566197550';
@@ -1166,7 +1187,7 @@ final class conversion_test extends advanced_testcase {
         }
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -1216,7 +1237,7 @@ final class conversion_test extends advanced_testcase {
         }
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -1242,7 +1263,7 @@ final class conversion_test extends advanced_testcase {
         $mock->append(new Result([]));
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -1291,7 +1312,7 @@ final class conversion_test extends advanced_testcase {
         $mockhandler = new MockHandler();
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'update_completion_status');
@@ -1404,7 +1425,6 @@ final class conversion_test extends advanced_testcase {
         $mockhandler->append($mockresult);
         $result = $method->invoke($conversion, $conversionrecord, $mockhandler);
         $this->assertEquals($conversion::CONVERSION_ACCEPTED, $result->status);
-
     }
 
     /**
@@ -1490,7 +1510,8 @@ final class conversion_test extends advanced_testcase {
         $DB->insert_record('local_smartmedia_data', $metadatarecord3);
 
         $conversionrecord = new stdClass();
-        $conversionrecord->contenthash = $file3->get_contenthash();;
+        $conversionrecord->contenthash = $file3->get_contenthash();
+        ;
         $conversionrecord->pathnamehash = $file3->get_pathnamehash();
         $conversionrecord->status = 202;
         $conversionrecord->transcribe_status = 202;
@@ -1507,7 +1528,7 @@ final class conversion_test extends advanced_testcase {
         $DB->insert_record('local_smartmedia_conv', $conversionrecord);
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_fileids');
@@ -1518,7 +1539,6 @@ final class conversion_test extends advanced_testcase {
         $this->assertArrayHasKey($file1->get_id(), $result);
         $this->assertArrayHasKey($file2->get_id(), $result);
         $this->assertArrayNotHasKey($file3->get_id(), $result);
-
     }
 
     /**
@@ -1588,7 +1608,7 @@ final class conversion_test extends advanced_testcase {
         $DB->insert_record('local_smartmedia_data', $metadatarecord2);
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_fileids');
@@ -1598,7 +1618,6 @@ final class conversion_test extends advanced_testcase {
         $this->assertCount(1, $result);
         $this->assertArrayHasKey($file1->get_id(), $result);
         $this->assertArrayNotHasKey($file2->get_id(), $result);
-
     }
     /**
      * Test getting fileids for new conversion records.
@@ -1608,7 +1627,7 @@ final class conversion_test extends advanced_testcase {
         global $DB;
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -1641,7 +1660,8 @@ final class conversion_test extends advanced_testcase {
         $this->assertFalse($result); // Should be false as there is no conversion record.
 
         $conversionrecord = new stdClass();
-        $conversionrecord->contenthash = $sourcefile->get_contenthash();;
+        $conversionrecord->contenthash = $sourcefile->get_contenthash();
+        ;
         $conversionrecord->pathnamehash = $sourcefile->get_pathnamehash();
         $conversionrecord->status = $conversion::CONVERSION_FINISHED;
         $conversionrecord->transcoder_status = $conversion::CONVERSION_FINISHED;
@@ -1665,13 +1685,12 @@ final class conversion_test extends advanced_testcase {
         $smartfile = $fs->create_file_from_string($smartfilerecord, 'I am the smart video.');
         $result = $conversion->check_smartmedia_file($sourcefile, $smartfile);
         $this->assertTrue($result);
-
     }
 
     /**
      * Test getting getting only relevant media files.
      */
-    public function test_get_media_files(): void {
+    public function test_get_downloaded_converted_files(): void {
         $this->resetAfterTest(true);
 
         // Create some test files.
@@ -1702,22 +1721,21 @@ final class conversion_test extends advanced_testcase {
 
         // Set up the method to test.
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_media_files');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'get_downloaded_converted_files');
         $method->setAccessible(true); // Allow accessing of private method.
         $result = $method->invoke($conversion, 'aaaaaaaaaaaaaaaaaa');
 
-        // We should only get 2 results here as non playlist filter files shouls have been filtered.
-        $this->assertCount(2, $result);
-
+        // All 5 files are returned.
+        $this->assertCount(5, $result);
     }
 
     /**
      * Test getting getting only relevant media files.
      */
-    public function test_filter_playlists(): void {
+    public function test_is_player_file(): void {
         $this->resetAfterTest(true);
 
         // Create some test files.
@@ -1747,130 +1765,27 @@ final class conversion_test extends advanced_testcase {
         $smartfilerecord['filename'] = 'contenthash_preset-id.ts';
         $files[] = $fs->create_file_from_string($smartfilerecord, 'I am a segment file.');
 
+        $smartfilerecord['filename'] = 'contenthash_mpegdash_playlistSmartmedia-MPD-Video-4.8m.ts';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am a sub level mpd playlist.');
+
+        $smartfilerecord['filename'] = 'contenthash_hls_playlistSmartmedia-HLS-Video-2m.ts';
+        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am a sub level hls playlist.');
+
         // Set up the method to test.
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'filter_playlists');
+        $method = new ReflectionMethod('\local_smartmedia\conversion', 'is_player_file');
         $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, $files);
+        $result = array_filter($files, fn($f) => $method->invoke($conversion, $f));
 
-        $this->assertCount(4, $result);
+        // There are only 2 player files, the top level m3u8 and mpd playlists.
+        $this->assertCount(2, $result);
 
         foreach ($result as $file) {
             $this->assertNotEquals('contenthash_preset-id.ts', $file->get_filename());
         }
-
-    }
-
-
-    /**
-     * Test playlist generation.
-     */
-    public function test_generate_playlists(): void {
-        $this->resetAfterTest(true);
-
-        // Create some test files.
-        $fs = get_file_storage();
-        $files = [];
-
-        $smartfilerecord = [
-            'contextid' => 1,
-            'component' => 'local_smartmedia',
-            'filearea' => 'media',
-            'itemid' => 0,
-            'filepath' => '/aaaaaaaaaaaaaaaaaa/conversions/',
-            'filename' => 'contenthash_mpegdash_playlist.mpd'];
-
-        // For this test it doesn't actually matter these are not real multimedia files.
-        $files[] = $fs->create_file_from_string($smartfilerecord, $this->fixture['mpd_playlist_fixture']);
-
-        $smartfilerecord['filename'] = 'contenthash_hls_playlist.m3u8';
-        $files[] = $fs->create_file_from_string($smartfilerecord, $this->fixture['hls_playlist_fixture']);
-
-        $smartfilerecord['filename'] = 'contenthash_preset-id.mp4';
-        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the mp4 download video.');
-
-        $smartfilerecord['filename'] = 'contenthash_preset-id.mp3';
-        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am the audio only mp3.');
-
-        $smartfilerecord['filename'] = 'contenthash_preset-id.ts';
-        $files[] = $fs->create_file_from_string($smartfilerecord, 'I am a segment file.');
-
-        // Source file id.
-        $fileid = 1391;
-
-        // Set up the method to test.
-        $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $this->resetDebugging();
-        $conversion = new conversion($transcoder);
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'generate_playlists');
-        $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, $files, $fileid);
-
-        foreach ($result as $file) {
-            if ($file->get_filename() == 'contenthash_mpegdash_playlist.mpd') {
-                $this->assertEquals(1391, $file->get_itemid());
-            } else if ($file->get_filename() == 'contenthash_hls_playlist.m3u8') {
-                $this->assertEquals(1391, $file->get_itemid());
-            } else {
-                $this->assertEquals(0, $file->get_itemid());
-            }
-        }
-    }
-
-    /**
-     * Test MPD playlist URL replacement.
-     */
-    public function test_replace_urls_mpd(): void {
-        $this->resetAfterTest(true);
-
-        $filecontent = $this->fixture['mpd_playlist_fixture'];
-        $fileid = 1391;
-
-        // Set up the method to test.
-        $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $this->resetDebugging();
-        $conversion = new conversion($transcoder);
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_urls');
-        $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, $filecontent, $fileid);
-
-        $this->assertStringNotContainsString('media/0/13ed14cef7', $result);
-        $this->assertStringContainsString('media/1391/13ed14cef7', $result);
-        $this->assertStringNotContainsString('conversions/1351620000001-500030.fmp4', $result);
-        $this->assertStringContainsString('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500030.fmp4', $result);
-        $this->assertStringNotContainsString('conversions/1351620000001-500050.fmp4', $result);
-        $this->assertStringContainsString('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-500050.fmp4', $result);
-    }
-
-    /**
-     * Test HLS playlist URL replacement.
-     */
-    public function test_replace_urls_hls(): void {
-        $this->resetAfterTest(true);
-
-        $filecontent = $this->fixture['hls_playlist_fixture'];
-        $fileid = 1391;
-
-        // Set up the method to test.
-        $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $this->resetDebugging();
-        $conversion = new conversion($transcoder);
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'replace_urls');
-        $method->setAccessible(true); // Allow accessing of private method.
-        $result = $method->invoke($conversion, $filecontent, $fileid);
-
-        $this->assertStringNotContainsString('media/0/13ed14cef7', $result);
-        $this->assertStringContainsString('media/1391/13ed14cef7', $result);
-        $this->assertStringNotContainsString('conversions/1351620000001-200015_v4.m3u8', $result);
-        $this->assertStringContainsString('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200015_v4.m3u8', $result);
-        $this->assertStringNotContainsString('conversions/1351620000001-200045_v4.m3u8', $result);
-        $this->assertStringContainsString('conversions/13ed14cef757cd7797345cb76b30c3d83caf2513_1351620000001-200045_v4.m3u8', $result);
     }
 
     /**
@@ -1897,7 +1812,7 @@ final class conversion_test extends advanced_testcase {
 
         // Set up the method to test.
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
         $method = new ReflectionMethod('\local_smartmedia\conversion', 'cleanup_aws_files');
@@ -1952,35 +1867,10 @@ final class conversion_test extends advanced_testcase {
     }
 
     /**
-     * Test string starts with helper function.
-     */
-    public function test_string_starts_with(): void {
-        $this->resetAfterTest(true);
-
-        $goodneedle = '8f3d12e28ecb231852436d5c905d2a3e6ee8e119';
-        $badneedle = '8f3d12e28ecb232252436d5c905d2a3e6ee8e119';
-        $haystack = '8f3d12e28ecb231852436d5c905d2a3e6ee8e119/conversions/';
-
-        // Set up the method to test.
-        $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $this->resetDebugging();
-        $conversion = new conversion($transcoder);
-        $method = new ReflectionMethod('\local_smartmedia\conversion', 'string_starts_with');
-        $method->setAccessible(true); // Allow accessing of private method.
-        $trueresult = $method->invoke($conversion, $haystack, $goodneedle);
-        $falseresult = $method->invoke($conversion, $haystack, $badneedle);
-
-        $this->assertTrue($trueresult);
-        $this->assertFalse($falseresult);
-
-    }
-
-    /**
      * Test will convert.
      */
     public function test_will_convert(): void {
-        global $DB, $CFG;
+        global $DB;
         $this->resetAfterTest(true);
 
         // Setup for testing.
@@ -2014,11 +1904,16 @@ final class conversion_test extends advanced_testcase {
         $conversionrecord->timemodified = time();
 
         $href = url::make_pluginfile_url(
-            $initialfilerecord['contextid'], $initialfilerecord['component'], $initialfilerecord['filearea'],
-            $initialfilerecord['itemid'], $initialfilerecord['filepath'], $initialfilerecord['filename']);
+            $initialfilerecord['contextid'],
+            $initialfilerecord['component'],
+            $initialfilerecord['filearea'],
+            $initialfilerecord['itemid'],
+            $initialfilerecord['filepath'],
+            $initialfilerecord['filename']
+        );
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
+        $transcoder = new aws_media_convert($api->create_media_convert_client());
         $this->resetDebugging();
         $conversion = new conversion($transcoder);
 
@@ -2039,7 +1934,5 @@ final class conversion_test extends advanced_testcase {
         $DB->insert_record('local_smartmedia_conv', $conversionrecord);
         $willconvert = $conversion->will_convert($href);
         $this->assertEquals($conversion::CONVERSION_IN_PROGRESS, $willconvert);
-
     }
-
 }

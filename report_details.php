@@ -24,7 +24,7 @@
  */
 
 use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\aws_media_convert;
 
 require_once('../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
@@ -33,8 +33,13 @@ require_once($CFG->libdir . '/tablelib.php');
 $hash = required_param('hash', PARAM_TEXT);
 
 // Calls require_login and performs permissions checks for admin pages.
-admin_externalpage_setup('local_smartmedia_report', '', null, '',
-    ['pagelayout' => 'report']);
+admin_externalpage_setup(
+    'local_smartmedia_report',
+    '',
+    null,
+    '',
+    ['pagelayout' => 'report']
+);
 
 $title = get_string('pluginname', 'local_smartmedia');
 
@@ -44,10 +49,10 @@ $PAGE->set_heading($title);
 $output = $PAGE->get_renderer('local_smartmedia');
 
 // Setup a transcoder to get all preset information and store it.
-$api = new aws_api;
-$transcoderclient = $api->create_elastic_transcoder_client();
-$transcoder = new aws_elastic_transcoder($transcoderclient);
-$presets = $transcoder->get_all_presets();
+$api = new aws_api();
+$transcoderclient = $api->create_media_convert_client();
+$transcoder = new aws_media_convert($transcoderclient);
+$presets = $transcoder->get_presets();
 
 $sql = "SELECT f.filename, ro.type, ro.format, ro.resolution, ro.duration, ro.filesize, ro.cost, ro.status,
                ro.files, ro.timecreated, ro.timecompleted, conv.id as convid

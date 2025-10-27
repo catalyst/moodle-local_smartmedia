@@ -20,7 +20,7 @@ use local_smartmedia\queue_process;
 use local_smartmedia\conversion;
 use core\task\scheduled_task;
 use local_smartmedia\aws_api;
-use local_smartmedia\aws_elastic_transcoder;
+use local_smartmedia\aws_media_convert;
 
 /**
  * Task to process conversions of mediafiles.
@@ -29,7 +29,6 @@ use local_smartmedia\aws_elastic_transcoder;
  * @package     local_smartmedia
  */
 class process_conversions extends scheduled_task {
-
     /**
      * Get a descriptive name for this task (shown to admins).
      *
@@ -54,14 +53,14 @@ class process_conversions extends scheduled_task {
         }
 
         // Get SQS messages from AWS.
-        mtrace('local_smartmedia: Getting SQS queue messages');
+        mtrace('local_smartmedia: Consuming SQS queue messages and storing locally');
         $queueprocess = new queue_process();
-        $processedqueue = $queueprocess->process_queue();
-        mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueue);
+        $processedqueuecount = $queueprocess->process_queue();
+        mtrace('local_smartmedia: Total number of processed SQS queue messages: ' . $processedqueuecount);
 
         $api = new aws_api();
-        $transcoder = new aws_elastic_transcoder($api->create_elastic_transcoder_client());
-        $conversion = new conversion($transcoder);
+        $mediaconvert = new aws_media_convert($api->create_media_convert_client());
+        $conversion = new conversion($mediaconvert);
 
         // Create conversion records if proactive conversions are enabled.
         $backgroundprocessing = get_config('local_smartmedia', 'proactiveconversion');
@@ -70,7 +69,6 @@ class process_conversions extends scheduled_task {
             $createdconversions = $conversion->create_conversions();
 
             mtrace('local_smartmedia: Total number of created conversions: ' . count($createdconversions));
-
         }
 
         // Process new conversions.
@@ -82,14 +80,11 @@ class process_conversions extends scheduled_task {
             if ($value != conversion::CONVERSION_IN_PROGRESS) {
                 mtrace('local_smartmedia: Failed to start processing for file with conversion id: ' . $key);
             }
-
         }
 
         // Update pending conversions.
         mtrace('local_smartmedia: Updating pending conversions');
         $updated = $conversion->update_pending_conversions();
         mtrace('local_smartmedia: Total number of updated conversions: ' . count($updated));
-
     }
-
 }

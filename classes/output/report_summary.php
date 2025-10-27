@@ -48,7 +48,7 @@ class report_summary implements renderable, templatable {
         $otherfiles = 0;
 
         // Get values for chart from the database.
-        list($insql, $inparams) = $DB->get_in_or_equal(['totalfiles', 'videofiles', 'audiofiles']);
+        [$insql, $inparams] = $DB->get_in_or_equal(['totalfiles', 'videofiles', 'audiofiles']);
         $select = "name $insql";
         $values = $DB->get_records_select('local_smartmedia_reports', $select, $inparams, '', 'name, value');
 
@@ -79,7 +79,7 @@ class report_summary implements renderable, templatable {
 
         // Get values for chart from the database.
         $fields = ['uniquemultimediaobjects', 'metadataprocessedfiles', 'transcodedfiles'];
-        list($insql, $inparams) = $DB->get_in_or_equal($fields);
+        [$insql, $inparams] = $DB->get_in_or_equal($fields);
         $select = "name $insql";
         $values = $DB->get_records_select('local_smartmedia_reports', $select, $inparams, '', 'name, value');
 
@@ -106,7 +106,6 @@ class report_summary implements renderable, templatable {
         $values = $this->get_file_summary_totals();
 
         if (!empty(($values))) { // Handle case where there is no data in table.
-
             $series = new chart_series(get_string('report:summary:filesummary:total', 'local_smartmedia'), $values);
             $labels = [
                     get_string('report:summary:filesummary:otherfiles', 'local_smartmedia'),
@@ -139,13 +138,18 @@ class report_summary implements renderable, templatable {
         $values = $this->get_process_summary_totals();
 
         if (!empty(($values))) { // Handle case where there is no data in table.
-
             $series1 = new chart_series(
-                get_string('report:summary:processsummary:uniquemultimediaobjects', 'local_smartmedia'), [$values[0]]);
+                get_string('report:summary:processsummary:uniquemultimediaobjects', 'local_smartmedia'),
+                [$values[0]]
+            );
             $series2 = new chart_series(
-                get_string('report:summary:processsummary:metadataprocessedfiles', 'local_smartmedia'), [$values[1]]);
+                get_string('report:summary:processsummary:metadataprocessedfiles', 'local_smartmedia'),
+                [$values[1]]
+            );
             $series3 = new chart_series(
-                get_string('report:summary:processsummary:transcodedfiles', 'local_smartmedia'), [$values[2]]);
+                get_string('report:summary:processsummary:transcodedfiles', 'local_smartmedia'),
+                [$values[2]]
+            );
             $labels = [get_string('report:summary:totals', 'local_smartmedia')];
 
             $chart = new chart_bar();
@@ -160,7 +164,6 @@ class report_summary implements renderable, templatable {
         }
 
         return $output;
-
     }
 
     /**
