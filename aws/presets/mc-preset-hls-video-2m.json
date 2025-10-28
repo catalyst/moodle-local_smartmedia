@@ -1,79 +1,98 @@
 {
-    "Name": "Smartmedia-HLS-Video-2m", 
-    "Description": "System preset: HLS Video - 2M", 
-    "Settings": {
-        "VideoDescription": {
-            "CodecSettings": {
-                "Codec": "H_264", 
-                "H264Settings": {
-                    "CodecProfile": "MAIN", 
-                    "SpatialAdaptiveQuantization": "ENABLED", 
-                    "TemporalAdaptiveQuantization": "ENABLED", 
-                    "Softness": 0, 
-                    "RateControlMode": "CBR", 
-                    "MinIInterval": 0, 
-                    "UnregisteredSeiTimecode": "DISABLED", 
-                    "FramerateControl": "INITIALIZE_FROM_SOURCE", 
-                    "NumberReferenceFrames": 3, 
-                    "Bitrate": 1872000, 
-                    "GopBReference": "DISABLED", 
-                    "EntropyEncoding": "CAVLC", 
-                    "GopSizeUnits": "AUTO", 
-                    "FlickerAdaptiveQuantization": "DISABLED", 
-                    "Telecine": "NONE", 
-                    "AdaptiveQuantization": "HIGH", 
-                    "InterlaceMode": "PROGRESSIVE", 
-                    "QualityTuningLevel": "SINGLE_PASS", 
-                    "HrdBufferInitialFillPercentage": 90, 
-                    "RepeatPps": "DISABLED", 
-                    "SlowPal": "DISABLED", 
-                    "GopClosedCadence": 1, 
-                     
-                    "ParControl": "INITIALIZE_FROM_SOURCE", 
-                    "Slices": 1, 
-                    "FramerateConversionAlgorithm": "DUPLICATE_DROP", 
-                    "Syntax": "DEFAULT", 
-                    "SceneChangeDetect": "ENABLED", 
-                    "CodecLevel": "LEVEL_3_1", 
-                    "NumberBFramesBetweenReferenceFrames": 0
-                }
-            }, 
-            "Sharpness": 100, 
-            "AntiAlias": "ENABLED", 
-            "Height": 768, 
-            "Width": 1024, 
-            "ScalingBehavior": "DEFAULT", 
-            "RespondToAfd": "NONE", 
-            "ColorMetadata": "INSERT", 
-            "AfdSignaling": "NONE", 
-            "TimecodeInsertion": "DISABLED"
-        }, 
-        "ContainerSettings": {
-            "M3u8Settings": {
-                "Scte35Source": "NONE", 
-                "ProgramNumber": 1, 
-                "PatInterval": 100, 
-                "PcrControl": "PCR_EVERY_PES_PACKET", 
-                "AudioPids": [
-                    482, 
-                    483, 
-                    484, 
-                    485, 
-                    486, 
-                    487, 
-                    488, 
-                    489, 
-                    490, 
-                    491, 
-                    492
-                ], 
-                "PmtInterval": 100, 
-                "TimedMetadata": "NONE", 
-                "PmtPid": 480, 
-                "AudioFramesPerPes": 2, 
-                "VideoPid": 481
-            }, 
-            "Container": "M3U8"
+  "Description": "System preset: HLS Video - 2M",
+  "Name": "Smartmedia-HLS-Video-2m",
+  "Settings": {
+    "VideoDescription": {
+      "Width": 1024,
+      "ScalingBehavior": "DEFAULT",
+      "Height": 768,
+      "TimecodeInsertion": "DISABLED",
+      "AntiAlias": "ENABLED",
+      "Sharpness": 100,
+      "CodecSettings": {
+        "Codec": "H_264",
+        "H264Settings": {
+          "InterlaceMode": "PROGRESSIVE",
+          "NumberReferenceFrames": 3,
+          "Syntax": "DEFAULT",
+          "Softness": 0,
+          "GopClosedCadence": 1,
+          "HrdBufferInitialFillPercentage": 90,
+          "Slices": 1,
+          "GopBReference": "DISABLED",
+          "SlowPal": "DISABLED",
+          "SpatialAdaptiveQuantization": "ENABLED",
+          "TemporalAdaptiveQuantization": "ENABLED",
+          "FlickerAdaptiveQuantization": "DISABLED",
+          "EntropyEncoding": "CAVLC",
+          "Bitrate": 1872000,
+          "FramerateControl": "INITIALIZE_FROM_SOURCE",
+          "RateControlMode": "CBR",
+          "CodecProfile": "MAIN",
+          "Telecine": "NONE",
+          "MinIInterval": 0,
+          "AdaptiveQuantization": "HIGH",
+          "CodecLevel": "LEVEL_3_1",
+          "SceneChangeDetect": "ENABLED",
+          "QualityTuningLevel": "SINGLE_PASS",
+          "FramerateConversionAlgorithm": "DUPLICATE_DROP",
+          "UnregisteredSeiTimecode": "DISABLED",
+          "GopSizeUnits": "AUTO",
+          "ParControl": "INITIALIZE_FROM_SOURCE",
+          "NumberBFramesBetweenReferenceFrames": 0,
+          "RepeatPps": "DISABLED"
         }
+      },
+      "AfdSignaling": "NONE",
+      "RespondToAfd": "NONE",
+      "ColorMetadata": "INSERT"
+    },
+    "AudioDescriptions": [
+      {
+        "AudioTypeControl": "FOLLOW_INPUT",
+        "AudioSourceName": "Audio Selector 1",
+        "CodecSettings": {
+          "Codec": "AAC",
+          "AacSettings": {
+            "AudioDescriptionBroadcasterMix": "NORMAL",
+            "Bitrate": 160000,
+            "RateControlMode": "CBR",
+            "CodecProfile": "LC",
+            "CodingMode": "CODING_MODE_2_0",
+            "RawFormat": "NONE",
+            "SampleRate": 44100,
+            "Specification": "MPEG4"
+          }
+        },
+        "AudioType": 0
+      }
+    ],
+    "ContainerSettings": {
+      "Container": "M3U8",
+      "M3u8Settings": {
+        "AudioFramesPerPes": 2,
+        "PcrControl": "PCR_EVERY_PES_PACKET",
+        "PmtPid": 480,
+        "ProgramNumber": 1,
+        "PatInterval": 100,
+        "PmtInterval": 100,
+        "Scte35Source": "NONE",
+        "TimedMetadata": "NONE",
+        "VideoPid": 481,
+        "AudioPids": [
+          482,
+          483,
+          484,
+          485,
+          486,
+          487,
+          488,
+          489,
+          490,
+          491,
+          492
+        ]
+      }
     }
+  }
 }
