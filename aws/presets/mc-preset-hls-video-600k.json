@@ -5,7 +5,7 @@
     "VideoDescription": {
       "Width": 480,
       "ScalingBehavior": "DEFAULT",
-      "Height": 320,
+      "Height": 270,
       "TimecodeInsertion": "DISABLED",
       "AntiAlias": "ENABLED",
       "Sharpness": 100,
