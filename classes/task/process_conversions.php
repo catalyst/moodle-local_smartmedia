@@ -44,11 +44,8 @@ class process_conversions extends scheduled_task {
      * Throw exceptions on errors (the job will be retried).
      */
     public function execute() {
-
-        // First we should check whether there are an API keys set.
-        $key = get_config('local_smartmedia', 'api_key');
-        if (empty($key)) {
-            mtrace('local_smartmedia: AWS API key is not set. Exiting early.');
+        if (!conversion::are_aws_credentials_setup()) {
+            mtrace('local_smartmedia: AWS credentials not setup - Exiting early.');
             return;
         }
 

@@ -646,10 +646,8 @@ class report_process extends scheduled_task {
 
         mtrace('local_smartmedia: Processing data for overview report');
 
-        // First we should check whether there are an API keys set.
-        $key = get_config('local_smartmedia', 'api_key');
-        if (empty($key)) {
-            mtrace('local_smartmedia: AWS API key is not set. Exiting early.');
+        if (!conversion::are_aws_credentials_setup()) {
+            mtrace('local_smartmedia: AWS credentials not setup - Exiting early.');
             return;
         }
 

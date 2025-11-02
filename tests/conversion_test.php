@@ -1935,4 +1935,59 @@ final class conversion_test extends advanced_testcase {
         $willconvert = $conversion->will_convert($href);
         $this->assertEquals($conversion::CONVERSION_IN_PROGRESS, $willconvert);
     }
+
+    /**
+     * Provider for test_are_aws_credentials_setup
+     * @return array
+     */
+    public static function are_aws_credentials_setup_provider(): array {
+        return [
+            'no credentials' => [
+                'key' => '',
+                'secret' => '',
+                'usesdkcreds' => false,
+                'expected' => false,
+            ],
+            'no secret' => [
+                'key' => 'abc1234',
+                'secret' => '',
+                'usesdkcreds' => false,
+                'expected' => false,
+            ],
+            'no key' => [
+                'key' => '',
+                'secret' => 'abc1234',
+                'usesdkcreds' => false,
+                'expected' => false,
+            ],
+            'setup with key and secret' => [
+                'key' => 'abc1234',
+                'secret' => 'abc1234',
+                'usesdkcreds' => false,
+                'expected' => true,
+            ],
+            'use sdk credentials' => [
+                'key' => '',
+                'secret' => '',
+                'usesdkcreds' => true,
+                'expected' => true,
+            ],
+        ];
+    }
+
+    /**
+     * Tests for are_aws_credentials_setup.
+     * @param string $key
+     * @param string $secret
+     * @param bool $usesdkcreds
+     * @param bool $expected
+     * @dataProvider are_aws_credentials_setup_provider
+     */
+    public function test_are_aws_credentials_setup(string $key, string $secret, bool $usesdkcreds, bool $expected): void {
+        $this->resetAfterTest();
+        set_config('api_key', $key, 'local_smartmedia');
+        set_config('api_secret', $secret, 'local_smartmedia');
+        set_config('usesdkcreds', $usesdkcreds, 'local_smartmedia');
+        $this->assertEquals($expected, conversion::are_aws_credentials_setup());
+    }
 }

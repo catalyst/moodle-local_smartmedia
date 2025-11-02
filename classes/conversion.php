@@ -1319,4 +1319,17 @@ class conversion {
 
         return implode(', ', $fields);
     }
+
+    /**
+     * Checks that credentials are setup
+     * @return bool true if setup, else false.
+     */
+    public static function are_aws_credentials_setup(): bool {
+        $key = get_config('local_smartmedia', 'api_key');
+        $secret = get_config('local_smartmedia', 'api_secret');
+        $usesdk = get_config('local_smartmedia', 'usesdkcreds');
+
+        // Either key+secret, or usesdk.
+        return (!empty($key) && !empty($secret)) || !empty($usesdk);
+    }
 }
