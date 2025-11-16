@@ -61,6 +61,9 @@ class media_convert_preset {
         if ($this->is_output_audio()) {
             return false;
         }
+        if (!$this->is_output_video()) {
+            return false;
+        }
         return $this->apidata['Settings']['VideoDescription']['Height'] > LOCAL_SMARTMEDIA_MINIMUM_SD_HEIGHT;
     }
 
@@ -72,6 +75,9 @@ class media_convert_preset {
         if ($this->is_output_audio()) {
             return false;
         }
+        if (!$this->is_output_video()) {
+            return false;
+        }
         return $this->apidata['Settings']['VideoDescription']['Height'] > LOCAL_SMARTMEDIA_MINIMUM_HD_HEIGHT;
     }
 
@@ -80,7 +86,7 @@ class media_convert_preset {
      * @return bool
      */
     public function is_output_audio() {
-        return empty($this->apidata['Settings']['VideoDescription']) && !empty($this->apidata['Settings']['AudioDescription']);
+        return empty($this->apidata['Settings']['VideoDescription']) && !empty($this->apidata['Settings']['AudioDescriptions']);
     }
 
     /**
